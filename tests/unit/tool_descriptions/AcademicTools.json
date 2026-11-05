@@ -1,1 +1,8 @@
-{}
+{
+  "get_academic_calendar": "Mostra as datas de um semestre e o último cadastrado.\n\nUse para saber o semestre atual, quando começam as AVs ou quando o semestre termina.",
+  "get_curriculum": "Mostra a matriz do aluno com a situação em cada disciplina.\n\nUse para disciplinas por semestre, pré-requisitos, TCC, estágio ou o que falta.",
+  "list_course_offers": "Lista os cursos oferecidos na instituição do aluno, por unidade e turno.\n\nUse para saber se existe um curso, modalidade ou turno.",
+  "list_enrollments": "Lista as matrículas do aluno com situação e histórico.\n\nUse para vínculo, rematrícula, trancamento, CR ou conclusão do curso.",
+  "list_subject_professors": "Lista quem leciona uma disciplina em um semestre, na instituição do aluno.\n\nUse para saber quem é o professor e como contatá-lo.",
+  "list_subject_records": "Lista as disciplinas cursadas com notas, frequência e resultado.\n\nUse para ver o semestre atual, uma nota, uma reprovação ou a nota necessária na AV2."
+}

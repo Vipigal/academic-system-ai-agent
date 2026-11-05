@@ -41,9 +41,18 @@ def test_private_identity_tables_have_no_ownership_and_stay_out_of_the_models(
         OwnershipRegistry.rule_of(table)
 
 
-def test_no_model_declares_a_tax_id() -> None:
-    declared = {column.name for table in Base.metadata.tables.values() for column in table.columns}
-    assert not declared & {"cpf", "taxid", "requester_cpf", "requester_name", "email", "phone"}
+PRIVATE_COLUMNS = frozenset({"cpf", "taxid", "requester_cpf", "requester_name", "email", "phone"})
+PROFESSOR_CONTACT = ("sag.professor", "email")
+
+
+def test_no_model_declares_a_tax_id_or_contact_except_the_professor_email() -> None:
+    declared = {
+        (table.fullname, column.name)
+        for table in Base.metadata.tables.values()
+        for column in table.columns
+        if column.name in PRIVATE_COLUMNS
+    }
+    assert declared == {PROFESSOR_CONTACT}
 
 
 @pytest.mark.parametrize("row", [LmsUserRow, ProtocolRow, PersonRow, EnrollmentRow, ContractRow])

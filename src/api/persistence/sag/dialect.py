@@ -1,4 +1,5 @@
 import re
+from collections.abc import Collection
 
 from sqlalchemy import ColumnElement, false, func
 
@@ -15,6 +16,7 @@ BRAND_BY_SOURCE = {
 }
 ONLINE_SUFFIX = "_EAD"
 NOT_A_DIGIT = r"\D"
+REFERENCE_SEPARATOR = ":"
 
 
 class SagDialect:
@@ -35,3 +37,12 @@ class SagDialect:
         if not cpf:
             return false()
         return func.regexp_replace(PERSON_CPF.c.cpf, NOT_A_DIGIT, "", "g") == cpf
+
+    @staticmethod
+    def source_brands(brands: Collection[Brand]) -> list[str]:
+        sources = [source for source, brand in BRAND_BY_SOURCE.items() if brand in brands]
+        return [*sources, *(f"{source}{ONLINE_SUFFIX}" for source in sources)]
+
+    @staticmethod
+    def reference(brand: str, student_id: str) -> str:
+        return f"{brand}{REFERENCE_SEPARATOR}{student_id}"
