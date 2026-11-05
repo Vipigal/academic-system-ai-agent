@@ -1,1 +1,3 @@
-{}
+{
+  "get_pending_items": "Verifica matrícula, dívida, vencimentos de 30 dias, protocolos, frequência e provas.\n\nUse para \"está tudo em dia?\"; devolve o que foi verificado e o que merece atenção."
+}
