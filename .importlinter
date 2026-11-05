@@ -1,0 +1,57 @@
+[importlinter]
+root_package = api
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Camadas seguem a regra de dependência
+type = layers
+layers =
+    api.main
+    api.settings
+    api.presentation
+    api.application | api.persistence
+    api.domain
+
+[importlinter:contract:presentation-persistence]
+name = Presentation fala com a persistence só pela application
+type = forbidden
+source_modules =
+    api.presentation
+forbidden_modules =
+    api.persistence
+
+[importlinter:contract:database-drivers]
+name = Apenas a persistence importa SQLAlchemy e asyncpg
+type = forbidden
+source_modules =
+    api.main
+    api.settings
+    api.presentation
+    api.application
+    api.domain
+forbidden_modules =
+    sqlalchemy
+    asyncpg
+allow_indirect_imports = True
+
+[importlinter:contract:http-framework]
+name = HTTP fica na presentation e na composição
+type = forbidden
+source_modules =
+    api.application
+    api.persistence
+    api.domain
+forbidden_modules =
+    fastapi
+    uvicorn
+allow_indirect_imports = True
+
+[importlinter:contract:agent-framework]
+name = Framework do agente não entra em domain nem persistence
+type = forbidden
+source_modules =
+    api.persistence
+    api.domain
+forbidden_modules =
+    pydantic_ai
+allow_indirect_imports = True

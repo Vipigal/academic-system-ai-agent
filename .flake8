@@ -1,0 +1,7 @@
+[flake8]
+select = WPS2
+max-cognitive-score = 12
+max-arguments = 5
+extend-exclude = .venv,build
+per-file-ignores =
+    tests/*: WPS202,WPS221,WPS226

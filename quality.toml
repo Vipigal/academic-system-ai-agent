@@ -1,0 +1,33 @@
+docstring_allowed_paths = ["src/api/presentation/tools/**"]
+domain_paths = ["src/api/domain/**"]
+domain_package = "api.domain"
+domain_allowed_stdlib = [
+    "__future__",
+    "abc",
+    "collections",
+    "dataclasses",
+    "datetime",
+    "decimal",
+    "enum",
+    "functools",
+    "itertools",
+    "math",
+    "re",
+    "typing",
+    "uuid",
+]
+examiner_marker = "examiner:"
+session_access_module = "sqlalchemy.ext.asyncio"
+session_access_scope = ["src/api/**"]
+session_access_allowed = [
+    "src/api/persistence/database.py",
+    "src/api/persistence/repository_adapter.py",
+    "src/api/persistence/student_session_repository.py",
+]
+
+[limits]
+function_lines = 30
+class_lines = 150
+module_lines = 300
+
+[per_file_ignores]

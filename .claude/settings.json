@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(/**/ruff.toml)",
+      "Edit(/**/.ruff.toml)",
+      "Edit(/**/.flake8)",
+      "Edit(/**/setup.cfg)",
+      "Edit(/**/tox.ini)",
+      "Edit(/.importlinter)",
+      "Edit(/mypy.ini)",
+      "Edit(/pyrightconfig.json)",
+      "Edit(/**/.mypy.ini)",
+      "Edit(/quality.toml)",
+      "Edit(/Makefile)",
+      "Edit(/.github/workflows/**)",
+      "Edit(/tools/quality/**)",
+      "Edit(/tests/lint/**)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && .venv/bin/python -m tools.quality.claude_hook",
+            "timeout": 60,
+            "onFailure": "block",
+            "statusMessage": "Rodando o linter no arquivo editado"
+          }
+        ]
+      }
+    ]
+  }
+}

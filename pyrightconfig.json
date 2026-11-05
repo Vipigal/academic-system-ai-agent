@@ -1,0 +1,10 @@
+{
+  "include": ["src", "tools", "tests"],
+  "extraPaths": ["src", "."],
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Linux",
+  "typeCheckingMode": "standard",
+  "reportDeprecated": "error",
+  "venvPath": ".",
+  "venv": ".venv"
+}

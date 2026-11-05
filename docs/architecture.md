@@ -3,15 +3,16 @@ type: Architecture
 title: Arquitetura do agente de atendimento ao aluno
 description: Decisões, desenho e restrições da API que dá ao agente acesso seguro e normalizado aos quatro sistemas do grupo educacional.
 tags: [arquitetura, api, isolamento, normalizacao, agente]
-status: draft
-generated: { by: claude_code/claude-opus-5-5, at: 2026-11-05T03:00:00Z }
+status: stable
+generated: { by: claude_code/claude-opus-5-5, at: 2026-11-05T04:01:00Z }
+verified: { by: human:vinicius, at: 2026-11-05T02:53:00Z }
 sources:
   - id: readme
     resource: /README.md
     title: Enunciado do case
-  - id: briefing
-    resource: /docs/briefing-exploratorio.md
-    title: Briefing exploratório (evidências; suas recomendações não são decisões)
+  - id: eda
+    resource: /docs/eda.md
+    title: Análise exploratória dos dados
   - id: carga
     resource: /db/init/01_load.sh
     title: Script de carga dos CSVs
@@ -22,8 +23,8 @@ sources:
 
 # Arquitetura do agente de atendimento ao aluno
 
-> **Estado:** rascunho em discussão. A seção 3 traz o que está decidido. A seção 8 traz o que falta fechar
-> antes de começar o código.
+> **Estado:** verificado. A seção 3 traz o que está decidido. O que falta definir está em
+> [Pendências](/docs/pendencias.md).
 >
 > **Medições:** consultas no banco local e protótipos descartáveis, em 2026-11-04 e 2026-11-05. Latências
 > foram medidas em execução sequencial e sem índices; não são resultado de teste de carga.
@@ -37,7 +38,7 @@ sources:
 - **Diferencial 2, modelo canônico:** o domínio tem a linguagem nossa. Cada sistema traduz o próprio dialeto.
 - **Postura de segurança:** menor privilégio. O agente não tem ferramenta para ações destrutivas nem parâmetro
   que amplie o acesso. Ele ainda pode interpretar mal um dado; esse risco é tratado à parte (seção 7).
-- **Revisar primeiro:** seção 5.2 e as pendências da seção 8.
+- **Por onde começar:** seção 3 (decisões) e seção 5.2 (isolamento).
 
 ## 1. O problema
 
@@ -101,6 +102,10 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | B29 | Adapter de repositório acrescenta o `AND` de ownership em toda consulta, a partir de um mapa estático por tabela e dos identificadores da sessão (5.2) | Mesma garantia com menos conceitos, sem depender de lembrar do filtro |
 | B30 | O aluno vê os 73 protocolos abertos por responsável com o ID dele, sem os dados do responsável | O protocolo é dele; os dados do responsável não |
 | B31 | Models não usam `relationship()`; toda relação é um `JOIN` explícito | O carregamento do relationship gera consulta que o adapter não vê. No teste, o pagador de um aluno devolveu 7 contratos, sendo só 1 dele |
+| B32 | O guard de consultas usa lista de permitidos | Com lista de proibidos, `suffix_with("OR true")` devolveu as faturas de todos os alunos |
+| B33 | `Via` declara a ligação com o pai, e o adapter a acrescenta com `AND` | `JOIN` com condição errada trouxe pagamentos de terceiros; a garantia não pode depender de quem escreve a consulta |
+| B34 | A API fica em `src/api/`; `src/app/` é reservada para o front-end | Separar os dois produtos no repositório |
+| B35 | O aluno vê nome e e-mail institucional dos professores da disciplina no semestre, na marca dele; CPF e demais dados de professor ficam fora | Decisão do dono do projeto; o contato com o professor não é dado sensível |
 
 ## 4. O que os dados impõem
 
@@ -113,7 +118,7 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | A5 | A chave suja é resolvível, e barata | Protótipo com as 1.000 pessoas, sem nenhuma linha em duas pessoas: contratos 1.065/1.065, faturas 25.931/25.931, pagamentos 24.380/24.380, disciplinas 20.277/20.277, protocolos 3.882/3.933, tentativas 18.566/18.857. Sessão completa: p50 17 ms, p95 32 ms | Dispensa crosswalk persistido e cache, por enquanto |
 | A6 | Filtrar por pagador vaza dados | 17 pagadores, 44 matrículas de pessoas diferentes | B8 |
 | A7 | Posse de protocolo é uma cascata, não uma chave | 351 protocolos sem ID, 315 CPFs sem zeros à esquerda, 113 de responsáveis, 11 de terceiros. Os 51 protocolos invisíveis no protótipo são os 11 de terceiros e 40 de responsáveis sem ID do aluno | Resolução própria na sessão, com *fail closed* |
-| A8 | A linha certa pode trazer dado proibido | Nota interna, CPF e contato do pagador e do requerente, analistas e dados de professores[^briefing] | Filtro de linha não basta (5.4) |
+| A8 | A linha certa pode trazer dado proibido | Nota interna, CPF e contato do pagador e do requerente, analistas e CPF de professores[^eda] | Filtro de linha não basta (5.4) |
 | A9 | Marca tem 5 grafias e duas granularidades | `UniSaoPaulo_EAD` (10 valores, com modalidade), `unisaopaulo`, `UNISAOPAULO`, `1010`, `Uni São Paulo` (5 valores) | Tradutor por sistema; o caminho inverso exige a modalidade |
 | A10 | Os formatos variam além das chaves | CPF com pontuação em `sag.person`, taxa como `R$ 0,00`, datas em epoch e ISO, valores em centavos, tudo em `text`[^carga] | O tradutor também converte tipos |
 | A11 | PKs e FKs batem quase integralmente | 47/47 PKs sem duplicata nem nulo; 69/74 FKs sem violação. As 5 restantes: `log.courseid` (27.322 valores `0` e 202 órfãos), `log.userid` (169), `category.parent` (5 valores `0`), `protocol.demand_analyst` (23) e `issued_document.signed_by` (6) | B24 |
@@ -121,12 +126,13 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | A13 | O conjunto de cada pessoa é pequeno | No máximo 3 contratos, 2 contas no LMS e 18 protocolos por pessoa | Os identificadores cabem na sessão |
 | A14 | Protocolo nasce com três linhas | 3.933/3.933 têm histórico `Open` (`changed_by = system`) e mensagem inicial do requerente; `SLA_Due_At` = abertura + `SLA_Hours` em 3.933/3.933 | Regra do domínio para abertura (5.6) |
 | A15 | Parte dos serviços tem taxa | 4 de 18 serviços têm taxa; 732 faturas `SERVICE_FEE` apontam para protocolos | B27 |
-| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; data de referência é 31/10/2026[^briefing] | Regras no domínio e relógio injetado |
-| A17 | O catálogo está em inglês | "Administração" versus `BUSINESS ADMINISTRATION`; `Course_Label` tem 24 grafias para 8 cursos[^briefing] | As tools precisam de um resolvedor de entidades |
+| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; data de referência é 31/10/2026[^eda] | Regras no domínio e relógio injetado |
+| A17 | O catálogo está em inglês | "Administração" versus `BUSINESS ADMINISTRATION`; `Course_Label` tem 24 grafias para 8 cursos[^eda] | As tools precisam de um resolvedor de entidades |
 
 ## 5. Desenho
 
-Os trechos de código são versões condensadas de protótipos que rodaram contra o banco, salvo onde indicado.
+Os trechos de código são versões condensadas de protótipos que rodaram contra o banco, salvo onde indicado. Eles mostram o
+desenho completo, não o código: podem não passar no lint, e o código real cresce por fatia em `src/api/`.
 
 ### 5.1 Camadas e organização
 
@@ -139,16 +145,20 @@ Banco         → sag · lms · secretary · finance · agent
 ```
 
 Regra de dependência: Presentation → Application → Domain. Persistence → Domain. O domínio não importa nada de
-fora, e a application fala com repositórios por meio de interfaces definidas no domínio. Teste automático de
-importação garante as fronteiras.
+fora, e a application fala com repositórios por meio de interfaces definidas no domínio. O linter garante as fronteiras
+por contratos de importação.
+
+`src/app/` fica reservada para o front-end.
 
 ```text
-app/
+src/api/
+├── main.py         composição: o único módulo que conhece todas as camadas
 ├── presentation/   http/  tools/
 ├── application/    session_service.py  financial_service.py  dto/
 ├── domain/         brand.py  session.py  invoice.py  ports.py
 └── persistence/
     ├── repository_adapter.py     acrescenta o ownership em toda consulta
+    ├── query_guard.py            recusa o que não está na lista de permitidos
     ├── student_session_repository.py
     ├── sag/  lms/  secretary/
     └── finance/
@@ -176,12 +186,15 @@ class StudentSession:
     lms_user_ids: frozenset[str]
     protocol_ids: frozenset[str]
 
+
 class StudentSessionRepository:
     async def load(self, person_id: str) -> StudentSession:
         cpf, enrollments = await self._identity(person_id)
         return StudentSession(
-            person_ids=..., cpf=cpf, enrollment_keys=...,
-            contract_ids=await self._contracts_of(enrollments),   # usa FinanceDialect
+            person_ids=...,
+            cpf=cpf,
+            enrollment_keys=...,
+            contract_ids=await self._contracts_of(enrollments),  # usa FinanceDialect
             lms_user_ids=await self._lms_accounts_of(enrollments),  # usa LmsDialect
             protocol_ids=await self._protocols_of(cpf, enrollments),  # usa SecretaryDialect
         )
@@ -192,17 +205,24 @@ class StudentSessionRepository:
 ```python
 FINANCE_OWNERSHIP = {
     ContractRow: lambda s: ContractRow.id.in_(s.contract_ids),
-    InvoiceRow:  lambda s: InvoiceRow.contract_id.in_(s.contract_ids),
-    PaymentRow:  Via(InvoiceRow),   # sem coluna de dono: exige JOIN com InvoiceRow
-    ProductRow:  Public,            # sem dono: consulta livre
+    InvoiceRow: lambda s: InvoiceRow.contract_id.in_(s.contract_ids),
+    PaymentRow: Via(
+        InvoiceRow, PaymentRow.invoice_id == InvoiceRow.id
+    ),  # exige JOIN com InvoiceRow
+    ProductRow: Public(),  # sem dono: consulta livre
 }
 SAG_OWNERSHIP = {
-    StudentClassRow: lambda s: tuple_(StudentClassRow.brand, StudentClassRow.student_id).in_(s.enrollment_keys),
-    ClassSectionRow: Public,
+    StudentClassRow: lambda s: tuple_(StudentClassRow.brand, StudentClassRow.student_id).in_(
+        s.enrollment_keys
+    ),
+    ClassSectionRow: Public(),
 }
 SECRETARY_OWNERSHIP = {
-    ProtocolRow:    lambda s: ProtocolRow.id.in_(s.protocol_ids),
-    InteractionRow: lambda s: InteractionRow.protocol_id.in_(s.protocol_ids) & (InteractionRow.is_internal_note == "False"),
+    ProtocolRow: lambda s: ProtocolRow.id.in_(s.protocol_ids),
+    InteractionRow: lambda s: (
+        InteractionRow.protocol_id.in_(s.protocol_ids)
+        & (InteractionRow.is_internal_note == "False")
+    ),
 }
 ```
 
@@ -225,21 +245,22 @@ class InvoiceRow(Base):
 ```python
 class RepositoryAdapter:
     async def fetch(self, stmt: Select) -> Sequence[Any]:
-        async with self._session_factory() as db:    # sessão do ORM curta, por chamada
+        async with self._db_session_factory() as db:  # sessão do ORM curta, por chamada
             return (await db.scalars(self._with_ownership(stmt))).all()
 
     def _with_ownership(self, stmt: Select) -> Select:
-        reject_unsafe_constructs(stmt)     # text(), subquery, alias, CTE e UNION
-        tables = tables_in(stmt)           # FROM e JOINs do nível principal
+        reject_unsafe_constructs(stmt)  # só passa o que está na lista de permitidos
+        tables = tables_in(stmt)  # FROM e JOINs do nível principal
         for table in tables:
             rule = OWNERSHIP_BY_TABLE.get(table)
             if rule is None:
                 raise OwnershipError(f"tabela sem declaração: {table.fullname}")
-            if rule is Public:
+            if isinstance(rule, Public):
                 continue
             if isinstance(rule, Via):
                 if rule.parent.__table__ not in tables:
                     raise OwnershipError(f"{table.name} exige JOIN com {rule.parent.__tablename__}")
+                stmt = stmt.where(rule.link)
                 continue
             stmt = stmt.where(rule(self._student_session))
         return stmt
@@ -258,32 +279,33 @@ SELECT ... FROM finance.invoice
 WHERE status = 'OVERDUE' AND contractid IN ('CT00010738');
 
 SELECT ... FROM finance.payment JOIN finance.invoice ON payment.invoiceid = invoice.invoiceid
-WHERE invoice.contractid IN ('CT00010738');
+WHERE payment.invoiceid = invoice.invoiceid AND invoice.contractid IN ('CT00010738');
 ```
 
 | Situação | Tabelas | Como declara |
 |---|---|---|
 | Coluna de dono própria (20) | SAG: `enrollment`, `enrollment_status_history`, `term_enrollment`, `student_class`, `person`. Financeiro: `contract`, `discount`, `invoice`, `receivable_snapshot`, `agreement`. LMS: `mdl_user`, `mdl_user_info_data`, `mdl_user_enrolments`, `mdl_quiz_attempts`, `mdl_logstore_standard_log`. Secretaria: `protocol`, `protocol_status_history`, `protocol_interaction`, `issued_document`, `satisfaction_survey` | Cláusula a partir da sessão |
-| Dono por `JOIN` (8) | `payment`, `late_charge`, `invoice_tax`, `agreement_invoice` (via fatura); `customer` (via contrato, sem dados pessoais); `mdl_course`, `mdl_course_modules`, `mdl_quiz` (via inscrições) | `Via(pai)` |
-| Catálogo da marca (9) | `sag.brand`, `sag.unit`, `course_offer`, `class_section`, `secretary.unit`, `company`, `price_list`, `mdl_tenant`, `mdl_course_categories` | Cláusula pela marca da sessão |
-| Global (8) | `course`, `curriculum`, `subject`, `curriculum_subject`, `term`, `product`, `demand_type`, `mdl_user_info_field` | `Public` |
-| Corporativa (2) | `analyst` e `professor` (no máximo o nome do professor da própria turma) | Não mapeada |
+| Dono por `JOIN` (8) | `payment`, `late_charge`, `invoice_tax`, `agreement_invoice` (via fatura); `customer` (via contrato, sem dados pessoais); `mdl_course`, `mdl_course_modules`, `mdl_quiz` (via inscrições) | `Via(pai, ligação)` |
+| Catálogo da marca (10) | `sag.brand`, `sag.unit`, `course_offer`, `class_section`, `secretary.unit`, `company`, `price_list`, `mdl_tenant`, `mdl_course_categories`, `professor` (só nome e e-mail, B35) | Cláusula pela marca da sessão |
+| Global (8) | `course`, `curriculum`, `subject`, `curriculum_subject`, `term`, `product`, `demand_type`, `mdl_user_info_field` | `Public()` |
+| Corporativa (1) | `analyst` | Não mapeada |
 
-**Resultados do protótipo:**
+**Resultados do protótipo e dos testes:**
 
 - Para as 1.000 pessoas, nenhuma linha apareceu em duas pessoas (A5).
-- Foram bloqueados: `payment` sem `JOIN`, tabela não declarada, `text("1=1 OR 1=1")`, subquery, alias e `UNION`.
+- O guard usa lista de permitidos: colunas de tabela mapeada, parâmetros, operadores comuns e algumas funções. O resto é
+  recusado, como `text()`, subquery, alias, CTE, `UNION`, label, sufixo e hint, operador customizado e função do banco.
+- Foram bloqueados: `payment` sem `JOIN` e tabela não declarada.
+- `JOIN` com condição errada não traz linhas de terceiros, porque o adapter acrescenta a ligação de `Via` com `AND`.
 - `OR` vindo de parâmetro fica entre parênteses: `(status = 'OVERDUE' OR status = 'PAID') AND contractid IN (...)`.
 - Pessoa sem identificadores gera uma cláusula vazia, que não devolve nenhuma linha.
 - Subquery não custou latência no teste: os planos de consulta foram iguais. Ela saiu porque não é necessária.
 
 **Custos aceitos:**
 
-- Repositórios não usam subquery, alias nem CTE. Se surgir necessidade real, o adapter passa a tratar o caso.
+- Repositórios só usam o que está na lista de permitidos. Se surgir necessidade real, o guard passa a aceitar o caso.
 - Com a sessão montada de uma vez, a queda de um sistema afeta todos os pedidos. Hoje há um só banco, então o risco é
   pequeno. O carregamento por sistema é o caminho de evolução.
-- `Via` confere se o pai está na consulta, mas não valida a condição do `JOIN`. O teste de partição por repositório cobre
-  esse caso (seção 6).
 
 Dado de outra pessoa e dado inexistente têm a mesma resposta, para que o agente não descubra a existência de um registro.
 
@@ -292,11 +314,17 @@ Dado de outra pessoa e dado inexistente têm a mesma resposta, para que o agente
 ```python
 # domain/brand.py: linguagem nossa, sem conhecer nenhum sistema
 class Brand(Enum):
-    SAO_PAULO = "sao_paulo"; MONTANHAS = "montanhas"; LITORAL = "litoral"
-    ATLANTICO = "atlantico"; ARAUCARIA = "araucaria"
+    SAO_PAULO = "sao_paulo"
+    MONTANHAS = "montanhas"
+    LITORAL = "litoral"
+    ATLANTICO = "atlantico"
+    ARAUCARIA = "araucaria"
+
 
 class Modality(Enum):
-    IN_PERSON = "in_person"; ONLINE = "online"
+    IN_PERSON = "in_person"
+    ONLINE = "online"
+
 
 @dataclass(frozen=True, slots=True)
 class EnrollmentRef:
@@ -308,32 +336,39 @@ class EnrollmentRef:
 ```python
 # persistence/finance/dialect.py: `1010` só existe aqui
 class FinanceDialect:
-    _COMPANIES = {"1010": Brand.SAO_PAULO, "1020": Brand.MONTANHAS, "1030": Brand.LITORAL,
-                  "1040": Brand.ATLANTICO, "1050": Brand.ARAUCARIA}
-    _AREAS = {"PRESENCIAL": Modality.IN_PERSON, "DIGITAL": Modality.ONLINE}
-
     @classmethod
-    def enrollment_ref(cls, company_code: str, business_area: str, academic_ref: str) -> EnrollmentRef:
-        number = academic_ref.strip().split("-")[0]
-        if not number.isdigit():
-            raise UnknownDialectValue(f"academicRef: {academic_ref!r}")
-        return EnrollmentRef(
-            lookup(cls._COMPANIES, company_code, "companyCode"),
-            lookup(cls._AREAS, business_area, "businessArea"),
-            number.zfill(5)[:5],
-        )
+    def contract_of(cls, enrollments: Collection[EnrollmentRef]) -> ColumnElement[bool]:
+        keys = [cls._contract_key(enrollment) for enrollment in enrollments]
+        columns = tuple_(ContractRow.company_code, ContractRow.business_area, cls._student_number())
+        return columns.in_(keys)
+
+    @staticmethod
+    def _contract_key(enrollment: EnrollmentRef) -> tuple[str, str, str]:
+        company = COMPANY_BY_BRAND[enrollment.brand]  # Brand.SAO_PAULO → "1010"
+        area = AREA_BY_MODALITY[enrollment.modality]  # Modality.ONLINE → "DIGITAL"
+        return company, area, enrollment.student_number
+
+    @staticmethod
+    def _student_number() -> ColumnElement[str]:  # `1253-0` → `01253`, `013463` → `01346`
+        reference = func.trim(ContractRow.academic_ref)
+        number = func.split_part(reference, "-", 1)
+        return func.lpad(number, STUDENT_NUMBER_LENGTH, "0")
+
 
 # persistence/sag/dialect.py: `UniSaoPaulo_EAD` só existe aqui
 class SagDialect:
     @classmethod
     def enrollment_ref(cls, brand: str, student_id: str) -> EnrollmentRef:
         modality = Modality.ONLINE if brand.endswith("_EAD") else Modality.IN_PERSON
-        return EnrollmentRef(lookup(cls._BRANDS, brand.removesuffix("_EAD"), "BRAND"), modality, student_id[:5])
+        return EnrollmentRef(
+            lookup(cls._BRANDS, brand.removesuffix("_EAD"), "BRAND"), modality, student_id[:5]
+        )
 ```
 
 O número canônico usa os 5 dígitos de base, sem verificador; a combinação é única nas 1.037 matrículas. Valor
-desconhecido levanta erro em vez de ser adivinhado. Um teste de cobertura roda sobre o banco real, prova que todo
-valor distinto tem tradução e serve como evidência para a entrega.
+desconhecido levanta erro em vez de ser adivinhado. A exceção é o `academicRef`, normalizado no SQL para carregar só
+os contratos da pessoa: valor fora do padrão não casa com nenhuma matrícula e o contrato fica sem dono. Um teste de
+cobertura roda sobre o banco real, prova que todo valor distinto tem tradução e serve como evidência para a entrega.
 
 Cada entidade tem um mapper simples, que usa o dialeto para converter o model:
 
@@ -394,18 +429,23 @@ class StudentProtocol:
         if not demand.active or demand.has_fee:
             raise DemandUnavailable(demand.code)
         return cls(
-            number=number, enrollment=enrollment, demand=demand, status=ProtocolStatus.OPEN,
-            opened_at=now, sla_due_at=now + demand.sla,
+            number=number,
+            enrollment=enrollment,
+            demand=demand,
+            status=ProtocolStatus.OPEN,
+            opened_at=now,
+            sla_due_at=now + demand.sla,
             history=[StatusChange(seq=1, to=ProtocolStatus.OPEN, at=now)],
             interactions=[Interaction(author=AuthorType.REQUESTER, message=message, at=now)],
         )
 
+
 # persistence/secretary/repositories.py: traduz e grava em uma transação
 class ProtocolWriter:
     async def save(self, protocol: StudentProtocol) -> None:
-        async with self._session_factory() as db, db.begin():
+        async with self._db_session_factory() as db, db.begin():
             db.add(ProtocolMapper.to_row(protocol))
-            await db.flush()   # sem relationship(), a ordem precisa ser explícita
+            await db.flush()  # sem relationship(), a ordem precisa ser explícita
             db.add_all(ProtocolMapper.history_rows(protocol))
             db.add_all(ProtocolMapper.interaction_rows(protocol))
 ```
@@ -455,7 +495,7 @@ Limites de concorrência, deadlines, retry e proteção do provedor de LLM entra
 2. Toda tabela mapeada tem declaração de ownership; caso contrário, a aplicação não inicia.
 3. **Partição:** cada linha com dono pertence a no máximo uma pessoa, em toda consulta de repositório. O protótipo já provou isso para contrato, fatura, pagamento, disciplina, tentativa e protocolo.
 4. Parâmetros não ampliam resultados: um "agente comprometido" chama todas as tools com todos os argumentos e recebe zero linhas alheias.
-5. Nenhum CPF, nota interna ou dado de funcionário aparece em DTO de saída.
+5. Nenhum CPF, nota interna ou dado de funcionário aparece em DTO de saída, exceto nome e e-mail de professor (B35).
 6. Dado de outro aluno e dado inexistente têm a mesma resposta.
 7. Valor desconhecido em identificador levanta erro.
 8. Apenas a persistência importa o SQLAlchemy.
@@ -480,64 +520,29 @@ Limites de concorrência, deadlines, retry e proteção do provedor de LLM entra
 | # | Risco | Mitigação |
 |---|---|---|
 | R1 | Repositório é barreira única (B9) | Invariantes da seção 6 e role restrita |
-| R2 | Código contorna o adapter com SQL manual | Invariante 8 e revisão |
+| R2 | Código contorna o adapter com SQL manual | Invariante 8, lint que restringe quem abre sessão de banco e revisão |
 | R3 | Escala não comprovada | Índices e teste de carga com LLM simulado |
 | R4 | Escrita altera os dados usados pelo eval | Eval em banco recarregado ou com transação desfeita ao final |
 | R5 | Texto do aluno em protocolo pode conter injeção | Texto tratado como dado; escrita depende de aprovação humana |
-| R6 | Sem regulamento na base[^briefing] | O agente diz que não tem a informação |
-| R7 | Sistemas com períodos e valores diferentes[^briefing] | Fonte oficial por tema e ausência de dado explicada |
+| R6 | Sem regulamento na base[^eda] | O agente diz que não tem a informação |
+| R7 | Sistemas com períodos e valores diferentes[^eda] | Fonte oficial por tema e ausência de dado explicada |
 
 ## 8. Pendências
 
-| # | Decisão | Recomendação | Alternativa | Custo da recomendação |
-|---|---|---|---|---|
-| P1 | Forma das skills e framework do agente | Decidir ao começar o agente, depois da API | Decidir agora: sem ganho imediato | Nenhum no momento |
+A lista de pendências fica em [Pendências](/docs/pendencias.md).
 
 ## 9. Fora de escopo por enquanto
 
 | Item | Volta quando |
 |---|---|
-| Crosswalk persistido e schemas `core`, `xref` e `safe` do briefing | O custo de resolver identidade exigir; hoje contradiz B11 |
+| Crosswalk persistido e schemas intermediários de dados normalizados | O custo de resolver identidade exigir; hoje contradiz B11 |
 | RLS | B9 for revista |
 | Cache ou Redis | Teste de carga mostrar que montar a sessão a cada pedido pesa |
 | RAG e pgvector | Ainda em aberto; avaliar com as perguntas de catálogo |
 | Atender responsável ou pagador | O enunciado fala em aluno autenticado |
 | Escritas além de abrir protocolo | O case exigir ou o primeiro fluxo estiver estável |
 
-## Registro
-
-**Criação** · 2026-11-04
-
-- **O quê:** primeira versão, com as disposições da sessão de arquitetura, os achados e as decisões pendentes.
-
-**Mudança no spec** · 2026-11-05 · §3, §4, §5, §6, §7, §8
-
-- **O quê:** registradas as decisões do dono do projeto sobre isolamento por pessoa, sessão sem cache, RLS, menor
-  privilégio, limites de alteração do banco, schema `agent` e escrita nas tabelas recebidas.
-- **Por quê:** rodada de decisões com o dono do projeto e validação com o banco real.
-- **Seções editadas:** §3, §4, §5, §6, §7, §8.
-- **Impacto na implementação:** carga corrigida (`01_load.sh`) e banco recarregado; demais scripts seguem pendentes.
-
-**Mudança no spec** · 2026-11-05 · §5.2, §5.5, §5.6, B21–B28
-
-- **O quê:** o mecanismo de isolamento foi simplificado para um adapter que acrescenta `AND`, com mapa estático por
-  tabela e identificadores na sessão. Saíram subconsultas, regras `FromSession` e `Through` e a resolução preguiçosa por
-  sistema. `JOIN` entre sistemas passou a ser permitido.
-- **Por quê:** o dono do projeto considerou a versão anterior complexa e apontou o padrão de adapter que já usou. O
-  protótipo manteve as mesmas garantias de partição.
-- **Seções editadas:** §2, §3, §4, §5.1, §5.2, §5.5, §5.6, §5.7, §6, §7, §8.
-- **Impacto na implementação:** nenhum código de aplicação existia.
-
-**Mudança no spec** · 2026-11-05 · B21, B29–B31, §5
-
-- **O quê:** adotado o SQLAlchemy ORM assíncrono no lugar do Core puro, com um model por tabela e um mapper por entidade,
-  sem `relationship()`. Registradas a adoção do adapter e a visibilidade dos protocolos abertos por responsável.
-- **Por quê:** o dono do projeto pediu a opção mais legível e simples. O protótipo manteve o adapter e os bloqueios, com
-  custo de cerca de 0,7 ms em uma consulta de 49 faturas.
-- **Seções editadas:** §3, §5.1, §5.2, §5.3, §5.4, §5.6, §5.8, §6.
-- **Impacto na implementação:** nenhum código de aplicação existia.
-
 [^readme]: Enunciado do case, seções 1 e 3.
-[^briefing]: Briefing exploratório, seções 3.4 e 3.5.
+[^eda]: Análise exploratória dos dados, seções 5 a 8.
 [^carga]: Script de carga: todas as colunas são `text`, para preservar os valores originais.
 [^atlas]: Atlas de Dados: correspondência de unidades entre SAG e secretaria.

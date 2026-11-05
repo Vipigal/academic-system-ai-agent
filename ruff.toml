@@ -1,0 +1,48 @@
+target-version = "py314"
+line-length = 100
+preview = true
+
+[format]
+preview = false
+
+[lint]
+explicit-preview-rules = true
+select = ["ALL", "PLR0904", "PLR0914", "PLR0916", "PLR1702", "PLW0717"]
+ignore = ["COM812", "CPY", "D", "EM", "FIX", "TC", "TD", "TRY003"]
+
+[lint.per-file-ignores]
+"tests/**" = ["PLR2004", "S101", "S603", "TID251"]
+"tools/quality/claude_hook.py" = ["S603"]
+
+[lint.mccabe]
+max-complexity = 8
+
+[lint.pylint]
+max-args = 5
+max-nested-blocks = 3
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[lint.flake8-tidy-imports.banned-api]
+"sqlalchemy.orm.Relationship".msg = "relationship gera consulta que o adapter de ownership não vê. Use JOIN explícito."
+"sqlalchemy.orm.util.aliased".msg = "O adapter de ownership não trata alias. Consulte a tabela diretamente."
+"sqlalchemy.sql.expression.literal_column".msg = "SQL textual contorna o adapter de ownership. Use colunas do model."
+"sqlalchemy.sql.expression.text".msg = "SQL textual contorna o adapter de ownership. Monte a consulta com select()."
+"sqlalchemy.sql.literal_column".msg = "SQL textual contorna o adapter de ownership. Use colunas do model."
+"sqlalchemy.sql.text".msg = "SQL textual contorna o adapter de ownership. Monte a consulta com select()."
+"typing.Any".msg = "Declare o tipo real. Em fronteira, valide com Pydantic ou um typeguard."
+"typing.cast".msg = "cast esconde erro de tipo. Valide com isinstance ou um typeguard."
+"typing.no_type_check".msg = "Desliga a checagem de tipos. Corrija os tipos."
+"datetime.date.today".msg = "Injete o relógio: a data de referência vem da configuração, nunca do sistema."
+"datetime.datetime.now".msg = "Injete o relógio: a data de referência vem da configuração, nunca do sistema."
+"datetime.datetime.today".msg = "Injete o relógio: a data de referência vem da configuração, nunca do sistema."
+"importlib.import_module".msg = "Import dinâmico esconde dependências das regras de camada. Use import explícito."
+"os.environ".msg = "Leia configuração pelo Settings, injetado a partir de src/api/main.py."
+"os.getenv".msg = "Leia configuração pelo Settings, injetado a partir de src/api/main.py."
+"sqlalchemy.literal_column".msg = "SQL textual contorna o adapter de ownership. Use colunas do model."
+"sqlalchemy.create_engine".msg = "A API é assíncrona. Use create_async_engine."
+"sqlalchemy.orm.Session".msg = "A API é assíncrona. Use AsyncSession."
+"sqlalchemy.orm.aliased".msg = "O adapter de ownership não trata alias. Consulte a tabela diretamente."
+"sqlalchemy.orm.relationship".msg = "relationship gera consulta que o adapter de ownership não vê. Use JOIN explícito."
+"sqlalchemy.text".msg = "SQL textual contorna o adapter de ownership. Monte a consulta com select()."

@@ -143,8 +143,8 @@ Term(
     label="Dívida",
     synonyms=("débito", "em aberto", "devendo"),
     definition="Exclui OPEN e RENEGOTIATED; só pagamento CONFIRMED conta.",  # A16 da arquitetura
-    source=System.FINANCE,        # fonte oficial do tema
-    answered_by=("get_debts",),   # liga o termo às tools
+    source=System.FINANCE,  # fonte oficial do tema
+    answered_by=("get_debts",),  # liga o termo às tools
 )
 ```
 
@@ -172,14 +172,14 @@ referencia o id, e o servidor resolve o id, como nos links deles.
 ```python
 # Ilustrativo: não foi testado nem aprovado
 class Evidence(BaseModel):
-    id: str                       # gerado pelo servidor, ex.: "ev_1"
-    source: System                # exibido como "Financeiro", nunca "finance.invoice"
-    label: str                    # "Faturas vencidas"
-    term: str | None              # definição usada, para a UI poder explicá-la
-    as_of: date                   # data de referência, vinda do relógio injetado
+    id: str  # gerado pelo servidor, ex.: "ev_1"
+    source: System  # exibido como "Financeiro", nunca "finance.invoice"
+    label: str  # "Faturas vencidas"
+    term: str | None  # definição usada, para a UI poder explicá-la
+    as_of: date  # data de referência, vinda do relógio injetado
     row_count: int
     truncated: bool
-    coverage_note: str | None     # "sem dados do LMS antes de 2023"
+    coverage_note: str | None  # "sem dados do LMS antes de 2023"
 ```
 
 ```text
