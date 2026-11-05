@@ -16,13 +16,17 @@ STUDENT_PREFIX_BY_MODALITY = {Modality.IN_PERSON: "PRES", Modality.ONLINE: "EAD"
 
 
 class LmsDialect:
+    @staticmethod
+    def tenants_of(brands: Collection[Brand]) -> list[str]:
+        return [tenant for brand, tenant in TENANT_BY_BRAND.items() if brand in brands]
+
     @classmethod
     def account_of(cls, enrollments: Collection[EnrollmentRef]) -> ColumnElement[bool]:
-        keys = [cls._account_key(enrollment) for enrollment in enrollments]
+        keys = [cls.account_key(enrollment) for enrollment in enrollments]
         return tuple_(LmsUserRow.tenant_id, cls._student_key()).in_(keys)
 
     @staticmethod
-    def _account_key(enrollment: EnrollmentRef) -> tuple[str, str]:
+    def account_key(enrollment: EnrollmentRef) -> tuple[str, str]:
         tenant = TENANT_BY_BRAND[enrollment.brand]
         prefix = STUDENT_PREFIX_BY_MODALITY[enrollment.modality]
         return tenant, f"{prefix}_{enrollment.student_number}"
