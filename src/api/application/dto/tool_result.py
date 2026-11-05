@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from api.application.page import Page, PageInfo
 from api.domain.ontology.model import Ontology
 
+MAX_CANDIDATES = 40
+
 
 class ToolStatus(StrEnum):
     OK = "ok"
@@ -133,11 +135,11 @@ class ToolResult[T](BaseModel):
 
     @classmethod
     def not_found(cls, candidates: tuple[Candidate, ...]) -> Self:
-        return cls(status=ToolStatus.NOT_FOUND, candidates=candidates)
+        return cls(status=ToolStatus.NOT_FOUND, candidates=candidates[:MAX_CANDIDATES])
 
     @classmethod
     def ambiguous(cls, candidates: tuple[Candidate, ...]) -> Self:
-        return cls(status=ToolStatus.AMBIGUOUS, candidates=candidates)
+        return cls(status=ToolStatus.AMBIGUOUS, candidates=candidates[:MAX_CANDIDATES])
 
     @classmethod
     def refused(cls, data: T | None = None, *, caveats: tuple[Caveat, ...] = ()) -> Self:

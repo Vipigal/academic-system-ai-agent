@@ -1,5 +1,3 @@
-from datetime import date
-
 from api.application.academic_service import AcademicService
 from api.application.dto.tool_result import ToolResult
 from api.persistence.database import Database
@@ -8,8 +6,8 @@ from api.persistence.sag.academic_catalog_repository import SagAcademicCatalogRe
 from api.persistence.sag.academic_student_repository import SagStudentAcademicRepository
 from api.persistence.student_session_repository import StudentSessionRepository
 from api.presentation.tools.academic_tools import AcademicTools
+from tests.integration.tool_support import FixedClock
 
-REFERENCE = date(2026, 10, 31)
 CURRENT_TERM = "2026/2"
 MIGRATED_ADS_PERSON = "3000031"
 MIGRATED_ADS = "UniMontanhas:070017"
@@ -18,11 +16,6 @@ ONLINE_REFERENCE = "UniAraucaria_EAD:011541"
 GRADUATED_REFERENCE = "UniAraucaria:090697"
 SAO_PAULO_PERSON = "3002552"
 SAO_PAULO_ENROLLMENT = "UniSaoPaulo:181722"
-
-
-class FixedClock:
-    def today(self) -> date:
-        return REFERENCE
 
 
 async def tools_for(database: Database, person_id: str) -> AcademicTools:

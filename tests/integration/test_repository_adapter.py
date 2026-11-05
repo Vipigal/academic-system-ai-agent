@@ -19,6 +19,7 @@ SESSION = StudentSession(
     brands=frozenset(),
     contract_ids=frozenset({OWN_CONTRACT}),
     self_paid_contract_ids=frozenset(),
+    company_paid_contract_ids=frozenset(),
     lms_user_ids=frozenset(),
     protocol_ids=frozenset(),
 )

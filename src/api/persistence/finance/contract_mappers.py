@@ -1,5 +1,5 @@
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Sequence
 from datetime import date
 from decimal import Decimal
 
@@ -9,7 +9,7 @@ from api.domain.invoice import Invoice
 from api.domain.money import Money
 from api.persistence.brasilia import BrasiliaTime
 from api.persistence.finance.charge_models import AgreementRow, DiscountRow
-from api.persistence.finance.labels import COMPANY_CUSTOMER, FinanceLabels
+from api.persistence.finance.labels import FinanceLabels
 from api.persistence.finance.models import ContractRow
 
 
@@ -19,8 +19,8 @@ class ContractMapper:
         cls,
         rows: Iterable[ContractRow],
         discounts: Iterable[DiscountRow],
-        customer_types: Mapping[str, str],
         self_paid: frozenset[str],
+        company_paid: frozenset[str],
     ) -> Sequence[Contract]:
         scholarships: defaultdict[str, list[Scholarship]] = defaultdict(list)
         for discount in discounts:
@@ -30,7 +30,7 @@ class ContractMapper:
                 id=row.id,
                 course_code=row.product_code,
                 situation=FinanceLabels.contract_situation(row.status),
-                payer=cls._payer(row, customer_types, self_paid),
+                payer=cls._payer(row, self_paid, company_paid),
                 scholarships=tuple(scholarships[row.id]),
             )
             for row in rows
@@ -38,11 +38,11 @@ class ContractMapper:
 
     @staticmethod
     def _payer(
-        row: ContractRow, customer_types: Mapping[str, str], self_paid: frozenset[str]
+        row: ContractRow, self_paid: frozenset[str], company_paid: frozenset[str]
     ) -> PayerType:
         if row.id in self_paid:
             return PayerType.SELF
-        if customer_types[row.customer_id] == COMPANY_CUSTOMER:
+        if row.id in company_paid:
             return PayerType.COMPANY
         return PayerType.OTHER_PERSON
 

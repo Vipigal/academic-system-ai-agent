@@ -18,6 +18,10 @@ class RepositoryAdapter:
         self._db_session_factory = db_session_factory
         self._student_session = student_session
 
+    @property
+    def student_session(self) -> StudentSession:
+        return self._student_session
+
     async def fetch[RowT](self, stmt: Select[RowT]) -> Sequence[RowT]:
         guarded = self._with_ownership(stmt)
         async with self._db_session_factory() as db:

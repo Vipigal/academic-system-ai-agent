@@ -5,7 +5,6 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict
 
-from api.application.dto.tool_result import StatedValue
 from api.domain.finance_contract import Contract, ContractSituation, PayerType, Scholarship
 from api.domain.finance_debt import DebtPosition
 from api.domain.invoice import Invoice, InvoiceKind
@@ -84,17 +83,16 @@ class ScholarshipDto(BaseModel):
     kind: str
     rate: Decimal
     valid_from: date
-    valid_to: StatedValue[date]
+    valid_to: date | None
     is_active: bool
 
     @classmethod
     def from_entity(cls, scholarship: Scholarship, reference: date) -> Self:
-        valid_to = scholarship.valid_to
         return cls(
             kind=scholarship.kind,
             rate=scholarship.rate,
             valid_from=scholarship.valid_from,
-            valid_to=StatedValue.recorded(valid_to) if valid_to else StatedValue.not_recorded(),
+            valid_to=scholarship.valid_to,
             is_active=scholarship.is_active_on(reference),
         )
 
@@ -107,7 +105,7 @@ class ContractSummaryDto(BaseModel):
     situation: ContractSituation
     payer: PayerType
     debt: DebtDto
-    next_invoice: StatedValue[NextInvoiceDto]
+    next_invoice: NextInvoiceDto | None
     scholarships: tuple[ScholarshipDto, ...]
     tuition_invoices: int
 
@@ -129,9 +127,9 @@ class ContractSummaryDto(BaseModel):
         )
 
     @staticmethod
-    def _next_invoice(invoices: Iterable[Invoice], reference: date) -> StatedValue[NextInvoiceDto]:
+    def _next_invoice(invoices: Iterable[Invoice], reference: date) -> NextInvoiceDto | None:
         upcoming = [invoice for invoice in invoices if invoice.is_upcoming(reference)]
         if not upcoming:
-            return StatedValue.not_recorded()
+            return None
         first = min(upcoming, key=lambda invoice: (invoice.due_date, invoice.id))
-        return StatedValue.recorded(NextInvoiceDto.from_entity(first))
+        return NextInvoiceDto.from_entity(first)

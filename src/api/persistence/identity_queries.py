@@ -6,8 +6,6 @@ from api.domain.brand import EnrollmentRef
 from api.persistence.finance.dialect import FinanceDialect
 from api.persistence.finance.models import ContractRow
 from api.persistence.identity_tables import (
-    CONTRACT_PAYER,
-    CUSTOMER_TAX_ID,
     PERSON_CPF,
     PROTOCOL_REQUESTER,
 )
@@ -34,13 +32,6 @@ class IdentityQueries:
     @staticmethod
     def contracts_of(enrollments: Collection[EnrollmentRef]) -> Select[str]:
         return select(ContractRow.id).where(FinanceDialect.contract_of(enrollments))
-
-    @staticmethod
-    def self_paid_of(cpf: str, contract_ids: Collection[str]) -> Select[str]:
-        payer = CUSTOMER_TAX_ID.c.customerid == CONTRACT_PAYER.c.customerid
-        own_contract = CONTRACT_PAYER.c.contractid.in_(contract_ids)
-        statement = select(CONTRACT_PAYER.c.contractid).join(CUSTOMER_TAX_ID, payer)
-        return statement.where(own_contract, CUSTOMER_TAX_ID.c.taxid == cpf)
 
     @staticmethod
     def lms_accounts_of(enrollments: Collection[EnrollmentRef]) -> Select[str]:

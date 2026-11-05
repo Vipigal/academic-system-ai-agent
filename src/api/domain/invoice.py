@@ -77,7 +77,7 @@ class Invoice:
         return self.status in DEBT_STATUSES and self.due_date < reference
 
     def is_upcoming(self, reference: date) -> bool:
-        return self.status in UPCOMING_STATUSES and self.due_date > reference
+        return self.status in UPCOMING_STATUSES and self.due_date >= reference
 
     def late_charge_due(self, reference: date) -> Money:
         return self.late_charge if self.is_debt(reference) else Money.from_cents(0)

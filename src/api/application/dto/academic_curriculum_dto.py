@@ -4,7 +4,6 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict
 
-from api.application.dto.tool_result import StatedValue
 from api.domain.academic_curriculum import CurriculumSubject, EnrollmentProgress
 from api.domain.academic_record import SubjectResult
 
@@ -14,7 +13,7 @@ class PrerequisiteDto(BaseModel):
 
     code: str
     name: str | None
-    situation: StatedValue[SubjectResult]
+    situation: SubjectResult | None
 
 
 class CurriculumSubjectDto(BaseModel):
@@ -27,7 +26,7 @@ class CurriculumSubjectDto(BaseModel):
     semester: int
     hours: int
     mandatory: bool
-    situation: StatedValue[SubjectResult]
+    situation: SubjectResult | None
     prerequisite: PrerequisiteDto | None
 
     @classmethod
@@ -40,7 +39,7 @@ class CurriculumSubjectDto(BaseModel):
             semester=subject.semester,
             hours=subject.hours,
             mandatory=subject.mandatory,
-            situation=cls._situation(progress, subject.code),
+            situation=progress.situation_of(subject.code),
             prerequisite=cls._prerequisite(progress, subject),
         )
 
@@ -54,15 +53,8 @@ class CurriculumSubjectDto(BaseModel):
         return PrerequisiteDto(
             code=code,
             name=subject.prerequisite_name,
-            situation=cls._situation(progress, code),
+            situation=progress.situation_of(code),
         )
-
-    @staticmethod
-    def _situation(progress: EnrollmentProgress, code: str) -> StatedValue[SubjectResult]:
-        situation = progress.situation_of(code)
-        if situation is None:
-            return StatedValue[SubjectResult].not_recorded()
-        return StatedValue[SubjectResult].recorded(situation)
 
 
 class CurriculumTotals:

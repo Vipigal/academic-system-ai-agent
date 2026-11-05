@@ -10,12 +10,12 @@ from api.persistence.finance.repositories import SqlFinanceRepository
 from api.persistence.repository_adapter import RepositoryAdapter
 from api.persistence.student_session_repository import StudentSessionRepository
 from tests.integration.sql_oracle import SqlOracle
+from tests.integration.tool_support import REFERENCE, FixedClock, all_pages
 
 PERSON_WITH_OVERDUE_INVOICE = "3001982"
 OTHER_PERSON = "3000071"
 OVERDUE_INVOICE = "7025510"
 OWN_CONTRACT = "CT00011752"
-REFERENCE = date(2026, 10, 31)
 PARTIAL_INVOICE = "7067951"
 PARTIAL_PERSON = "3003422"
 NOT_YET_DUE_PERSON = "3003610"
@@ -23,28 +23,14 @@ NOT_YET_DUE_CONTRACT = "CT00013240"
 MAX_PAGE = PageRequest(limit=100)
 
 
-class FixedClock:
-    def __init__(self, today: date) -> None:
-        self._today = today
-
-    def today(self) -> date:
-        return self._today
-
-
 async def service_for(database: Database, person_id: str) -> FinancialService:
     session = await StudentSessionRepository(database.db_session_factory).load(person_id)
     adapter = RepositoryAdapter(database.db_session_factory, session)
-    return FinancialService(SqlFinanceRepository(adapter, session), FixedClock(REFERENCE))
+    return FinancialService(SqlFinanceRepository(adapter), FixedClock(REFERENCE))
 
 
 async def all_invoices_of(service: FinancialService) -> list[InvoiceDto]:
-    invoices: list[InvoiceDto] = []
-    offset: int | None = 0
-    while offset is not None:
-        result = await service.list_invoices(page=PageRequest(offset=offset, limit=100))
-        invoices.extend(result.data or [])
-        offset = result.page.next_offset if result.page else None
-    return invoices
+    return await all_pages(lambda page: service.list_invoices(page=page))
 
 
 async def debts_of(service: FinancialService) -> list[InvoiceDto]:
@@ -204,5 +190,5 @@ async def test_invoices_come_in_a_total_order(database: Database) -> None:
         PERSON_WITH_OVERDUE_INVOICE
     )
     adapter = RepositoryAdapter(database.db_session_factory, session)
-    invoices = await SqlFinanceRepository(adapter, session).list_invoices()
+    invoices = await SqlFinanceRepository(adapter).list_invoices()
     assert invoices == sorted(invoices, key=lambda invoice: (invoice.due_date, invoice.id))

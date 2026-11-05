@@ -21,6 +21,7 @@ CUSTOMER_TAX_ID = Table(
     IDENTITY_METADATA,
     Column("customerid", Text, primary_key=True),
     Column("taxid", Text),
+    Column("customertype", Text),
     schema="finance",
 )
 PROTOCOL_REQUESTER = Table(

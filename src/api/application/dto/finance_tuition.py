@@ -1,11 +1,13 @@
+from collections.abc import Iterable, Sequence
 from datetime import date
 from decimal import Decimal
 from typing import Self
 
 from pydantic import BaseModel, ConfigDict
 
-from api.domain.finance_contract import Scholarship
+from api.domain.finance_contract import Contract, Scholarship
 from api.domain.finance_tuition import TuitionChange, TuitionChangeCause
+from api.domain.invoice import Invoice
 
 
 class EndedScholarshipDto(BaseModel):
@@ -49,3 +51,11 @@ class TuitionChangeDto(BaseModel):
                 for scholarship in change.ended_scholarships
             ),
         )
+
+    @classmethod
+    def history_of(cls, contracts: Iterable[Contract], invoices: Sequence[Invoice]) -> list[Self]:
+        return [
+            cls.from_entity(change)
+            for contract in contracts
+            for change in TuitionChange.history_of(contract, invoices)
+        ]

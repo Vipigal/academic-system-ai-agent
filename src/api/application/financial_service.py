@@ -6,7 +6,7 @@ from api.application.dto.invoice_dto import InvoiceDto
 from api.application.dto.tool_result import ToolResult
 from api.application.financial_totals import FinanceTotals
 from api.application.page import FIRST_PAGE, PageRequest
-from api.domain.finance_tuition import TuitionChange
+from api.application.period_filter import PeriodFilter
 from api.domain.invoice import InvoiceKind, InvoiceStatus
 from api.domain.ports.clock import Clock
 from api.domain.ports.finance import FinanceRepository
@@ -39,7 +39,7 @@ class FinancialService:
             for invoice in await self._finance.list_invoices()
             if status in {None, invoice.status}
             and kind in {None, invoice.kind}
-            and invoice.competence.startswith(period or "")
+            and PeriodFilter.matches(period, invoice.competence)
         ]
         dtos = [InvoiceDto.from_entity(invoice, reference) for invoice in selected]
         return ToolResult.listing(
@@ -79,12 +79,7 @@ class FinancialService:
     async def get_tuition_changes(self) -> ToolResult[list[TuitionChangeDto]]:
         contracts = await self._finance.list_contracts()
         invoices = await self._finance.list_invoices()
-        changes = [
-            TuitionChangeDto.from_entity(change)
-            for contract in contracts
-            for change in TuitionChange.history_of(contract, invoices)
-        ]
-        return ToolResult.items(changes)
+        return ToolResult.items(TuitionChangeDto.history_of(contracts, invoices))
 
     async def list_agreements(self) -> ToolResult[list[AgreementDto]]:
         agreements = await self._finance.list_agreements()

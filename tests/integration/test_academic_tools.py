@@ -9,6 +9,7 @@ from api.persistence.database import Database
 from api.presentation.tools.registry import ToolRegistry
 from tests.integration import academic_tools_support as support
 from tests.integration.sql_oracle import SqlOracle
+from tests.integration.tool_support import REFERENCE
 
 ALL_ROWS = PageRequest(limit=100)
 ADS_2024_SUBJECTS = (
@@ -47,7 +48,7 @@ async def test_du01_calendar_of_the_current_term(database: Database) -> None:
     assert await SqlOracle(database).values(
         "SELECT av2_start || ' ' || end_date FROM sag.term WHERE is_current = 'Y'"
     ) == {f"{term.av2_start} {term.end_date}"}
-    assert (result.data.reference_date, result.caveats) == (support.REFERENCE, ())
+    assert (result.data.reference_date, result.caveats) == (REFERENCE, ())
 
 
 async def test_sr04_term_after_the_last_one_is_not_recorded_with_the_caveat(
@@ -114,13 +115,13 @@ async def test_du04_prerequisite_comes_with_the_student_situation(database: Data
     subject = support.only(await tools.get_curriculum(subject="ADS0404"))
 
     assert (subject.semester, subject.mandatory) == (4, False)
-    assert subject.situation.value is SubjectResult.APPROVED
+    assert subject.situation is SubjectResult.APPROVED
     assert subject.prerequisite is not None
     assert (subject.prerequisite.code, subject.prerequisite.name) == (
         "ADS0102",
         "ALGORITHMS AND PROGRAMMING I",
     )
-    assert subject.prerequisite.situation.value is SubjectResult.APPROVED
+    assert subject.prerequisite.situation is SubjectResult.APPROVED
 
 
 async def test_du05_online_offers_of_the_student_brand(database: Database) -> None:

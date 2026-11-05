@@ -41,7 +41,9 @@ def test_private_identity_tables_have_no_ownership_and_stay_out_of_the_models(
         OwnershipRegistry.rule_of(table)
 
 
-PRIVATE_COLUMNS = frozenset({"cpf", "taxid", "requester_cpf", "requester_name", "email", "phone"})
+PRIVATE_COLUMNS = frozenset(
+    {"cpf", "taxid", "customerid", "requester_cpf", "requester_name", "email", "phone"}
+)
 PROFESSOR_CONTACT = ("sag.professor", "email")
 
 
@@ -58,6 +60,10 @@ def test_no_model_declares_a_tax_id_or_contact_except_the_professor_email() -> N
 @pytest.mark.parametrize("row", [LmsUserRow, ProtocolRow, PersonRow, EnrollmentRow, ContractRow])
 def test_identity_tables_of_the_four_systems_declare_ownership(row: type[Base]) -> None:
     assert OwnershipRegistry.rule_of(row.__table__) is not None
+
+
+def test_the_payer_table_stays_out_of_the_models() -> None:
+    assert "finance.customer" not in {table.fullname for table in Base.metadata.tables.values()}
 
 
 def test_no_model_declares_relationship() -> None:

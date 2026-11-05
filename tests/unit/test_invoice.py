@@ -122,7 +122,7 @@ def test_is_upcoming_when_in_open_and_due_later(status: InvoiceStatus) -> None:
     ("status", "due_date"),
     [
         (InvoiceStatus.PAID, date(2026, 11, 5)),
-        (InvoiceStatus.OPEN, REFERENCE),
+        (InvoiceStatus.OPEN, date(2026, 10, 30)),
         (InvoiceStatus.PARTIAL, date(2026, 10, 5)),
     ],
 )
@@ -137,3 +137,12 @@ def test_money_converts_cents_to_reais_without_float_error() -> None:
 def test_money_total_adds_every_value() -> None:
     assert Money.total([Money.from_cents(10), Money.from_cents(5)]) == Money.from_cents(15)
     assert Money.total([]) == Money.from_cents(0)
+
+
+@pytest.mark.parametrize("status", [InvoiceStatus.OPEN, InvoiceStatus.PARTIAL])
+def test_invoice_due_on_the_reference_day_is_upcoming_and_not_a_debt(
+    status: InvoiceStatus,
+) -> None:
+    invoice = invoice_with(status, due_date=REFERENCE)
+    assert invoice.is_upcoming(REFERENCE)
+    assert not invoice.is_debt(REFERENCE)

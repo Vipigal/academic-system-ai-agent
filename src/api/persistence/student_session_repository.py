@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from api.domain.session import StudentSession
 from api.persistence.identity_queries import IdentityQueries
+from api.persistence.payer_queries import PayerQueries
 from api.persistence.sag.dialect import SagDialect
 
 
@@ -30,6 +31,7 @@ class StudentSessionRepository:
             brands=frozenset(),
             contract_ids=frozenset(),
             self_paid_contract_ids=frozenset(),
+            company_paid_contract_ids=frozenset(),
             lms_user_ids=frozenset(),
             protocol_ids=frozenset(),
         )
@@ -51,7 +53,10 @@ class StudentSessionRepository:
             brands=frozenset(enrollment.brand for enrollment in student_ids),
             contract_ids=contract_ids,
             self_paid_contract_ids=await cls._values(
-                db, IdentityQueries.self_paid_of(cpf, contract_ids)
+                db, PayerQueries.self_paid_of(cpf, contract_ids)
+            ),
+            company_paid_contract_ids=await cls._values(
+                db, PayerQueries.company_paid_of(contract_ids)
             ),
             lms_user_ids=await cls._values(db, IdentityQueries.lms_accounts_of(student_ids)),
             protocol_ids=await cls._values(db, IdentityQueries.protocols_of(cpf, student_ids)),

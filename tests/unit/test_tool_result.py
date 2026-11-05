@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 
 from api.application.dto.tool_result import (
+    MAX_CANDIDATES,
     Candidate,
     Caveat,
     Coverage,
@@ -194,3 +195,9 @@ def test_dto_list_serializes_inside_the_envelope() -> None:
     assert dumped["data"] == [
         {"code": "ADS0102", "second_exam": {"state": "recorded", "value": "7.5"}}
     ]
+
+
+def test_candidates_are_capped_for_not_found_and_ambiguous() -> None:
+    many = tuple(Candidate(code=str(number), name="x") for number in range(MAX_CANDIDATES + 10))
+    for result in (ToolResult[str].not_found(many), ToolResult[str].ambiguous(many)):
+        assert result.candidates == many[:MAX_CANDIDATES]

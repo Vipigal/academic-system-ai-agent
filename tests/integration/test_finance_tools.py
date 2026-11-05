@@ -59,13 +59,10 @@ async def test_fi02_next_invoice_is_the_first_open_one(
     )
     assert first_open == {"2026-11-10"}
     assert summary["next_invoice"] == {
-        "state": "recorded",
-        "value": {
-            "invoice_id": "7075736",
-            "kind": "tuition",
-            "due_date": "2026-11-10",
-            "amount_reais": "1199.90",
-        },
+        "invoice_id": "7075736",
+        "kind": "tuition",
+        "due_date": "2026-11-10",
+        "amount_reais": "1199.90",
     }
 
 
@@ -79,8 +76,8 @@ async def test_partial_invoice_due_later_is_the_next_invoice_by_its_balance(
         "WHERE i.invoiceid = '7065141' AND p.status = 'CONFIRMED' GROUP BY i.netamountcents"
     )
     assert balance == 84951
-    assert summary["next_invoice"]["value"]["invoice_id"] == "7065141"
-    assert summary["next_invoice"]["value"]["amount_reais"] == "849.51"
+    assert summary["next_invoice"]["invoice_id"] == "7065141"
+    assert summary["next_invoice"]["amount_reais"] == "849.51"
     assert summary["debt"]["overdue_invoices"] == 0
 
 
@@ -120,13 +117,13 @@ async def test_fi06_full_scholarship_explains_the_lack_of_invoices(
     )
     assert invoices == 0
     assert summary["tuition_invoices"] == 0
-    assert summary["next_invoice"] == {"state": "not_recorded"}
+    assert summary["next_invoice"] is None
     assert summary["scholarships"] == [
         {
             "kind": "PROUNI_100",
             "rate": "1.0",
             "valid_from": "2026-08-01",
-            "valid_to": {"state": "not_recorded"},
+            "valid_to": None,
             "is_active": True,
         }
     ]
@@ -163,7 +160,7 @@ async def test_cr06_terminated_contract_keeps_agreement_installments(
 ) -> None:
     summary = await harness.summary_of("3002891", "CT00012543")
     agreement = await harness.agreement_of("3002891", "AG2026000321")
-    upcoming = summary["next_invoice"]["value"]
+    upcoming = summary["next_invoice"]
     assert summary["situation"] == "terminated"
     assert (upcoming["kind"], upcoming["amount_reais"], upcoming["due_date"]) == (
         "agreement_installment",

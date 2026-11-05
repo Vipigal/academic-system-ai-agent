@@ -127,7 +127,7 @@ async def test_va08_pending_subjects_and_hours_summary(database: Database) -> No
 
     found = support.rows(result)
     assert {subject.code: subject.hours for subject in found} == {"ADS5303": 80, "ADS0502": 60}
-    assert {subject.situation.value for subject in found} == {SubjectResult.IN_PROGRESS}
+    assert {subject.situation for subject in found} == {SubjectResult.IN_PROGRESS}
     assert (
         result.totals[f"{key}.total_hours"],
         result.totals[f"{key}.completed_hours"],

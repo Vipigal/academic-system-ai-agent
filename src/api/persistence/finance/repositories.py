@@ -5,10 +5,8 @@ from sqlalchemy import select
 from api.domain.finance_agreement import Agreement
 from api.domain.finance_contract import Contract
 from api.domain.invoice import Invoice
-from api.domain.session import StudentSession
 from api.persistence.finance.charge_models import (
     AgreementRow,
-    CustomerRow,
     DiscountRow,
     LateChargeRow,
 )
@@ -19,9 +17,8 @@ from api.persistence.repository_adapter import RepositoryAdapter
 
 
 class SqlFinanceRepository:
-    def __init__(self, adapter: RepositoryAdapter, session: StudentSession) -> None:
+    def __init__(self, adapter: RepositoryAdapter) -> None:
         self._adapter = adapter
-        self._session = session
 
     async def list_invoices(self) -> Sequence[Invoice]:
         rows = await self._adapter.fetch(
@@ -44,12 +41,9 @@ class SqlFinanceRepository:
         discounts = await self._adapter.fetch(
             select(DiscountRow).order_by(DiscountRow.valid_from, DiscountRow.id)
         )
-        customers = await self._adapter.fetch(
-            select(CustomerRow).join(ContractRow, ContractRow.customer_id == CustomerRow.id)
-        )
-        customer_types = {customer.id: customer.customer_type for customer in customers}
+        session = self._adapter.student_session
         return ContractMapper.to_entities(
-            rows, discounts, customer_types, self._session.self_paid_contract_ids
+            rows, discounts, session.self_paid_contract_ids, session.company_paid_contract_ids
         )
 
     async def list_agreements(self) -> Sequence[Agreement]:

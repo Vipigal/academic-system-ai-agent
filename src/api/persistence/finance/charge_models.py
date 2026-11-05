@@ -4,14 +4,6 @@ from api.persistence.base import Base
 from api.persistence.finance.models import FINANCE_SCHEMA
 
 
-class CustomerRow(Base):
-    __tablename__ = "customer"
-    __table_args__ = FINANCE_SCHEMA
-
-    id: Mapped[str] = mapped_column("customerid", primary_key=True)
-    customer_type: Mapped[str] = mapped_column("customertype")
-
-
 class DiscountRow(Base):
     __tablename__ = "discount"
     __table_args__ = FINANCE_SCHEMA

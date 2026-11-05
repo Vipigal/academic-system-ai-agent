@@ -10,7 +10,6 @@ class ContractRow(Base):
     __table_args__ = FINANCE_SCHEMA
 
     id: Mapped[str] = mapped_column("contractid", primary_key=True)
-    customer_id: Mapped[str] = mapped_column("customerid")
     company_code: Mapped[str] = mapped_column("companycode")
     business_area: Mapped[str] = mapped_column("businessarea")
     academic_ref: Mapped[str] = mapped_column("academicref")

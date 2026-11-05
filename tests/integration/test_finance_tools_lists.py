@@ -165,3 +165,13 @@ async def test_paging_invoices_reaches_the_oracle_set_with_stable_totals(
     assert len(seen) == len(set(seen))
     assert set(seen) == expected
     assert all(page.totals == pages[0].totals for page in pages)
+
+
+async def test_period_is_exact_so_a_month_prefix_does_not_bring_other_months(
+    harness: FinanceHarness,
+) -> None:
+    tools = await harness.tools_for("3001982")
+    december = await tools.list_invoices(period="2024-12")
+    prefix = await tools.list_invoices(period="2024-1")
+    assert december.data
+    assert prefix.data == []

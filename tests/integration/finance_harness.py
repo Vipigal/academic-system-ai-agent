@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Any
 
 from api.application.dto.invoice_dto import InvoiceDto
@@ -10,19 +9,14 @@ from api.persistence.finance.repositories import SqlFinanceRepository
 from api.persistence.repository_adapter import RepositoryAdapter
 from api.persistence.student_session_repository import StudentSessionRepository
 from api.presentation.tools.finance_tools import FinanceTools
+from tests.integration.tool_support import FixedClock
 
-REFERENCE = date(2026, 10, 31)
 SNAPSHOT_TOTAL = (
     "SELECT totaldebtcents FROM finance.receivable_snapshot "
     "WHERE contractid = :contract AND snapshotdate = '2026-10-31'"
 )
 
 type InvoicePage = ToolResult[list[InvoiceDto]]
-
-
-class FixedClock:
-    def today(self) -> date:
-        return REFERENCE
 
 
 class FinanceHarness:
@@ -32,7 +26,7 @@ class FinanceHarness:
     async def tools_for(self, person_id: str) -> FinanceTools:
         factory = self._database.db_session_factory
         session = await StudentSessionRepository(factory).load(person_id)
-        repository = SqlFinanceRepository(RepositoryAdapter(factory, session), session)
+        repository = SqlFinanceRepository(RepositoryAdapter(factory, session))
         return FinanceTools(FinancialService(repository, FixedClock()))
 
     async def summary_of(self, person_id: str, contract: str) -> dict[str, Any]:
