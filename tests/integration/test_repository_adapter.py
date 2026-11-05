@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import pytest
 from sqlalchemy import or_, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -10,8 +12,17 @@ from api.persistence.repository_adapter import RepositoryAdapter
 from tests.integration.sql_oracle import SqlOracle
 
 OWN_CONTRACT = "CT00011752"
-SESSION = StudentSession(person_ids=frozenset({"3001982"}), contract_ids=frozenset({OWN_CONTRACT}))
-EMPTY_SESSION = StudentSession(person_ids=frozenset(), contract_ids=frozenset())
+SESSION = StudentSession(
+    person_ids=frozenset({"3001982"}),
+    cpf="",
+    enrollment_keys=frozenset(),
+    brands=frozenset(),
+    contract_ids=frozenset({OWN_CONTRACT}),
+    self_paid_contract_ids=frozenset(),
+    lms_user_ids=frozenset(),
+    protocol_ids=frozenset(),
+)
+EMPTY_SESSION = replace(SESSION, person_ids=frozenset(), contract_ids=frozenset())
 
 
 SECRETARY_SCHEMA = {"schema": "secretary"}

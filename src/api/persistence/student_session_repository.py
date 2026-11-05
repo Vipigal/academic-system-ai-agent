@@ -1,14 +1,11 @@
 from collections.abc import Collection
 
-from sqlalchemy import select
+from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from api.domain.brand import EnrollmentRef
 from api.domain.session import StudentSession
-from api.persistence.finance.dialect import FinanceDialect
-from api.persistence.finance.models import ContractRow
+from api.persistence.identity_queries import IdentityQueries
 from api.persistence.sag.dialect import SagDialect
-from api.persistence.sag.models import EnrollmentRow, PersonRow
 
 
 class StudentSessionRepository:
@@ -17,34 +14,47 @@ class StudentSessionRepository:
 
     async def load(self, person_id: str) -> StudentSession:
         async with self._db_session_factory() as db:
-            person_ids = await self._person_ids_of(db, person_id)
-            enrollments = await self._enrollments_of(db, person_ids)
-            contract_ids = await self._contracts_of(db, enrollments)
-        return StudentSession(person_ids=person_ids, contract_ids=contract_ids)
+            cpf = await self._cpf_of(db, person_id)
+            person_ids = await self._values(db, IdentityQueries.person_ids_of(cpf))
+            enrollment_keys = await self._enrollment_keys_of(db, person_ids)
+            return await self._session_of(db, cpf, person_ids, enrollment_keys)
+
+    @classmethod
+    async def _session_of(
+        cls,
+        db: AsyncSession,
+        cpf: str,
+        person_ids: frozenset[str],
+        enrollment_keys: frozenset[tuple[str, str]],
+    ) -> StudentSession:
+        student_ids = {SagDialect.enrollment_ref(*key): key[1] for key in enrollment_keys}
+        contract_ids = await cls._values(db, IdentityQueries.contracts_of(student_ids))
+        return StudentSession(
+            person_ids=person_ids,
+            cpf=cpf,
+            enrollment_keys=enrollment_keys,
+            brands=frozenset(enrollment.brand for enrollment in student_ids),
+            contract_ids=contract_ids,
+            self_paid_contract_ids=await cls._values(
+                db, IdentityQueries.self_paid_of(cpf, contract_ids)
+            ),
+            lms_user_ids=await cls._values(db, IdentityQueries.lms_accounts_of(student_ids)),
+            protocol_ids=await cls._values(db, IdentityQueries.protocols_of(cpf, student_ids)),
+        )
 
     @staticmethod
-    async def _person_ids_of(db: AsyncSession, person_id: str) -> frozenset[str]:
-        same_cpf = select(PersonRow.cpf).where(PersonRow.id == person_id).scalar_subquery()
-        statement = select(PersonRow.id).where(PersonRow.cpf == same_cpf)
-        result = await db.scalars(statement)
-        return frozenset(result.all())
+    async def _cpf_of(db: AsyncSession, person_id: str) -> str:
+        result = await db.scalars(IdentityQueries.cpf_of(person_id))
+        return SagDialect.normalized_cpf(result.one_or_none() or "")
 
     @staticmethod
-    async def _enrollments_of(
+    async def _enrollment_keys_of(
         db: AsyncSession, person_ids: Collection[str]
-    ) -> frozenset[EnrollmentRef]:
-        result = await db.scalars(
-            select(EnrollmentRow).where(EnrollmentRow.person_id.in_(person_ids))
-        )
-        return frozenset(
-            SagDialect.enrollment_ref(row.brand, row.student_id) for row in result.all()
-        )
+    ) -> frozenset[tuple[str, str]]:
+        result = await db.scalars(IdentityQueries.enrollments_of(person_ids))
+        return frozenset((row.brand, row.student_id) for row in result.all())
 
     @staticmethod
-    async def _contracts_of(
-        db: AsyncSession, enrollments: Collection[EnrollmentRef]
-    ) -> frozenset[str]:
-        result = await db.scalars(
-            select(ContractRow.id).where(FinanceDialect.contract_of(enrollments))
-        )
+    async def _values(db: AsyncSession, statement: Select[str]) -> frozenset[str]:
+        result = await db.scalars(statement)
         return frozenset(result.all())

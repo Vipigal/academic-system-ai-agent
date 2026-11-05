@@ -10,7 +10,6 @@ class PersonRow(Base):
     __table_args__ = SAG_SCHEMA
 
     id: Mapped[str] = mapped_column("person_id", primary_key=True)
-    cpf: Mapped[str]
 
 
 class EnrollmentRow(Base):

@@ -1,6 +1,7 @@
 from api.domain.invoice import InvoiceStatus
 from api.persistence.database import Database
 from api.persistence.finance.dialect import FinanceDialect
+from api.persistence.sag.dialect import SagDialect
 from api.persistence.student_session_repository import StudentSessionRepository
 from tests.integration.sql_oracle import SqlOracle
 
@@ -26,7 +27,35 @@ async def test_person_with_two_ids_gets_the_same_session_from_either(database: D
 async def test_unknown_person_gets_an_empty_session(database: Database) -> None:
     session = await repository_for(database).load("does-not-exist")
     assert not session.person_ids
+    assert not session.enrollment_keys
+    assert not session.brands
     assert not session.contract_ids
+    assert not session.lms_user_ids
+
+
+async def test_unknown_person_owns_no_protocol_nor_paid_contract(database: Database) -> None:
+    session = await repository_for(database).load("does-not-exist")
+    assert not session.protocol_ids
+    assert not session.self_paid_contract_ids
+
+
+async def test_the_session_never_shows_the_cpf(database: Database) -> None:
+    session = await repository_for(database).load("3001982")
+    assert session.cpf.isdigit()
+    assert len(session.cpf) == 11
+    assert session.cpf not in repr(session)
+
+
+async def test_enrollment_keys_keep_the_spelling_of_the_source(database: Database) -> None:
+    session = await repository_for(database).load("3000071")
+    expected = await SqlOracle(database).values(
+        "SELECT brand || ':' || student_id FROM sag.enrollment "
+        "WHERE person_id IN ('3000071', '3017324')",
+    )
+    assert {":".join(key) for key in session.enrollment_keys} == expected
+    assert session.brands == {
+        SagDialect.enrollment_ref(*key).brand for key in session.enrollment_keys
+    }
 
 
 async def contracts_owned_by_each_person(database: Database) -> list[str]:

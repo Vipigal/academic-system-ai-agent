@@ -3,8 +3,13 @@ from sqlalchemy import Column, MetaData, String, Table
 
 from api.main import ApiFactory
 from api.persistence.base import Base
+from api.persistence.finance.models import ContractRow
+from api.persistence.identity_tables import IDENTITY_METADATA
+from api.persistence.lms.models import LmsUserRow
 from api.persistence.ownership import OwnershipError
 from api.persistence.ownership_registry import OwnershipRegistry
+from api.persistence.sag.models import EnrollmentRow, PersonRow
+from api.persistence.secretary.models import ProtocolRow
 
 
 def test_every_mapped_table_declares_ownership() -> None:
@@ -25,6 +30,25 @@ def test_application_does_not_start_with_undeclared_table() -> None:
             ApiFactory.create()
     finally:
         Base.metadata.remove(table)
+
+
+@pytest.mark.parametrize("table", IDENTITY_METADATA.tables.values(), ids=str)
+def test_private_identity_tables_have_no_ownership_and_stay_out_of_the_models(
+    table: Table,
+) -> None:
+    assert table not in Base.metadata.tables.values()
+    with pytest.raises(OwnershipError):
+        OwnershipRegistry.rule_of(table)
+
+
+def test_no_model_declares_a_tax_id() -> None:
+    declared = {column.name for table in Base.metadata.tables.values() for column in table.columns}
+    assert not declared & {"cpf", "taxid", "requester_cpf", "requester_name", "email", "phone"}
+
+
+@pytest.mark.parametrize("row", [LmsUserRow, ProtocolRow, PersonRow, EnrollmentRow, ContractRow])
+def test_identity_tables_of_the_four_systems_declare_ownership(row: type[Base]) -> None:
+    assert OwnershipRegistry.rule_of(row.__table__) is not None
 
 
 def test_no_model_declares_relationship() -> None:

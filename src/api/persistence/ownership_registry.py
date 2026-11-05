@@ -2,11 +2,14 @@ from sqlalchemy import FromClause, MetaData
 
 from api.persistence.base import Base
 from api.persistence.finance.ownership import FINANCE_OWNERSHIP
+from api.persistence.lms.ownership import LMS_OWNERSHIP
 from api.persistence.ownership import OwnershipError, OwnershipRule
 from api.persistence.sag.ownership import SAG_OWNERSHIP
+from api.persistence.secretary.ownership import SECRETARY_OWNERSHIP
 
+OWNERSHIP_BY_SYSTEM = (FINANCE_OWNERSHIP, LMS_OWNERSHIP, SAG_OWNERSHIP, SECRETARY_OWNERSHIP)
 OWNERSHIP_BY_TABLE: dict[FromClause, OwnershipRule] = {
-    row.__table__: rule for row, rule in (FINANCE_OWNERSHIP | SAG_OWNERSHIP).items()
+    row.__table__: rule for system in OWNERSHIP_BY_SYSTEM for row, rule in system.items()
 }
 
 
