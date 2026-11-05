@@ -1,0 +1,2 @@
+class ProtocolService:
+    pass

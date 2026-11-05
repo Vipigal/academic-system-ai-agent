@@ -1,5 +1,6 @@
 from api.application.dto.invoice_dto import InvoiceDto
-from api.domain.ports import Clock, InvoiceRepository
+from api.domain.ports.clock import Clock
+from api.domain.ports.finance import InvoiceRepository
 
 
 class FinancialService:

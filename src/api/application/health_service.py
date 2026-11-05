@@ -1,5 +1,5 @@
 from api.application.dto.health_dto import HealthDto
-from api.domain.ports import DatabaseProbe
+from api.domain.ports.health import DatabaseProbe
 
 
 class HealthService:

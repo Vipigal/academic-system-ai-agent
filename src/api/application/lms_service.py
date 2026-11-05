@@ -1,0 +1,2 @@
+class LmsService:
+    pass
