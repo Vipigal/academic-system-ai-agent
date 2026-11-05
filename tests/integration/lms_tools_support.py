@@ -1,14 +1,8 @@
 from api.application.dto.tool_result import ToolResult
-from api.application.lms_service import LmsService
 from api.persistence.database import Database
-from api.persistence.lms.lms_repository import SqlLmsRepository
-from api.persistence.repository_adapter import RepositoryAdapter
-from api.persistence.sag.academic_catalog_repository import SagAcademicCatalogRepository
-from api.persistence.sag.academic_student_repository import SagStudentAcademicRepository
-from api.persistence.student_session_repository import StudentSessionRepository
 from api.presentation.tools.lms_tools import LmsTools
 from tests.integration.sql_oracle import SqlOracle
-from tests.integration.tool_support import FixedClock
+from tests.integration.tool_support import student_tools
 
 CURRENT_TERM = "2026/2"
 LITORAL_EAD_PERSON = "3001959"
@@ -27,15 +21,7 @@ BRASILIA_MINUTE = "YYYY-MM-DD HH24:MI"
 
 
 async def tools_for(database: Database, person_id: str) -> LmsTools:
-    session = await StudentSessionRepository(database.db_session_factory).load(person_id)
-    adapter = RepositoryAdapter(database.db_session_factory, session)
-    service = LmsService(
-        SqlLmsRepository(adapter),
-        SagAcademicCatalogRepository(adapter),
-        SagStudentAcademicRepository(adapter),
-        FixedClock(),
-    )
-    return LmsTools(service)
+    return (await student_tools(database, person_id)).lms
 
 
 def rows[T](result: ToolResult[list[T]]) -> list[T]:

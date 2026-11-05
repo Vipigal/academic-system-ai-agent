@@ -17,7 +17,7 @@ Uma tarefa só termina com `make check` verde; a saída dele é a prova. Recarre
 
 ## Regras que o linter garante
 
-- **Camadas:** presentation → application → domain; persistence → domain. Só `src/api/main.py` conhece todas.
+- **Camadas:** presentation → application → domain; persistence → domain. Só `src/api/main.py` e `src/api/composition/`, que monta as tools por aluno, conhecem todas.
 - **Domínio:** só biblioteca padrão, sem rede nem ambiente. Dependência externa entra por `domain/ports/`, com um módulo por área.
 - **Banco:** só a persistence importa SQLAlchemy, e só o `RepositoryAdapter` e a carga da sessão abrem sessão de banco.
 - **Tamanho e complexidade:** os limites estão em `ruff.toml`, `.flake8` e `quality.toml`.

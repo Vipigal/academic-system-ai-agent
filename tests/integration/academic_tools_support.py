@@ -1,12 +1,7 @@
-from api.application.academic_service import AcademicService
 from api.application.dto.tool_result import ToolResult
 from api.persistence.database import Database
-from api.persistence.repository_adapter import RepositoryAdapter
-from api.persistence.sag.academic_catalog_repository import SagAcademicCatalogRepository
-from api.persistence.sag.academic_student_repository import SagStudentAcademicRepository
-from api.persistence.student_session_repository import StudentSessionRepository
 from api.presentation.tools.academic_tools import AcademicTools
-from tests.integration.tool_support import FixedClock
+from tests.integration.tool_support import student_tools
 
 CURRENT_TERM = "2026/2"
 MIGRATED_ADS_PERSON = "3000031"
@@ -19,12 +14,7 @@ SAO_PAULO_ENROLLMENT = "UniSaoPaulo:181722"
 
 
 async def tools_for(database: Database, person_id: str) -> AcademicTools:
-    session = await StudentSessionRepository(database.db_session_factory).load(person_id)
-    adapter = RepositoryAdapter(database.db_session_factory, session)
-    service = AcademicService(
-        SagAcademicCatalogRepository(adapter), SagStudentAcademicRepository(adapter), FixedClock()
-    )
-    return AcademicTools(service)
+    return (await student_tools(database, person_id)).academic
 
 
 def rows[T](result: ToolResult[list[T]]) -> list[T]:

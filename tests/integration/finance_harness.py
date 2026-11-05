@@ -2,14 +2,10 @@ from typing import Any
 
 from api.application.dto.invoice_dto import InvoiceDto
 from api.application.dto.tool_result import ToolResult
-from api.application.financial_service import FinancialService
 from api.application.page import PageRequest
 from api.persistence.database import Database
-from api.persistence.finance.repositories import SqlFinanceRepository
-from api.persistence.repository_adapter import RepositoryAdapter
-from api.persistence.student_session_repository import StudentSessionRepository
 from api.presentation.tools.finance_tools import FinanceTools
-from tests.integration.tool_support import FixedClock
+from tests.integration.tool_support import student_tools
 
 SNAPSHOT_TOTAL = (
     "SELECT totaldebtcents FROM finance.receivable_snapshot "
@@ -24,10 +20,7 @@ class FinanceHarness:
         self._database = database
 
     async def tools_for(self, person_id: str) -> FinanceTools:
-        factory = self._database.db_session_factory
-        session = await StudentSessionRepository(factory).load(person_id)
-        repository = SqlFinanceRepository(RepositoryAdapter(factory, session))
-        return FinanceTools(FinancialService(repository, FixedClock()))
+        return (await student_tools(self._database, person_id)).finance
 
     async def summary_of(self, person_id: str, contract: str) -> dict[str, Any]:
         tools = await self.tools_for(person_id)

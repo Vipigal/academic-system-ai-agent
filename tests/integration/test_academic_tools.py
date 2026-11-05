@@ -202,3 +202,19 @@ async def test_va01_registration_in_the_current_term(database: Database) -> None
         "SELECT term_status FROM sag.term_enrollment "
         "WHERE brand = 'UniSaoPaulo' AND student_id = '181722' AND term = '2026/2'"
     ) == {"REGISTERED"}
+
+
+async def test_re04_class_without_professor_is_left_out(database: Database) -> None:
+    tools = await support.tools_for(database, "3000003")
+    sections = await SqlOracle(database).values(
+        "SELECT coalesce(professor.email, 'none') FROM sag.class_section "
+        "LEFT JOIN sag.professor ON professor.professor_id = class_section.professor_id "
+        "WHERE subject_code = 'ADM0103' AND term = '2026/2' "
+        "AND class_section.brand LIKE 'UniSaoPaulo%'"
+    )
+
+    result = await tools.list_subject_professors("ADM0103")
+
+    assert "none" in sections
+    assert result.status is ToolStatus.OK
+    assert {professor.email for professor in support.rows(result)} == sections - {"none"}

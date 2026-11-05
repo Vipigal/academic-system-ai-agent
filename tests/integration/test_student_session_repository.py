@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.domain.invoice import InvoiceStatus
+from api.domain.session import StudentSession
 from api.persistence.database import Database
 from api.persistence.finance.dialect import FinanceDialect
 from api.persistence.sag.dialect import SagDialect
@@ -61,17 +62,10 @@ async def test_enrollment_keys_keep_the_spelling_of_the_source(database: Databas
     }
 
 
-async def contracts_owned_by_each_person(database: Database) -> list[str]:
-    one_id_per_person = await SqlOracle(database).values(
-        "SELECT min(person_id) FROM sag.person GROUP BY cpf",
-    )
-    repository = repository_for(database)
-    sessions = [await repository.load(person_id) for person_id in one_id_per_person]
-    return [contract for session in sessions for contract in session.contract_ids]
-
-
-async def test_every_contract_belongs_to_exactly_one_person(database: Database) -> None:
-    owned = await contracts_owned_by_each_person(database)
+async def test_every_contract_belongs_to_exactly_one_person(
+    database: Database, everyone: list[StudentSession]
+) -> None:
+    owned = [contract for session in everyone for contract in session.contract_ids]
     all_contracts = await SqlOracle(database).values("SELECT contractid FROM finance.contract")
     assert len(owned) == len(set(owned))
     assert set(owned) == all_contracts

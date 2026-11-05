@@ -1,35 +1,11 @@
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import Iterable
 
 import pytest
-import pytest_asyncio
 
 from api.domain.session import StudentSession
 from api.persistence.database import Database
-from api.persistence.student_session_repository import StudentSessionRepository
-from api.settings import Settings
-from tests.integration.sql_oracle import SqlOracle
+from tests.integration.sql_oracle import PROTOCOL_OWNERS, SqlOracle
 
-ONE_ID_PER_PERSON = (
-    r"SELECT min(person_id) FROM sag.person GROUP BY regexp_replace(cpf, '\D', '', 'g')"
-)
-PROTOCOL_OWNERS = r"""
-    SELECT protocol.protocol || ':' || regexp_replace(person.cpf, '\D', '', 'g')
-    FROM secretary.protocol
-    JOIN secretary.unit ON unit.unit_code = protocol.unit_code
-    JOIN sag.enrollment
-      ON enrollment.brand = replace(translate(unit.brand_name, 'ãáâ', 'aaa'), ' ', '')
-         || CASE unit.unit_type WHEN 'Polo EAD' THEN '_EAD' ELSE '' END
-    JOIN sag.person ON person.person_id = enrollment.person_id
-    WHERE (enrollment.student_id = lpad(protocol.stu_id, 6, '0')
-           AND (protocol.requester_type = 'Guardian'
-                OR (protocol.requester_type IN ('Student', 'Alumni')
-                    AND regexp_replace(person.cpf, '\D', '', 'g')
-                        = lpad(protocol.requester_cpf, 11, '0'))))
-       OR (protocol.requester_type IN ('Student', 'Alumni')
-           AND regexp_replace(person.cpf, '\D', '', 'g') = lpad(protocol.requester_cpf, 11, '0')
-           AND NOT EXISTS (SELECT 1 FROM sag.enrollment other
-                           WHERE other.student_id = lpad(protocol.stu_id, 6, '0')))
-"""
 LMS_OWNERS = r"""
     SELECT account.student_lms_id || ':' || regexp_replace(person.cpf, '\D', '', 'g')
     FROM lms.mdl_user account
@@ -80,15 +56,6 @@ PAYMENTS_OF_CONTRACTS = (
     "WHERE contractid = ANY(string_to_array(:ids, ','))"
 )
 ALL_PAYMENTS = "SELECT count(*) FROM finance.payment"
-
-
-@pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def everyone() -> AsyncIterator[list[StudentSession]]:
-    database = Database(Settings.from_environment().database_url.get_secret_value())
-    people = await SqlOracle(database).values(ONE_ID_PER_PERSON)
-    repository = StudentSessionRepository(database.db_session_factory)
-    yield [await repository.load(person_id) for person_id in sorted(people)]
-    await database.dispose()
 
 
 @pytest.fixture

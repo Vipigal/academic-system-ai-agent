@@ -87,4 +87,5 @@ class TeacherMapper:
                 unit_name=UnitNames.of(unit_by_id, section.unit_id),
             )
             for section in sources.sections
+            if section.professor_id in professor_by_id
         ]
