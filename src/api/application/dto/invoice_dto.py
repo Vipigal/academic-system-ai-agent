@@ -13,15 +13,17 @@ class InvoiceDto(BaseModel):
     id: str
     due_date: date
     net_amount_reais: Decimal
+    balance_amount_reais: Decimal
     status: InvoiceStatus
     is_debt: bool
 
     @classmethod
-    def from_entity(cls, invoice: Invoice) -> Self:
+    def from_entity(cls, invoice: Invoice, reference: date) -> Self:
         return cls(
             id=invoice.id,
             due_date=invoice.due_date,
             net_amount_reais=invoice.net.reais,
+            balance_amount_reais=invoice.balance.reais,
             status=invoice.status,
-            is_debt=invoice.is_debt(),
+            is_debt=invoice.is_debt(reference),
         )

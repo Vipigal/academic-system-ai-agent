@@ -23,6 +23,11 @@ class Invoice:
     due_date: date
     net: Money
     status: InvoiceStatus
+    paid: Money
 
-    def is_debt(self) -> bool:
-        return self.status in DEBT_STATUSES
+    @property
+    def balance(self) -> Money:
+        return self.net - self.paid
+
+    def is_debt(self, reference: date) -> bool:
+        return self.status in DEBT_STATUSES and self.due_date < reference

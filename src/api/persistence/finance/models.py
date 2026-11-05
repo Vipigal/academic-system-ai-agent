@@ -32,6 +32,8 @@ class PaymentRow(Base):
 
     id: Mapped[str] = mapped_column("paymentid", primary_key=True)
     invoice_id: Mapped[str] = mapped_column("invoiceid")
+    principal_cents: Mapped[str] = mapped_column("principalcents")
+    status: Mapped[str]
 
 
 class ProductRow(Base):
