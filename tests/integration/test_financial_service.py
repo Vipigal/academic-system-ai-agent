@@ -3,9 +3,10 @@ from decimal import Decimal
 
 from api.application.dto.invoice_dto import InvoiceDto
 from api.application.financial_service import FinancialService
-from api.domain.invoice import InvoiceStatus
+from api.application.page import PageRequest
+from api.domain.invoice import InvoiceKind, InvoiceStatus
 from api.persistence.database import Database
-from api.persistence.finance.repositories import FinanceInvoiceRepository
+from api.persistence.finance.repositories import SqlFinanceRepository
 from api.persistence.repository_adapter import RepositoryAdapter
 from api.persistence.student_session_repository import StudentSessionRepository
 from tests.integration.sql_oracle import SqlOracle
@@ -19,6 +20,7 @@ PARTIAL_INVOICE = "7067951"
 PARTIAL_PERSON = "3003422"
 NOT_YET_DUE_PERSON = "3003610"
 NOT_YET_DUE_CONTRACT = "CT00013240"
+MAX_PAGE = PageRequest(limit=100)
 
 
 class FixedClock:
@@ -32,12 +34,26 @@ class FixedClock:
 async def service_for(database: Database, person_id: str) -> FinancialService:
     session = await StudentSessionRepository(database.db_session_factory).load(person_id)
     adapter = RepositoryAdapter(database.db_session_factory, session)
-    return FinancialService(FinanceInvoiceRepository(adapter), FixedClock(REFERENCE))
+    return FinancialService(SqlFinanceRepository(adapter, session), FixedClock(REFERENCE))
+
+
+async def all_invoices_of(service: FinancialService) -> list[InvoiceDto]:
+    invoices: list[InvoiceDto] = []
+    offset: int | None = 0
+    while offset is not None:
+        result = await service.list_invoices(page=PageRequest(offset=offset, limit=100))
+        invoices.extend(result.data or [])
+        offset = result.page.next_offset if result.page else None
+    return invoices
+
+
+async def debts_of(service: FinancialService) -> list[InvoiceDto]:
+    return (await service.list_debts()).data or []
 
 
 async def test_lists_the_invoices_of_the_person(database: Database) -> None:
     service = await service_for(database, PERSON_WITH_OVERDUE_INVOICE)
-    invoices = await service.list_invoices()
+    invoices = await all_invoices_of(service)
     expected = await SqlOracle(database).values(
         "SELECT invoiceid FROM finance.invoice WHERE contractid = :contract",
         contract=OWN_CONTRACT,
@@ -47,7 +63,7 @@ async def test_lists_the_invoices_of_the_person(database: Database) -> None:
 
 async def test_debts_exclude_open_and_renegotiated_invoices(database: Database) -> None:
     service = await service_for(database, PERSON_WITH_OVERDUE_INVOICE)
-    debts = await service.list_debts()
+    debts = await debts_of(service)
     expected = await SqlOracle(database).values(
         "SELECT invoiceid FROM finance.invoice "
         "WHERE contractid = :contract AND status IN ('OVERDUE', 'PARTIAL') "
@@ -59,21 +75,27 @@ async def test_debts_exclude_open_and_renegotiated_invoices(database: Database) 
 
 async def test_dto_uses_canonical_values(database: Database) -> None:
     service = await service_for(database, PERSON_WITH_OVERDUE_INVOICE)
-    debts = await service.list_debts()
+    debts = await debts_of(service)
     overdue = next(debt for debt in debts if debt.id == OVERDUE_INVOICE)
-    assert overdue == InvoiceDto(
+    assert overdue.model_copy(update={"payments": ()}) == InvoiceDto(
         id=OVERDUE_INVOICE,
+        contract_id=OWN_CONTRACT,
+        kind=InvoiceKind.TUITION,
+        competence="2024-12",
         due_date=date(2024, 12, 10),
         net_amount_reais=Decimal("192.90"),
         balance_amount_reais=Decimal("192.90"),
+        late_charge_reais=Decimal("48.23"),
+        amount_due_reais=Decimal("241.13"),
         status=InvoiceStatus.OVERDUE,
         is_debt=True,
+        payments=(),
     )
 
 
 async def test_other_person_never_sees_the_invoice(database: Database) -> None:
     service = await service_for(database, OTHER_PERSON)
-    invoices = await service.list_invoices()
+    invoices = await all_invoices_of(service)
     assert invoices
     assert OVERDUE_INVOICE not in {invoice.id for invoice in invoices}
 
@@ -83,7 +105,7 @@ async def invoices_seen_by_each_person(database: Database) -> list[str]:
         "SELECT min(person_id) FROM sag.person GROUP BY cpf",
     )
     services = [await service_for(database, person_id) for person_id in one_id_per_person]
-    per_person = [await service.list_invoices() for service in services]
+    per_person = [await all_invoices_of(service) for service in services]
     return [invoice.id for invoices in per_person for invoice in invoices]
 
 
@@ -97,17 +119,23 @@ async def test_every_invoice_belongs_to_exactly_one_person(database: Database) -
 def test_dto_exposes_only_the_allowed_fields() -> None:
     assert set(InvoiceDto.model_fields) == {
         "id",
+        "contract_id",
+        "kind",
+        "competence",
         "due_date",
         "net_amount_reais",
         "balance_amount_reais",
+        "late_charge_reais",
+        "amount_due_reais",
         "status",
         "is_debt",
+        "payments",
     }
 
 
 async def test_partial_invoice_balance_is_net_minus_confirmed_payments(database: Database) -> None:
     service = await service_for(database, PARTIAL_PERSON)
-    invoices = await service.list_invoices()
+    invoices = await all_invoices_of(service)
     partial = next(invoice for invoice in invoices if invoice.id == PARTIAL_INVOICE)
     assert partial.net_amount_reais == Decimal("174.93")
     assert partial.balance_amount_reais == Decimal("93.92")
@@ -125,8 +153,8 @@ async def test_partial_invoice_not_yet_due_is_not_debt(database: Database) -> No
         contract=NOT_YET_DUE_CONTRACT,
     )
     service = await service_for(database, NOT_YET_DUE_PERSON)
-    invoices = await service.list_invoices()
-    debts = await service.list_debts()
+    invoices = await all_invoices_of(service)
+    debts = await debts_of(service)
     assert not_yet_due
     assert not_yet_due <= {invoice.id for invoice in invoices}
     assert not not_yet_due & {debt.id for debt in debts}
@@ -137,7 +165,7 @@ async def debts_of_everyone(database: Database) -> list[InvoiceDto]:
         database, "SELECT min(person_id) FROM sag.person GROUP BY cpf"
     )
     services = [await service_for(database, person_id) for person_id in one_id_per_person]
-    return [debt for service in services for debt in await service.list_debts()]
+    return [debt for service in services for debt in await debts_of(service)]
 
 
 async def snapshot_by_contract(database: Database) -> dict[str, tuple[int, int]]:
@@ -151,12 +179,8 @@ async def snapshot_by_contract(database: Database) -> dict[str, tuple[int, int]]
 
 
 async def debt_cents_by_contract(database: Database) -> list[tuple[str, int]]:
-    pairs = await oracle_rows(
-        database, "SELECT invoiceid || ':' || contractid FROM finance.invoice"
-    )
-    contract_of_invoice = dict(pair.split(":") for pair in pairs)
     debts = await debts_of_everyone(database)
-    return [(contract_of_invoice[debt.id], int(debt.balance_amount_reais * 100)) for debt in debts]
+    return [(debt.contract_id, int(debt.balance_amount_reais * 100)) for debt in debts]
 
 
 def principal_and_count(debts: list[tuple[str, int]]) -> dict[str, tuple[int, int]]:
@@ -179,6 +203,6 @@ async def test_invoices_come_in_a_total_order(database: Database) -> None:
     session = await StudentSessionRepository(database.db_session_factory).load(
         PERSON_WITH_OVERDUE_INVOICE
     )
-    repository = FinanceInvoiceRepository(RepositoryAdapter(database.db_session_factory, session))
-    invoices = await repository.list_all()
+    adapter = RepositoryAdapter(database.db_session_factory, session)
+    invoices = await SqlFinanceRepository(adapter, session).list_invoices()
     assert invoices == sorted(invoices, key=lambda invoice: (invoice.due_date, invoice.id))

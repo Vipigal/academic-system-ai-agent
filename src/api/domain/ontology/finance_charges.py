@@ -59,8 +59,8 @@ PROXIMO_BOLETO = Ontology(
     name="Próximo boleto",
     area=Area.FINANCE,
     synonyms=("quando vence", "próxima mensalidade", "de quanto é o boleto"),
-    definition="Primeira fatura em aberto que vence depois de hoje, pelo valor líquido. "
-    "Pode ser parcela de acordo, não mensalidade.",
+    definition="Primeira fatura em aberto que vence depois de hoje, pelo saldo: o valor líquido, "
+    "menos o já pago em fatura parcial. Pode ser parcela de acordo, não mensalidade.",
     source=System.FINANCE,
     origin=Origin.CONFIRMED,
     evidence="3 das 6 faturas parciais só vencem em 05/11/2026, e 19 faturas de novembro já foram "

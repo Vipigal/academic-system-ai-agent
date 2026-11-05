@@ -5,7 +5,7 @@ from sqlalchemy import ColumnElement, func, tuple_
 from api.domain.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
 from api.domain.invoice import InvoiceStatus
 from api.persistence.dialect_lookup import DialectLookup
-from api.persistence.finance.models import ContractRow, PaymentRow
+from api.persistence.finance.models import ContractRow
 
 COMPANY_BY_BRAND = {
     Brand.SAO_PAULO: "1010",
@@ -15,7 +15,6 @@ COMPANY_BY_BRAND = {
     Brand.ARAUCARIA: "1050",
 }
 AREA_BY_MODALITY = {Modality.IN_PERSON: "PRESENCIAL", Modality.ONLINE: "DIGITAL"}
-CONFIRMED_PAYMENT = "CONFIRMED"
 STATUS_BY_SOURCE = {
     "PAID": InvoiceStatus.PAID,
     "OPEN": InvoiceStatus.OPEN,
@@ -32,10 +31,6 @@ class FinanceDialect:
         keys = [cls._contract_key(enrollment) for enrollment in enrollments]
         columns = tuple_(ContractRow.company_code, ContractRow.business_area, cls._student_number())
         return columns.in_(keys)
-
-    @staticmethod
-    def confirmed_payment() -> ColumnElement[bool]:
-        return PaymentRow.status == CONFIRMED_PAYMENT
 
     @staticmethod
     def invoice_status(status: str) -> InvoiceStatus:

@@ -327,7 +327,7 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 
 - **Chave:** `proximo_boleto`
 - **Sinônimos:** quando vence, próxima mensalidade, de quanto é o boleto
-- **Definição:** Primeira fatura em aberto que vence depois de hoje, pelo valor líquido. Pode ser parcela de acordo, não mensalidade.
+- **Definição:** Primeira fatura em aberto que vence depois de hoje, pelo saldo: o valor líquido, menos o já pago em fatura parcial. Pode ser parcela de acordo, não mensalidade.
 - **Sistema:** Financeiro
 - **Origem:** `CONFIRMED`
 - **Evidência:** 3 das 6 faturas parciais só vencem em 05/11/2026, e 19 faturas de novembro já foram pagas.

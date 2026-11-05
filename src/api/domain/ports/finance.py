@@ -1,8 +1,14 @@
 from collections.abc import Sequence
 from typing import Protocol
 
+from api.domain.finance_agreement import Agreement
+from api.domain.finance_contract import Contract
 from api.domain.invoice import Invoice
 
 
-class InvoiceRepository(Protocol):
-    async def list_all(self) -> Sequence[Invoice]: ...
+class FinanceRepository(Protocol):
+    async def list_invoices(self) -> Sequence[Invoice]: ...
+
+    async def list_contracts(self) -> Sequence[Contract]: ...
+
+    async def list_agreements(self) -> Sequence[Agreement]: ...

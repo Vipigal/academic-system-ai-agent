@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Self
@@ -12,6 +13,10 @@ class Money:
     @classmethod
     def from_cents(cls, cents: int) -> Self:
         return cls(cents)
+
+    @classmethod
+    def total(cls, values: Iterable[Money]) -> Self:
+        return cls(sum(value.cents for value in values))
 
     def __add__(self, other: Self) -> Self:
         return type(self)(self.cents + other.cents)
