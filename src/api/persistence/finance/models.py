@@ -30,6 +30,7 @@ class InvoiceRow(Base):
     gross_cents: Mapped[str] = mapped_column("grossamountcents")
     net_cents: Mapped[str] = mapped_column("netamountcents")
     status: Mapped[str]
+    protocol_ref: Mapped[str | None] = mapped_column("protocolref")
 
 
 class PaymentRow(Base):

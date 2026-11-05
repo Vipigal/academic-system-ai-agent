@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from sqlalchemy import select
 
@@ -14,6 +14,8 @@ from api.persistence.finance.contract_mappers import AgreementMapper, ContractMa
 from api.persistence.finance.mappers import InvoiceMapper
 from api.persistence.finance.models import ContractRow, InvoiceRow, PaymentRow
 from api.persistence.repository_adapter import RepositoryAdapter
+
+SERVICE_FEE_KIND = "SERVICE_FEE"
 
 
 class SqlFinanceRepository:
@@ -51,3 +53,10 @@ class SqlFinanceRepository:
             select(AgreementRow).order_by(AgreementRow.created_at, AgreementRow.id)
         )
         return AgreementMapper.to_entities(rows, await self.list_invoices())
+
+    async def list_service_fees(self) -> Mapping[str, Invoice]:
+        rows = await self._adapter.fetch(
+            select(InvoiceRow).where(InvoiceRow.kind == SERVICE_FEE_KIND)
+        )
+        by_id = {invoice.id: invoice for invoice in await self.list_invoices()}
+        return {row.protocol_ref: by_id[row.id] for row in rows if row.protocol_ref}

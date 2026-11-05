@@ -1,0 +1,31 @@
+from dataclasses import dataclass
+from enum import Enum
+
+from api.domain.money import Money
+
+
+class ServiceArea(Enum):
+    ACADEMIC = "academic"
+    DOCUMENTS = "documents"
+    FINANCIAL = "financial"
+    GENERAL = "general"
+    OMBUDSMAN = "ombudsman"
+    TECH = "tech"
+
+
+@dataclass(frozen=True, slots=True)
+class Service:
+    code: str
+    name: str
+    area: ServiceArea
+    sla_hours: int
+    fee: Money
+    active: bool
+
+    @property
+    def has_fee(self) -> bool:
+        return self.fee.cents > 0
+
+    @property
+    def agent_can_open(self) -> bool:
+        return self.active and not self.has_fee
