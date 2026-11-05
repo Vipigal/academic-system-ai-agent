@@ -152,10 +152,11 @@ por contratos de importação.
 
 ```text
 src/api/
-├── main.py         composição: o único módulo que conhece todas as camadas
+├── main.py         composição: liga as camadas ao servidor
+├── composition/    montagem das tools por aluno
 ├── presentation/   http/  tools/
 ├── application/    session_service.py  financial_service.py  dto/
-├── domain/         brand.py  session.py  invoice.py  ports.py
+├── domain/         brand.py  session.py  invoice.py  ports/
 └── persistence/
     ├── repository_adapter.py     acrescenta o ownership em toda consulta
     ├── query_guard.py            recusa o que não está na lista de permitidos
@@ -397,7 +398,9 @@ Três filtros em sequência, cada um mais restrito:
 | Entidade de domínio | Só o que a regra de negócio usa, com métodos | `Invoice.is_debt()` |
 | DTO de saída | Allowlist do que o agente vê | Status em linguagem canônica, valor em reais |
 
-O CPF só aparece nas definições privadas da carga da sessão. A sessão o guarda com `repr=False`, para não aparecer em log.
+O CPF, os dados do requerente e o vínculo entre contrato e pagador só aparecem em tabelas Core locais, fora de
+`Base.metadata`, usadas na carga da sessão. O tipo de pagador é calculado ali. A sessão guarda o CPF com `repr=False`,
+para não aparecer em log.
 
 ### 5.5 Composição entre sistemas
 
@@ -481,10 +484,11 @@ Limites de concorrência, deadlines, retry e proteção do provedor de LLM entra
 
 - **Tools:** adaptadores finos na presentation. Não recebem identidade. A sessão chega pelo contexto de execução,
   fora do schema visível ao modelo.
-- **Parâmetros amigáveis:** "Administração" ou "semestre passado" viram entidades canônicas. Caso ambíguo devolve
-  candidatos em vez de erro.
-- **Respostas das tools:** já trazem totais calculados, rótulos em português e sinais de qualidade, como
-  "frequência não registrada" ou "sem dados antes de 2023".
+- **Parâmetros amigáveis:** a busca por nome fica dentro da tool. Sem correspondência, a tool devolve candidatos, e o
+  modelo escolhe.
+- **Respostas das tools:** já trazem totais do conjunto inteiro, paginação e sinais de qualidade, como "frequência
+  não registrada" ou "sem dados antes de 2023". Não há tabela de tradução: o modelo traduz o que vem da base e responde
+  sempre em português.
 - **Skills:** instruções versionadas, carregadas sob demanda. Ajudam na qualidade, mas não são barreira de segurança.
 - **Eval:** cada execução registra versão de prompt, skills, tools e modelo, além da trajetória. As respostas esperadas
   vêm de SQL independente das tools. Parte do conjunto fica reservada para evitar sobreajuste.
@@ -538,7 +542,7 @@ A lista de pendências fica em [Pendências](/docs/pendencias.md).
 | Crosswalk persistido e schemas intermediários de dados normalizados | O custo de resolver identidade exigir; hoje contradiz B11 |
 | RLS | B9 for revista |
 | Cache ou Redis | Teste de carga mostrar que montar a sessão a cada pedido pesa |
-| RAG e pgvector | Ainda em aberto; avaliar com as perguntas de catálogo |
+| RAG e pgvector | A base ganhar texto de conhecimento para indexar |
 | Atender responsável ou pagador | O enunciado fala em aluno autenticado |
 | Escritas além de abrir protocolo | O case exigir ou o primeiro fluxo estiver estável |
 
