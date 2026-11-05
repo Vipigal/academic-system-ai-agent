@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import date
 from decimal import Decimal
 from enum import StrEnum
@@ -86,10 +86,17 @@ class ToolResult[T](BaseModel):
         cls,
         data: T,
         *,
+        totals: Mapping[str, Decimal | int] | None = None,
         caveats: tuple[Caveat, ...] = (),
         coverage: Coverage | None = None,
     ) -> Self:
-        return cls(status=ToolStatus.OK, data=data, caveats=caveats, coverage=coverage)
+        return cls(
+            status=ToolStatus.OK,
+            data=data,
+            totals=totals or {},
+            caveats=caveats,
+            coverage=coverage,
+        )
 
     @staticmethod
     def listing[I](
@@ -108,9 +115,21 @@ class ToolResult[T](BaseModel):
             coverage=coverage,
         )
 
-    @classmethod
-    def empty(cls, *, caveats: tuple[Caveat, ...] = (), coverage: Coverage | None = None) -> Self:
-        return cls(status=ToolStatus.EMPTY, caveats=caveats, coverage=coverage)
+    @staticmethod
+    def items[I](
+        values: Sequence[I],
+        *,
+        totals: Mapping[str, Decimal | int] | None = None,
+        caveats: tuple[Caveat, ...] = (),
+        coverage: Coverage | None = None,
+    ) -> ToolResult[list[I]]:
+        return ToolResult(
+            status=ToolStatus.OK if values else ToolStatus.EMPTY,
+            data=list(values),
+            totals=totals or {},
+            caveats=caveats,
+            coverage=coverage,
+        )
 
     @classmethod
     def not_found(cls, candidates: tuple[Candidate, ...]) -> Self:

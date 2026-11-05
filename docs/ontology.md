@@ -414,7 +414,7 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 
 - **Chave:** `estorno`
 - **Sinônimos:** paguei e aparece vencido, pagamento devolvido
-- **Definição:** Pagamento desfeito. A fatura continua devida, e o motivo não está registrado.
+- **Definição:** Pagamento desfeito. Sem novo pagamento confirmado, a fatura continua devida; o motivo não está registrado.
 - **Sistema:** Financeiro
 - **Origem:** `CONFIRMED`
 - **Evidência:** 26 faturas vencidas só têm pagamento estornado; em 89 pagas houve estorno e novo pagamento.

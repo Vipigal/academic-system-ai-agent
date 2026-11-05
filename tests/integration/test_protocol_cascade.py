@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.domain.brand import Brand, EnrollmentRef, Modality
 from api.persistence.database import Database
-from api.persistence.identity_tables import PROTOCOL_REQUESTER
+from api.persistence.identity_tables import PERSON_CPF, PROTOCOL_REQUESTER
+from api.persistence.sag.dialect import SagDialect
 from api.persistence.secretary.dialect import SecretaryDialect
 
 OWN_CPF = "01234567890"
@@ -88,4 +89,17 @@ async def test_empty_identity_resolves_nothing(database: Database) -> None:
     clause = SecretaryDialect.protocol_of("", {})
     async with database.db_session_factory() as db:
         resolved = await db.scalars(select(PROTOCOL_REQUESTER.c.protocol).where(clause))
+        assert resolved.all() == []
+
+
+async def test_empty_cpf_matches_no_person_even_with_blank_cpfs(database: Database) -> None:
+    async with database.db_session_factory() as db:
+        await db.execute(text("CREATE TEMP TABLE person (person_id text, cpf text) ON COMMIT DROP"))
+        await db.execute(
+            text("INSERT INTO pg_temp.person VALUES ('blank', ''), ('null', NULL), ('dots', '.-')")
+        )
+        resolved = await db.scalars(
+            select(PERSON_CPF.c.person_id).where(SagDialect.person_with_cpf("")),
+            execution_options=SYNTHETIC_SCHEMAS,
+        )
         assert resolved.all() == []

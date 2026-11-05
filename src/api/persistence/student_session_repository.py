@@ -15,9 +15,24 @@ class StudentSessionRepository:
     async def load(self, person_id: str) -> StudentSession:
         async with self._db_session_factory() as db:
             cpf = await self._cpf_of(db, person_id)
+            if not cpf:
+                return self._empty_session()
             person_ids = await self._values(db, IdentityQueries.person_ids_of(cpf))
             enrollment_keys = await self._enrollment_keys_of(db, person_ids)
             return await self._session_of(db, cpf, person_ids, enrollment_keys)
+
+    @staticmethod
+    def _empty_session() -> StudentSession:
+        return StudentSession(
+            person_ids=frozenset(),
+            cpf="",
+            enrollment_keys=frozenset(),
+            brands=frozenset(),
+            contract_ids=frozenset(),
+            self_paid_contract_ids=frozenset(),
+            lms_user_ids=frozenset(),
+            protocol_ids=frozenset(),
+        )
 
     @classmethod
     async def _session_of(

@@ -75,16 +75,38 @@ def test_single_result_omits_page_and_coverage() -> None:
     }
 
 
-def test_empty_keeps_the_caveats_and_the_coverage() -> None:
+def test_items_without_pagination_are_ok_and_keep_totals_caveats_and_coverage() -> None:
+    caveat = Caveat.from_ontology(CRITERIO_DE_APROVACAO)
     coverage = Coverage(from_date=date(2023, 2, 1), note="Sem registros antes desta data.")
+
+    result = ToolResult.items(("a", "b"), totals={"n": 2}, caveats=(caveat,), coverage=coverage)
+
+    assert result.model_dump(mode="json") == {
+        "status": "ok",
+        "data": ["a", "b"],
+        "totals": {"n": 2},
+        "caveats": [{"ontology": "criterio_de_aprovacao", "text": CRITERIO_DE_APROVACAO.caveat}],
+        "coverage": {"from": "2023-02-01", "note": "Sem registros antes desta data."},
+        "candidates": [],
+    }
+
+
+def test_items_of_an_empty_sequence_is_empty_with_a_list() -> None:
+    no_items: tuple[str, ...] = ()
     caveat = Caveat.from_ontology(CRITERIO_DE_APROVACAO)
 
-    result = ToolResult[str].empty(caveats=(caveat,), coverage=coverage)
+    result = ToolResult.items(no_items, caveats=(caveat,))
 
     assert result.status is ToolStatus.EMPTY
-    assert result.data is None
+    assert result.data == []
+    assert result.page is None
     assert result.caveats == (caveat,)
-    assert result.coverage == coverage
+
+
+def test_ok_carries_totals() -> None:
+    result = ToolResult.ok("summary", totals={"debt": Decimal("10.50")})
+
+    assert result.model_dump(mode="json")["totals"] == {"debt": "10.50"}
 
 
 def test_not_found_lists_the_student_candidates() -> None:

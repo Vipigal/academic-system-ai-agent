@@ -48,9 +48,19 @@ def test_does_not_count_as_debt(status: InvoiceStatus) -> None:
     assert not invoice_with(status).is_debt(REFERENCE)
 
 
-def test_balance_is_net_minus_paid() -> None:
-    invoice = invoice_with(InvoiceStatus.PARTIAL, paid_cents=8101)
+@pytest.mark.parametrize(
+    "status",
+    [InvoiceStatus.PAID, InvoiceStatus.OPEN, InvoiceStatus.OVERDUE, InvoiceStatus.PARTIAL],
+)
+def test_balance_is_net_minus_paid(status: InvoiceStatus) -> None:
+    invoice = invoice_with(status, paid_cents=8101)
     assert invoice.balance == Money.from_cents(85289)
+
+
+@pytest.mark.parametrize("status", [InvoiceStatus.CANCELLED, InvoiceStatus.RENEGOTIATED])
+def test_balance_is_zero_when_cancelled_or_renegotiated(status: InvoiceStatus) -> None:
+    assert invoice_with(status).balance == Money.from_cents(0)
+    assert invoice_with(status, paid_cents=8101).balance == Money.from_cents(0)
 
 
 def test_money_converts_cents_to_reais_without_float_error() -> None:

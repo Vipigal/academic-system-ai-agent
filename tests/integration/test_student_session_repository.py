@@ -1,3 +1,6 @@
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from api.domain.invoice import InvoiceStatus
 from api.persistence.database import Database
 from api.persistence.finance.dialect import FinanceDialect
@@ -78,3 +81,16 @@ async def test_every_invoice_status_in_the_database_has_translation(database: Da
     statuses = await SqlOracle(database).values("SELECT DISTINCT status FROM finance.invoice")
     translated = {FinanceDialect.invoice_status(status) for status in statuses}
     assert translated == set(InvoiceStatus)
+
+
+async def test_person_without_cpf_gets_an_empty_session(
+    database: Database, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def no_cpf(_db: AsyncSession, _person_id: str) -> str:
+        return ""
+
+    monkeypatch.setattr(StudentSessionRepository, "_cpf_of", staticmethod(no_cpf))
+    session = await StudentSessionRepository(database.db_session_factory).load("3001982")
+    assert not session.person_ids
+    assert not session.contract_ids
+    assert not session.protocol_ids

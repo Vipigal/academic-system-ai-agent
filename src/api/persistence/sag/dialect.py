@@ -1,6 +1,6 @@
 import re
 
-from sqlalchemy import ColumnElement, func
+from sqlalchemy import ColumnElement, false, func
 
 from api.domain.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
 from api.persistence.dialect_lookup import DialectLookup
@@ -32,4 +32,6 @@ class SagDialect:
 
     @staticmethod
     def person_with_cpf(cpf: str) -> ColumnElement[bool]:
+        if not cpf:
+            return false()
         return func.regexp_replace(PERSON_CPF.c.cpf, NOT_A_DIGIT, "", "g") == cpf

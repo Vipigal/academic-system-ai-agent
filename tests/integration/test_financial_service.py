@@ -173,3 +173,12 @@ async def test_debt_matches_the_receivable_snapshot_contract_by_contract(
     expected = await snapshot_by_contract(database)
     assert len(expected) == 273
     assert principal_and_count(await debt_cents_by_contract(database)) == expected
+
+
+async def test_invoices_come_in_a_total_order(database: Database) -> None:
+    session = await StudentSessionRepository(database.db_session_factory).load(
+        PERSON_WITH_OVERDUE_INVOICE
+    )
+    repository = FinanceInvoiceRepository(RepositoryAdapter(database.db_session_factory, session))
+    invoices = await repository.list_all()
+    assert invoices == sorted(invoices, key=lambda invoice: (invoice.due_date, invoice.id))

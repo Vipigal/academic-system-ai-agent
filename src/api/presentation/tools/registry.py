@@ -2,25 +2,39 @@ import inspect
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from types import FunctionType
-from typing import Self, get_args, get_type_hints
+from typing import Self, get_args, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
+from api.application.dto.tool_result import ToolResult
 from api.domain.ontology.catalog import ONTOLOGIES
 from api.domain.ontology.model import Ontology
 
 MAX_DESCRIPTION_LENGTH = 200
 DECLARED_ONTOLOGIES = "declared_ontologies"
-IDENTITY_TERMS = (
-    "cpf",
-    "customer",
-    "email",
-    "identity",
-    "person",
-    "session",
-    "student",
-    "tax",
-    "user",
+ALLOWED_PARAMETERS = frozenset(
+    {
+        "term",
+        "course",
+        "modality",
+        "unit",
+        "area",
+        "enrollment",
+        "semester",
+        "subject",
+        "pending_only",
+        "page",
+        "offset",
+        "limit",
+        "status",
+        "kind",
+        "period",
+        "year",
+        "service",
+        "number",
+        "message",
+        "query",
+    }
 )
 
 
@@ -43,6 +57,8 @@ class ToolDefinition:
         )
         definition._check_description()
         definition._check_ontologies()
+        definition._check_async(function)
+        definition._check_return(function)
         definition._check_parameters(function)
         return definition
 
@@ -63,13 +79,23 @@ class ToolDefinition:
 
     def _check_parameters(self, function: FunctionType) -> None:
         for parameter in self._parameter_names(function):
-            if any(term in parameter.lower() for term in IDENTITY_TERMS):
-                raise ToolContractError(f"{self.name} recebe identidade em {parameter}")
+            if parameter not in ALLOWED_PARAMETERS:
+                raise ToolContractError(f"{self.name} recebe {parameter}, fora dos permitidos")
+
+    def _check_async(self, function: FunctionType) -> None:
+        if not inspect.iscoroutinefunction(function):
+            raise ToolContractError(f"{self.name} precisa ser async")
+
+    def _check_return(self, function: FunctionType) -> None:
+        returned = get_type_hints(function).get("return")
+        origin = get_origin(returned) or returned
+        if not (isinstance(origin, type) and issubclass(origin, ToolResult)):
+            raise ToolContractError(f"{self.name} precisa devolver ToolResult")
 
     @staticmethod
     def _parameter_names(function: FunctionType) -> Iterator[str]:
         hints = get_type_hints(function)
-        for name in inspect.signature(function).parameters:
+        for name in list(inspect.signature(function).parameters)[1:]:
             yield name
             annotation = hints.get(name)
             for hint in (annotation, *get_args(annotation)):
@@ -105,11 +131,15 @@ class ToolRegistry:
 
     @staticmethod
     def describe(group_class: type) -> tuple[ToolDefinition, ...]:
-        return tuple(
-            ToolDefinition.from_function(function)
-            for name, function in inspect.getmembers(group_class, inspect.isfunction)
+        public = [
+            (name, inspect.getattr_static(group_class, name))
+            for name in dir(group_class)
             if not name.startswith("_")
-        )
+        ]
+        for name, member in public:
+            if not isinstance(member, FunctionType):
+                raise ToolContractError(f"{group_class.__name__}.{name} não é método de instância")
+        return tuple(ToolDefinition.from_function(member) for _, member in public)
 
     @classmethod
     def _bind(cls, group: object) -> Iterator[RegisteredTool]:

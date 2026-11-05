@@ -21,7 +21,8 @@ ESTORNO = Ontology(
     name="Estorno",
     area=Area.FINANCE,
     synonyms=("paguei e aparece vencido", "pagamento devolvido"),
-    definition="Pagamento desfeito. A fatura continua devida, e o motivo não está registrado.",
+    definition="Pagamento desfeito. Sem novo pagamento confirmado, a fatura continua devida; "
+    "o motivo não está registrado.",
     source=System.FINANCE,
     origin=Origin.CONFIRMED,
     evidence="26 faturas vencidas só têm pagamento estornado; em 89 pagas houve estorno e novo "

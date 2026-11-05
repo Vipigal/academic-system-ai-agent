@@ -15,6 +15,7 @@ class InvoiceStatus(Enum):
 
 
 DEBT_STATUSES = frozenset({InvoiceStatus.OVERDUE, InvoiceStatus.PARTIAL})
+SETTLED_STATUSES = frozenset({InvoiceStatus.CANCELLED, InvoiceStatus.RENEGOTIATED})
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,6 +28,8 @@ class Invoice:
 
     @property
     def balance(self) -> Money:
+        if self.status in SETTLED_STATUSES:
+            return Money.from_cents(0)
         return self.net - self.paid
 
     def is_debt(self, reference: date) -> bool:

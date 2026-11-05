@@ -71,7 +71,7 @@ def hidden_texts() -> Iterator[str]:
 @pytest.mark.parametrize(
     "expected",
     [
-        "Origem visível",
+        "### Origem visível (`origem`)",
         "sinônimo da origem",
         "Definição da origem.",
         "Aviso da origem.",

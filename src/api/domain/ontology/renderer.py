@@ -33,7 +33,7 @@ SYSTEM_TITLES = {
 class SkillFormat:
     @staticmethod
     def concept(ontology: Ontology) -> str:
-        lines = [f"### {ontology.name}", ontology.definition]
+        lines = [f"### {ontology.name} (`{ontology.key}`)", ontology.definition]
         if ontology.synonyms:
             synonyms = LIST_SEPARATOR.join(ontology.synonyms)
             lines.append(f"Como o aluno fala: {synonyms}.")

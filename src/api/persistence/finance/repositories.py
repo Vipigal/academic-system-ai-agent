@@ -14,7 +14,9 @@ class FinanceInvoiceRepository:
         self._adapter = adapter
 
     async def list_all(self) -> Sequence[Invoice]:
-        rows = await self._adapter.fetch(select(InvoiceRow).order_by(InvoiceRow.due_date))
+        rows = await self._adapter.fetch(
+            select(InvoiceRow).order_by(InvoiceRow.due_date, InvoiceRow.id)
+        )
         payments = await self._adapter.fetch(
             select(PaymentRow)
             .join(InvoiceRow, PaymentRow.invoice_id == InvoiceRow.id)
