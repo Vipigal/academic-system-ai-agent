@@ -1,3 +1,5 @@
+import asyncio
+
 from api.application.academic_service import AcademicService
 from api.application.dto.overview_pending_dto import PendingArea
 from api.application.financial_service import FinancialService
@@ -16,9 +18,13 @@ class StandingCollector:
         self._clock = clock
 
     async def collect(self) -> Findings:
-        enrollments = Gathered.of_result(await self._academic.list_enrollments())
-        summary = Gathered.of_result(await self._financial.get_financial_summary())
-        invoices = await Gathered.of_pages(lambda page: self._financial.list_invoices(page=page))
+        enrollment_result, summary_result, invoices = await asyncio.gather(
+            self._academic.list_enrollments(),
+            self._financial.get_financial_summary(),
+            Gathered.of_pages(lambda page: self._financial.list_invoices(page=page)),
+        )
+        enrollments = Gathered.of_result(enrollment_result)
+        summary = Gathered.of_result(summary_result)
         return Findings(
             {
                 PendingArea.ENROLLMENT: StandingRules.enrollments(enrollments.items),

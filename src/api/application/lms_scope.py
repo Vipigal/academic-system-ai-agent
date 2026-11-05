@@ -6,10 +6,12 @@ from api.application.dto.tool_result import Candidate, Caveat, Coverage, StatedV
 from api.domain.academic_calendar import AcademicCalendar
 from api.domain.academic_curriculum import EnrollmentProgress
 from api.domain.academic_record import SubjectRecord
+from api.domain.brand import Brand
 from api.domain.lms import LMS_RECORDS_START, ExamKind, OnlineExam
-from api.domain.ontology.lms import TENTATIVA
+from api.domain.lms_account import LmsAccount
+from api.domain.ontology.lms import SUSPENSAO_DO_AVA, TENTATIVA, ULTIMO_ACESSO
 
-type RecordIndex = dict[tuple[str, str], SubjectRecord]
+type RecordIndex = dict[tuple[Brand, str, str], SubjectRecord]
 COVERAGE_NOTE = "O ambiente virtual só tem registros a partir desta data."
 
 
@@ -60,13 +62,24 @@ class ExamNotes:
         return ()
 
 
+class AccountNotes:
+    @staticmethod
+    def caveats(accounts: Sequence[LmsAccount]) -> tuple[Caveat, ...]:
+        notes: list[Caveat] = []
+        if any(account.never_accessed for account in accounts):
+            notes.append(Caveat.from_ontology(ULTIMO_ACESSO))
+        if any(account.suspended for account in accounts):
+            notes.append(Caveat.from_ontology(SUSPENSAO_DO_AVA))
+        return tuple(notes)
+
+
 class OfficialGrades:
     @staticmethod
     def records_by_class(
         progress: Iterable[EnrollmentProgress],
     ) -> RecordIndex:
         return {
-            (record.subject_code, record.term.code): record
+            (item.enrollment.brand, record.subject_code, record.term.code): record
             for item in progress
             for record in item.records
         }
@@ -75,7 +88,7 @@ class OfficialGrades:
     def of(
         cls, exam: OnlineExam, records: RecordIndex, reference: date
     ) -> StatedValue[Decimal] | None:
-        record = records.get((exam.subject_code, exam.term))
+        record = records.get((exam.brand, exam.subject_code, exam.term))
         if record is None or exam.kind is ExamKind.PRACTICE_TEST:
             return None
         grade, expected = cls._grade_and_date(record, exam.kind)

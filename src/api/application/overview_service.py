@@ -11,10 +11,9 @@ from api.application.dto.overview_pending_dto import (
 from api.application.dto.tool_result import ToolResult
 from api.application.financial_service import FinancialService
 from api.application.lms_service import LmsService
-from api.application.overview_activity_collector import ActivityCollector
 from api.application.overview_caveats import OverviewCaveats
+from api.application.overview_collector import PendingCollector
 from api.application.overview_findings import Found
-from api.application.overview_standing_collector import StandingCollector
 from api.application.protocol_service import ProtocolService
 from api.domain.ports.clock import Clock
 
@@ -28,18 +27,16 @@ class OverviewService:
         lms: LmsService,
         clock: Clock,
     ) -> None:
-        self._standing = StandingCollector(academic, financial, clock)
-        self._activity = ActivityCollector(academic, protocols, lms)
+        self._collector = PendingCollector(academic, financial, protocols, lms, clock)
         self._clock = clock
 
     async def get_pending_items(self) -> ToolResult[PendingItemsDto]:
-        standing = await self._standing.collect()
-        activity = await self._activity.collect()
-        found: Found = {**standing.found, **activity.found}
+        findings = await self._collector.collect()
+        found = findings.found
         return ToolResult.ok(
             self._dto(found),
             totals=self._totals(found),
-            caveats=OverviewCaveats.declared(standing.caveats + activity.caveats),
+            caveats=OverviewCaveats.declared(findings.caveats),
         )
 
     def _dto(self, found: Found) -> PendingItemsDto:

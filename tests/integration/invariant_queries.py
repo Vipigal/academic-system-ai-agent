@@ -144,3 +144,28 @@ FORBIDDEN_VALUES = """
 INTERNAL_NOTES = (
     "SELECT DISTINCT message FROM secretary.protocol_interaction WHERE is_internal_note = 'True'"
 )
+OWN_ATTEMPT_COUNT = (
+    "SELECT count(*) FROM lms.mdl_quiz_attempts WHERE userid = ANY(string_to_array(:accounts, ','))"
+)
+OWN_VIEWS_BY_SUBJECT = """
+    SELECT subject || ':' || count(*) FROM (
+        SELECT substring(mdl_course.shortname FROM '^[A-Z]+[0-9]+') AS subject
+        FROM lms.mdl_logstore_standard_log AS log
+        JOIN lms.mdl_course_modules ON mdl_course_modules.id = log.contextinstanceid
+        JOIN lms.mdl_course ON mdl_course.id = mdl_course_modules.course
+        WHERE log.userid = ANY(string_to_array(:accounts, ','))
+          AND log.eventname = ANY(string_to_array(:events, ','))
+          AND mdl_course_modules.modname = ANY(string_to_array(:kinds, ','))
+    ) AS views
+    WHERE subject IS NOT NULL GROUP BY subject
+"""
+PUBLIC_MESSAGES_BY_PROTOCOL = """
+    SELECT protocol || ':' || count(*) FROM secretary.protocol_interaction
+    WHERE is_internal_note = 'False' AND protocol = ANY(string_to_array(:protocols, ','))
+    GROUP BY protocol
+"""
+HISTORY_BY_PROTOCOL = """
+    SELECT protocol || ':' || count(*) FROM secretary.protocol_status_history
+    WHERE protocol = ANY(string_to_array(:protocols, ','))
+    GROUP BY protocol
+"""

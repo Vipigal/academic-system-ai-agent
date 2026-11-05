@@ -4,6 +4,7 @@ from decimal import Decimal
 from enum import Enum
 
 from api.domain.academic_record import Delivery
+from api.domain.brand import Brand
 
 LMS_RECORDS_START = date(2023, 2, 1)
 
@@ -37,6 +38,7 @@ class ExamAttempt:
 @dataclass(frozen=True, slots=True)
 class OnlineExam:
     quiz_id: str
+    brand: Brand
     subject_code: str
     subject_name: str
     term: str

@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from decimal import Decimal
 from operator import attrgetter
 
+from api.domain.brand import Brand
 from api.domain.lms import ExamAttempt, OnlineExam
+from api.persistence.lms.dialect import LmsDialect
 from api.persistence.lms.models import LmsCourseRow, LmsQuizAttemptRow, LmsQuizRow
 from api.persistence.lms.vocabulary import CourseLabel, LmsVocabulary
 from api.persistence.sag.catalog_models import SubjectRow
@@ -21,6 +23,7 @@ class ExamSources:
 @dataclass(frozen=True, slots=True)
 class ExamIndex:
     labels: dict[str, CourseLabel]
+    brands: dict[str, Brand]
     names: dict[str, str]
     attempts: defaultdict[str, list[ExamAttempt]]
 
@@ -44,6 +47,7 @@ class ExamMapper:
         labeled = {row.id: CourseLabel.of(row.shortname) for row in sources.courses}
         return ExamIndex(
             labels={key: label for key, label in labeled.items() if label is not None},
+            brands={row.id: LmsDialect.brand_of(row.tenant_id) for row in sources.courses},
             names={subject.code: subject.name for subject in sources.subjects},
             attempts=cls._attempts_by_quiz(sources.attempts),
         )
@@ -53,6 +57,7 @@ class ExamMapper:
         label = index.labels[quiz.course_id]
         return OnlineExam(
             quiz_id=quiz.id,
+            brand=index.brands[quiz.course_id],
             subject_code=label.subject_code,
             subject_name=index.names[label.subject_code],
             term=label.term,

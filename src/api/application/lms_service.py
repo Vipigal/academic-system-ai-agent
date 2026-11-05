@@ -1,12 +1,19 @@
+import asyncio
+
 from api.application.dto.lms_account_dto import LmsAccountDto
 from api.application.dto.lms_exam_dto import OnlineExamDto
 from api.application.dto.lms_material_dto import MaterialViewDto
-from api.application.dto.tool_result import Candidate, Caveat, ToolResult
-from api.application.lms_scope import ExamNotes, LmsCandidates, LmsCoverage, OfficialGrades
+from api.application.dto.tool_result import Candidate, ToolResult
+from api.application.lms_scope import (
+    AccountNotes,
+    ExamNotes,
+    LmsCandidates,
+    LmsCoverage,
+    OfficialGrades,
+)
 from api.application.name_search import NameSearch
 from api.application.page import Page, PageRequest
 from api.domain.lms import OnlineExam
-from api.domain.ontology.lms import SUSPENSAO_DO_AVA, ULTIMO_ACESSO
 from api.domain.ports.academic import AcademicCatalogRepository, StudentAcademicRepository
 from api.domain.ports.clock import Clock
 from api.domain.ports.lms import LmsRepository
@@ -38,14 +45,9 @@ class LmsService:
 
     async def get_lms_account(self) -> ToolResult[list[LmsAccountDto]]:
         accounts = await self._lms.list_accounts()
-        caveats: list[Caveat] = []
-        if any(account.never_accessed for account in accounts):
-            caveats.append(Caveat.from_ontology(ULTIMO_ACESSO))
-        if any(account.suspended for account in accounts):
-            caveats.append(Caveat.from_ontology(SUSPENSAO_DO_AVA))
         return ToolResult.items(
             [LmsAccountDto.from_entity(account) for account in accounts],
-            caveats=tuple(caveats),
+            caveats=AccountNotes.caveats(accounts),
         )
 
     async def list_material_views(
@@ -73,11 +75,12 @@ class LmsService:
         self, matched: list[OnlineExam], term: str | None, page: PageRequest
     ) -> ToolResult[list[OnlineExamDto]]:
         paged = page.paginate(matched)
-        coverage = LmsCoverage.for_term(
-            term, await self._catalog.get_calendar(), found=bool(matched)
+        calendar, dtos = await asyncio.gather(
+            self._catalog.get_calendar(), self._dtos_of(paged.items)
         )
+        coverage = LmsCoverage.for_term(term, calendar, found=bool(matched))
         return ToolResult.listing(
-            Page(tuple(await self._dtos_of(paged.items)), paged.info),
+            Page(tuple(dtos), paged.info),
             caveats=ExamNotes.caveats(matched),
             coverage=coverage,
         )
