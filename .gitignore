@@ -10,3 +10,5 @@ build/
 .import_linter_cache/
 .claude/settings.local.json
 .claude/skills
+node_modules/
+dist/

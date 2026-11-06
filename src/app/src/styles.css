@@ -1,0 +1,21 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: #f5f6f8; color: #1b1f24; }
+.page { max-width: 720px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chat { height: 100vh; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row.between { justify-content: space-between; flex-wrap: wrap; }
+.row input { flex: 1; min-width: 0; }
+input { padding: 10px; border: 1px solid #c4c9d0; border-radius: 6px; font: inherit; }
+button { padding: 10px 14px; border: 0; border-radius: 6px; background: #1d4ed8; color: #fff; font: inherit; cursor: pointer; }
+button.secondary { background: #e3e6ea; color: #1b1f24; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.shortcuts { display: flex; flex-wrap: wrap; gap: 8px; }
+.messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.bubble { max-width: 90%; padding: 8px 12px; border-radius: 10px; overflow-wrap: anywhere; }
+.bubble.user { align-self: flex-end; background: #dbe6ff; }
+.bubble.assistant { align-self: flex-start; background: #fff; }
+.text { margin: 4px 0; white-space: pre-wrap; }
+.tool, .muted { color: #6b7280; font-size: 0.85rem; margin: 4px 0; }
+.card { border: 1px solid #c4c9d0; border-radius: 8px; padding: 12px; margin: 6px 0; background: #fafbfc; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.error { color: #b42318; }
+.success { color: #067647; font-weight: 600; }
