@@ -51,3 +51,42 @@ Nesta ordem, porque cada uma depende da anterior:
 - [x] `03_indexes.sql`: índices derivados das consultas reais.
 - [x] `04_agent_schema.sql`: conversas, mensagens, chamadas de tool e sequências.
 - [x] `05_roles.sh`: role restrita da API.
+
+## Reta final
+
+Nesta ordem. O bug e as decisões estão em [T14 · Protocolo robusto](/docs/plans/agente/t14-protocolo-robusto.md), e o caso do eval em
+[T10 · Runner de eval](/docs/plans/agente/t10-runner-eval.md).
+
+**Eval e baseline:**
+
+- [ ] Limpar o banco com `docker compose down -v`, para remover o protocolo `20260025164` do teste no front.
+- [ ] Terminar o runner: revisar o que foi escrito, runner, CLI, juiz, relatório e testes dos graders.
+- [ ] Acrescentar os itens `TR`, `SV` e `ES`, o `ProposalGrader` e a regra de itens críticos.
+- [ ] Rodar e salvar o baseline com o bug aparecendo, antes de qualquer correção.
+
+**Correção do protocolo:**
+
+- [ ] Catálogo de ações no domínio, com efeito e limite de cada serviço, e falha fechada.
+- [ ] `propose_protocol(action, enrollment, subject)`, sem `message`, com as recusas de disciplina e de situação da matrícula.
+- [ ] Nome em português e efeito nos DTOs de serviço; nome em português dos 8 cursos.
+- [ ] Skill e ontologias explicando que trancamento é do curso inteiro e a confusão com "matrícula em disciplina", sem oferecê-la como opção.
+- [ ] Prompt `v2`, com a regra de escopo: receita de bolo e código Python são recusados.
+- [ ] Confirmação com a mensagem escrita pelo aluno e a palavra digitada, exigidas pelo servidor.
+- [ ] Evento de confirmação no histórico, com o papel novo `system_event`.
+- [ ] Card novo no front, e tirar `181722` dos atalhos de login.
+- [ ] Verificar o card no navegador, com o Chromium do WSL.
+
+**Relógio:**
+
+- [ ] Produção com a data de hoje, sem variável no `.env`; testes e eval injetam 31/10/2026.
+- [ ] Corrigir A16 em `docs/architecture.md` e declarar nas evidências o efeito da foto dos dados com a data real.
+
+**Fechamento:**
+
+- [ ] Rodada final em banco limpo e comparação com o baseline.
+- [ ] Evidências e `README` (T13), com o case do protocolo.
+
+**Em sessão separada ou como atenção:**
+
+- [ ] Bugs visuais do front e verificação em 390 px. O dono passa a lista.
+- [ ] Ponto de atenção: muitos testes "unitários" sobem banco e varrem os dados, o que os deixa lentos e não escalaria num projeto real. Não reescrever agora; declarar nas evidências, e teste novo usa fake para regra.

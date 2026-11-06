@@ -28,6 +28,10 @@ qualidade.
 5. **Conversas:** pelo menos 5 exemplos reais, incluindo cruzamento de sistemas, recusa e abertura de protocolo.
 6. **Documento:** `docs/evidencias.md` (documento novo; propor tipo, título e caminho ao dono antes, pelo guia de autoria) e
    a seção de como rodar no `README.md`.
+7. **Case do protocolo:** a história do trancamento de disciplina, com a falha encontrada no uso real, os itens que entraram no
+   eval, o baseline reprovado, a correção da [T14](/docs/plans/agente/t14-protocolo-robusto.md) e a rodada final. Usar a redação da
+   garantia da T14, §6.8, sem prometer mais do que ela. Declarar também que os dados são uma foto de 31/10/2026, e o efeito disso
+   com a data real, e o limite D31.
 
 ## Pronto quando
 

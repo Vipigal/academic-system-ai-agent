@@ -23,14 +23,16 @@ Uma conversa por HTTP, com resposta em stream, histórico gravado e identidade d
    a troca ao final, com modelo, tokens e latência. Usa só a última mensagem do aluno (D14). É um span do Langfuse.
 3. `presentation/http/ui_stream.py`: converte os eventos da application para o protocolo do AI SDK, com os headers e o
    `[DONE]` final. Erro vira o evento `error` com texto genérico.
-4. `presentation/http/chat.py`: `ChatRouter.build(...)` com `POST /chat`, recebendo o provider do `ChatService`.
+4. `presentation/http/chat.py`: `ChatRouter.build(...)` com `POST /conversations` (D25) e `POST /chat`, recebendo o provider do
+   `ChatService`. O `tool-output-available` leva o resultado completo, com `client_only`; o histórico grava o que o modelo viu.
 5. `bootstrap/chat_providers.py`: monta o `ChatService` por request a partir das tarefas de T4, T5, T6 e T7.
 
 ## Testes
 
 Integração HTTP com app de teste e modelo fake: a ordem dos eventos para uma resposta com tool; a troca gravada no
 histórico; a segunda mensagem da conversa vê a primeira; mensagens de assistente enviadas pelo cliente são ignoradas;
-conversa de outro aluno devolve `404`; sem token, `401`.
+conversa de outro aluno e conversa inexistente devolvem o mesmo `404`; `POST /conversations` cria com o dono do token; sem token,
+`401`; `client_only` sai no stream e não fica em `agent.tool_call.result`.
 
 ## Pronto quando
 

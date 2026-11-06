@@ -410,9 +410,10 @@ Três filtros em sequência, cada um mais restrito:
 | Entidade de domínio | Só o que a regra de negócio usa, com métodos | `Invoice.is_debt()` |
 | DTO de saída | Allowlist do que o agente vê | Status em linguagem canônica, valor em reais |
 
-O CPF, os dados do requerente e o vínculo entre contrato e pagador só aparecem em tabelas Core locais, fora de
+Para leitura, o CPF, os dados do requerente e o vínculo entre contrato e pagador só aparecem em tabelas Core locais, fora de
 `Base.metadata`, usadas na carga da sessão. O tipo de pagador é calculado ali. A sessão guarda o CPF com `repr=False`,
-para não aparecer em log.
+para não aparecer em log. A exceção é a escrita do protocolo: `requester_cpf` e `requester_name` estão em `ProtocolRow` como
+`deferred` com `raiseload`, então não carregam numa consulta, e tocar neles levanta erro.
 
 ### 5.5 Composição entre sistemas
 
@@ -438,13 +439,12 @@ Trecho ilustrativo; ainda não foi testado.
 # domain/protocol.py: regras e efeitos em memória
 class StudentProtocol:
     @classmethod
-    def open(cls, *, session, enrollment, demand, message, number, now) -> "StudentProtocol":
+    def open(cls, *, session, enrollment, demand, message, now) -> "StudentProtocol":
         if not session.owns(enrollment):
             raise EnrollmentNotOwned()
         if not demand.active or demand.has_fee:
             raise DemandUnavailable(demand.code)
         return cls(
-            number=number,
             enrollment=enrollment,
             demand=demand,
             status=ProtocolStatus.OPEN,
@@ -455,22 +455,25 @@ class StudentProtocol:
         )
 
 
-# persistence/secretary/repositories.py: traduz e grava em uma transação
+# persistence/secretary/protocol_writer.py: traduz e grava em uma transação
 class ProtocolWriter:
-    async def save(self, protocol: StudentProtocol) -> None:
-        async with self._db_session_factory() as db, db.begin():
-            db.add(ProtocolMapper.to_row(protocol))
-            await db.flush()  # sem relationship(), a ordem precisa ser explícita
-            db.add_all(ProtocolMapper.history_rows(protocol))
-            db.add_all(ProtocolMapper.interaction_rows(protocol))
+    async def save(self, protocol: StudentProtocol) -> str:
+        row = ProtocolMapper.to_row(protocol)  # número por nextval no INSERT
+        await self._adapter.write(
+            [row],
+            ProtocolMapper.history_rows(protocol),
+            ProtocolMapper.interaction_rows(protocol),
+        )
+        return row.protocol
 ```
 
-O `flush` é obrigatório: sem ele, o ORM gravou as linhas filhas antes do protocolo no teste, o que violaria as FKs
-criadas em `02_constraints.sql`. A ordem com `flush` foi confirmada em transação desfeita.
+O `write` faz `flush` entre os lotes: sem ele, o ORM gravou as linhas filhas antes do protocolo no teste, o que violaria as
+FKs criadas em `02_constraints.sql`. A ordem com `flush` foi confirmada em transação desfeita.
 
 A unidade e o nome do curso vêm da matrícula e são traduzidos pelo dialeto da secretaria; unidades de SAG e secretaria
 casam em 27/27 por marca, modalidade, cidade e UF.[^atlas] Números de protocolo e de mensagem vêm de sequências no
-schema `agent`, sem alterar as tabelas recebidas.
+schema `agent`, sem alterar as tabelas recebidas, e saem de `nextval` e `currval` no próprio INSERT. Duas confirmações no mesmo
+instante podem abrir dois protocolos: o `409` de duplicado é checado na aplicação, e o front desabilita o botão.
 
 ### 5.7 Banco
 

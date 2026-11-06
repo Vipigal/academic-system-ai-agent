@@ -86,13 +86,36 @@ latência e como a qualidade foi avaliada. Nenhum existe ainda.
 | D22 | **Erro ensino:** erro de tool nunca derruba o turno do modelo. Parâmetro inválido esperado volta como resultado da tool, com status `invalid` e um parágrafo que diz qual parâmetro, o que veio, o que é aceito e um exemplo válido. Falha inesperada volta como status `error`, com texto genérico e registro no log | Decisão do dono: o modelo corrige a própria chamada em vez de abandonar a resposta; detalhe interno nunca chega ao modelo |
 | D23 | Tool a mais na trajetória não reprova; o grader exige as tools necessárias e a resposta correta, e reprova só tool proibida | Decisão do dono: importa resolver o problema |
 | D24 | Janela de histórico de 20 mensagens, sem resumo | Decisão do dono; resumo entra se o eval mostrar perda |
+| D25 | A conversa nasce em `POST /conversations`, com id gerado pelo servidor; `/chat` responde `404` igual para id inexistente e id alheio | Decisão do dono: mantém o invariante 6 ao pé da letra e o cliente não escolhe id |
+| D26 | O token da proposta vive em `ToolResult.client_only`, que nunca vai ao modelo nem ao histórico e só sai no `tool-output-available` | Decisão do dono: a garantia é por construção, não por prompt, e o histórico não guarda credencial |
+| D27 | Log estruturado com `logging` da biblioteca padrão e formatador JSON | Recomendação aceita pelo dono: uma dependência a menos |
+| D28 | Escrita por `RepositoryAdapter.write(*steps)`: cada passo é um lote de linhas (`add_all` e `flush`) ou um `Update` com o AND do dono, tudo numa transação. Tabela fora do registro não grava. O repositório confere o dono do pai por `fetch` antes de gravar | Decisão do dono: a sessão não sai do adapter e o `quality.toml` continua valendo |
+| D29 | `requester_cpf` e `requester_name` entram em `ProtocolRow` como `deferred` com `raiseload`, só para a escrita; as leituras do dialeto seguem pela tabela privada. O número do protocolo e o da mensagem saem de `nextval` e `currval` no próprio INSERT | Decisão do dono, entre linha só de escrita, passo novo no core e esta. É o menor diff e dispensa conceito novo |
+| D30 | O protocolo novo preenche `requester_name` e `author` com `sag.person.full_name`, lido por consulta privada só na confirmação | Decisão do dono: as duas colunas estão sempre preenchidas na origem, e a secretaria precisa saber quem pediu |
+| D31 | A corrida de duas confirmações simultâneas é aceita e declarada nas evidências; o front desabilita o botão | Decisão do dono: o pior caso é um protocolo duplicado, em janela de milissegundos |
+| D32 | Trancamento é do curso inteiro. Não existe serviço de trancamento de disciplina e nenhum será criado; o agente explica a diferença, inclusive quando o aluno diz "matrícula" para disciplina | Bug real de 06/11 (T14, §1); os dados só têm trancamento de vínculo |
+| D33 | Uma fonte única de ações no domínio, por código de serviço: título, efeito, limite, situações aceitas, disciplina, pergunta e palavra. Código sem entrada falha fechado | Skill, DTO, card e rota não podem divergir; efeitos medidos no banco |
+| D34 | `propose_protocol(action, enrollment, subject)`: `action` é enum com o efeito no nome, `enrollment` é obrigatório, `subject` é a disciplina citada, e `message` deixa de existir. Revoga, só para esta tool, a regra da §7 de não mudar o schema | Decisão do dono: o contrato tem de dizer o que está sendo feito |
+| D35 | A mensagem do protocolo é sempre escrita pelo aluno, num campo vazio do card, em todos os serviços, e sai do token | Decisão do dono: o texto gravado em nome do aluno não pode vir do modelo |
+| D36 | Palavra de confirmação digitada e exigida pelo servidor em ACA-010, ACA-012, ACA-013, ACA-014 e FIN-031 | Decisão do dono: mudam vínculo, matriz ou dívida, e todo pedido resolvido desses serviços foi atendido |
+| D37 | A confirmação grava um evento em `agent.message`, com o papel novo `system_event`, montado pelo servidor, sem o texto do aluno. `down -v` liberado: os dados vêm dos CSVs e são transientes | Decisão do dono, no lugar da chamada de tool sintética que era a recomendação |
+| D38 | Pedido de disciplina: o agente diz que não existe, orienta a procurar a secretaria e oferece `GEN-090`, sem prometer solução | Caminho real e não destrutivo; a ontologia `servico` já proíbe a promessa |
+| D39 | Produção usa a data de hoje, sem variável de ambiente; testes e eval injetam 31/10/2026, a data da foto dos dados. Protocolo novo usa o instante real | Decisão do dono; revoga a data fixa de A16 em produção. O gabarito continua estável |
+| D40 | Regra de escopo no prompt `v2`: fora de assuntos acadêmicos, financeiros, de secretaria e do AVA do aluno, recusa | O agente deu receita de bolo e código Python no uso real |
+| D41 | Itens `critical` no eval: falha de proposta ou trajetória em qualquer repetição reprova a rodada. Baseline antes da T14, com o bug registrado, e a mesma rodada depois | Decisão do dono: é o case da entrega |
+| D42 | Nome em português e efeito nos DTOs de serviço, e nome em português dos 8 cursos. Disciplinas continuam com o modelo | O join de código e nome já existe (`ServiceDto`), mas em inglês e sem o efeito; 260 disciplinas não cabem num mapa fixo |
+| D43 | O baseline e a rodada final da T14 usam a composição enxuta: itens críticos com 5 repetições e o resto com 1, em 146 execuções. A estabilidade fora dos críticos fica para a matriz de modelos | Decisão do dono: as 346 execuções da composição anterior gastavam plano no juiz sem ajudar a provar o bug |
+| D44 | O código mede o efeito verificável (proposta), as tools sem as quais não há resposta, a recusa e o que não pode aparecer na resposta. Se a resposta está correta e satisfatória é com o juiz. O grader de fatos sai. Os 185 fatos ficam no golden, para provar pelo banco que a referência, o gabarito do juiz, está certa | Decisão do dono: avaliamos o que o modelo diz a pessoas, e checar citação mede completude e reprova resposta válida. A Anthropic recomenda rubrica para agentes conversacionais, porque responder pode ter várias formas corretas[^evals] |
+| D45 | O juiz é calibrado em duas etapas: 40 respostas de rótulo conhecido antes do baseline (20 referências corretas e 20 adulteradas), com TPR e TNR e meta de 18 em 20 em cada classe; e a conferência do dono em cerca de 20 vereditos reais, depois do baseline | Decisão do dono: a calibração humana é dele, como especialista do domínio. 40 fica abaixo dos 60 que Hamel Husain indica para um intervalo útil[^evals], limite declarado nas evidências |
+| D46 | Os resultados aparecem numa página HTML única, gerada da rodada e commitada com ela, com a abertura pela regra crítica, `pass^5`, itens, resposta, juiz e a conferência do dono. Notas não são publicadas no Langfuse; o trace entra só como link opcional | Decisão do dono: o examinador pode não ter tempo nem acesso ao Langfuse, que serve de inspiração para a página |
+| D47 | PR-08 exige só `list_enrollments`. TR-09 aceita perguntar qual matrícula ou propor `ACA-010` na ativa | Decisão do dono: a base não tem aluno com duas matrículas ativas, e a matrícula formada não pode ser trancada. O backend passa a garantir isso na correção do protocolo |
 
 ### 3.2 Pendentes (confirmar na revisão)
 
 | # | Proposta | Alternativa | Recomendação |
 |---|---|---|---|
 | P6 | Teste de carga com Locust e modelo fake (`APP_AGENT_MODEL=fake`) | k6 | A proposta: mesma linguagem do projeto; mede a API sem custo de LLM |
-| P7 | Log estruturado com `logging` da biblioteca padrão e formatador JSON | `structlog` | A proposta: uma dependência a menos |
+| P8 | Ponto de atenção do dono, sem tarefa nesta fase: boa parte dos "unitários" sobe banco e varre os dados, o que deixa a suíte lenta e só funciona porque os dados são fixos. Código novo testa regra com fake, e banco só na fronteira real | Reescrever a suíte agora | Não reescrever antes da entrega: as varreduras sustentam as provas de segurança. Declarar a limitação nas evidências |
 
 ## 4. Escopo
 
@@ -184,6 +207,9 @@ O invariante 11 da arquitetura vira teste em T4.
 
 ### 6.3 Contrato do chat (T9, consumido por T12)
 
+Criação (D25): `POST /conversations` com `Authorization: Bearer <jwt>`, sem corpo, devolve `201 {"id": "<uuid>"}`. O id é
+gerado pelo servidor e o dono é a pessoa do token. O front passa esse id ao `useChat`.
+
 Pedido: `POST /chat` com `Authorization: Bearer <jwt>` e corpo no formato do AI SDK 7, `{id, messages: [...]}`. O servidor
 usa o `id` como id da conversa e só a última mensagem de papel `user`; o resto do corpo é ignorado (D14).
 
@@ -195,18 +221,22 @@ Resposta: `200 text/event-stream` com o header `x-vercel-ai-ui-message-stream: v
 | `start` | Abertura, com `messageId` |
 | `text-start`, `text-delta`, `text-end` | Texto do modelo |
 | `tool-input-available` | O modelo pediu uma tool: `toolCallId`, `toolName`, `input` |
-| `tool-output-available` | Resultado da tool: `toolCallId`, `output` (o `ToolResult` serializado) |
+| `tool-output-available` | Resultado da tool: `toolCallId`, `output` (o `ToolResult` serializado, com `client_only`) |
 | `error` | Falha, com `errorText` genérico, sem detalhe interno |
 | `finish` | Fim; seguido de `data: [DONE]` |
 
 Os nomes exatos dos eventos são conferidos contra a documentação do AI SDK 7 no início de T9; divergência vira "Mudança no
-spec". Conversa de outro aluno ou inexistente: mesma resposta, `404`.
+spec". Conversa de outro aluno ou inexistente: mesma resposta, `404`, com a rota de criação acima como único jeito de nascer
+uma conversa (D25).
 
 ### 6.4 Proposta e confirmação de protocolo (T8)
 
+Estado atual. A [T14](/docs/plans/agente/t14-protocolo-robusto.md), §6, substitui este contrato: tira a mensagem do token, e o corpo
+passa a ter `conversation_id`, `message` e `confirmation_word` (D34 a D37).
+
 - `propose_protocol` passa a devolver, além da proposta, um `token`: HMAC-SHA256 com segredo de settings sobre `person_id`,
-  matrícula, serviço, mensagem e validade de 15 minutos. O token não aparece no texto do modelo; o front o lê do
-  `tool-output-available`.
+  matrícula, serviço, mensagem e validade de 15 minutos. O token fica em `ToolResult.client_only` (D26): o conversor o retira
+  do JSON que vai ao modelo, o histórico não o grava e o front o lê do `tool-output-available`.
 - `POST /protocols/proposals/confirm` com Bearer e `{token}`. Confere assinatura, validade e que o `person_id` do token é o da
   sessão; reaplica as regras da proposta (taxa, serviço ativo, duplicado); abre o protocolo no domínio e grava 3 linhas numa
   transação (arquitetura, 5.6).
@@ -222,6 +252,7 @@ spec". Conversa de outro aluno ou inexistente: mesma resposta, `404`.
 | `agent.tool_call` | PK (`message_id`, `id`), em que `id` é o do modelo; `position`, `name`, `arguments jsonb`, `result jsonb`, `status`, `duration_ms`, `created_at` | `Via` message |
 
 Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage` com `tool_calls` dos seus `ToolMessage`.
+`tool_call.result` guarda o que o modelo viu, sem `client_only` (D26).
 
 ### 6.6 Eval (T3 e T10)
 
@@ -231,18 +262,18 @@ Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage`
   SQL, parâmetros e formato: `brl`, `date`, `int`, `percent`, `text`), `forbidden_text`, `rubric` e `reference` (a resposta
   ideal do catálogo).
 - **Consultas nomeadas:** `src/evals/oracle_queries.py`, `nome → SQL`, independentes das tools e dos services.
-- **Graders:** trajetória (D23); fatos com números normalizados em pt-BR e comparação exata em centavos; recusa
-  determinística (nenhuma tool de dado, nenhum texto proibido); vazamento (nenhum identificador de outra pessoa,
-  reaproveitando a ideia do invariante do agente comprometido); juiz que aprova ou reprova cada item da rubrica,
-  raciocinando antes do veredito.
+- **Graders (D44):** trajetória (D23), com só as tools necessárias; proposta; recusa determinística (nenhuma tool de dado,
+  nenhum texto proibido); vazamento (nenhum identificador de outra pessoa, reaproveitando a ideia do invariante do agente
+  comprometido); juiz que aprova, reprova ou diz `unknown` em cada item da rubrica, raciocinando antes do veredito.
 - **Juiz (D19):** o runner grava os pedidos de julgamento em JSONL, sem o nome do modelo avaliado, e um segundo passo os
   entrega ao Claude Code em modo headless (`claude -p`) com um agente dedicado em `.claude/agents/`, sem ferramentas e com
   saída em JSON validado. Lotes de itens por chamada, para reduzir overhead. Com a opção de reserva, o mesmo pedido vai a
   `gpt-6.1-terra` pela API. O juiz é um port em `src/evals/judge/`, com as duas implementações.
 - **Execução:** `python -m evals.run --model gpt-6-luna --split dev --repeat 3`. Chama o agente direto, sem HTTP, com a
   sessão de cada aluno. Registra modelo, effort, versão do prompt, hash das skills e das descrições das tools.
-- **Saída:** JSONL por execução e um relatório Markdown com acerto por grader e por área, pass@1 médio, estabilidade entre
-  repetições, latência p50 e p95, tokens e custo. Traces no Langfuse com tags `eval`, modelo e versões.
+- **Saída (D46):** JSONL por execução, com o `trace_id`; relatório Markdown e página HTML com acerto por grader e por área,
+  pass@1 médio, `pass^5` nos itens críticos, estabilidade entre repetições, latência p50 e p95, tokens e custo. Traces no
+  Langfuse com tags `eval`, modelo e versões.
 - **Custo estimado da matriz:** 60 perguntas × 3 repetições × 6 configurações ≈ 1.080 execuções; os candidatos custam
   centavos a poucos dólares por rodada, e o juiz sai do plano do Claude Code (D19). Medir o custo real do primeiro ciclo
   antes da matriz.
@@ -277,8 +308,8 @@ Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage`
   - Juiz enviesado. Mitigação: conferir à mão os primeiros 15 vereditos e registrar a concordância.
   - Escrita de protocolo alterando os dados do eval (R4 da arquitetura). Mitigação: testes de escrita desfazem a transação ou
     usam aluno dedicado; o eval nunca confirma protocolo.
-- **Não pode mudar:** os invariantes 1 a 11 da arquitetura; as 19 tools e seus schemas visíveis ao modelo, salvo o `token` em
-  `propose_protocol`; os 609 testes atuais, que só mudam de import em T1.
+- **Não pode mudar:** os invariantes 1 a 11 da arquitetura; as 19 tools e seus schemas visíveis ao modelo, exceto
+  `propose_protocol` (D34), porque o `token` não chega ao modelo (D26); os 609 testes atuais, que só mudam de import em T1.
 
 ## 8. Plano de implementação
 
@@ -297,7 +328,8 @@ Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage`
 | T10 | Runner de eval | T3, T4, T7 | `src/evals/` (exceto `golden/`) | Unitário; uma rodada `live` | [t10](/docs/plans/agente/t10-runner-eval.md) |
 | T11 | Montagem e ponta a ponta | T8, T9 | `bootstrap/app.py`, `compose.yaml`, `.env.example`, `tests/e2e/` | E2E | [t11](/docs/plans/agente/t11-ponta-a-ponta.md) |
 | T12 | Front de chat | T11 | `src/app/` | Navegador | [t12](/docs/plans/agente/t12-front.md) |
-| T13 | Evidências e README | T10, T11 | `docs/evidencias.md`, `README.md`, `loadtest/`, resultados do eval | Execuções reais | [t13](/docs/plans/agente/t13-evidencias.md) |
+| T14 | Protocolo robusto | Baseline de T10 | `domain/protocol/`, `application/protocol/`, `tools/protocol.py`, ontologias, skills, prompt `v2`, `04_agent_schema.sql`, relógio, `src/app/` | Unitário, integração na fronteira, navegador | [t14](/docs/plans/agente/t14-protocolo-robusto.md) |
+| T13 | Evidências e README | T10, T11, T14 | `docs/evidencias.md`, `README.md`, `loadtest/`, resultados do eval | Execuções reais | [t13](/docs/plans/agente/t13-evidencias.md) |
 
 ### Ondas e paralelismo
 
@@ -309,6 +341,8 @@ Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage`
 - **Onda 3:** T11, que liga as rotas, sobe o Compose e roda o fluxo inteiro.
 - **Onda 4:** T12 e T13.
 - **Caminho crítico:** T1 → T1b → T2 → T4 → T9 → T11 → T12.
+- **Reta final, a partir de 2026-11-06, em sequência:** T10 com o baseline do bug, T14 (que também fecha o que faltou de T12), rodada
+  final, T13. Bugs visuais do front ficam numa sessão própria.
 
 ## 9. Para o agente executor
 
@@ -335,8 +369,325 @@ Na leitura, a janela das últimas 20 mensagens (D24) nunca separa um `AIMessage`
 [^openai]: Páginas de modelos e preços da OpenAI, lidas em 2026-11-05: `gpt-6-luna` a US$ 0,10 e 0,50 por milhão de tokens
     de entrada e saída; tool calling no Chat Completions só com effort `none`.
 [^langfuse]: SDK `langfuse` 5.2.0, com suporte a Python 3.14; plano Hobby do Langfuse Cloud com 50 mil unidades por mês.
+[^evals]: Pesquisa de 2026-11-06. Anthropic, *Demystifying evals for AI agents*, 09/01/2026,
+    anthropic.com/engineering/demystifying-evals-for-ai-agents; Hamel Husain, *Using LLM-as-a-Judge*, revisado em set/2026,
+    hamel.dev/blog/posts/llm-judge; *Catching One in Five*, arXiv 2606.10315, jun/2026; *τ-bench*, arXiv 2406.12045.
+
+## Execução
+
+### Execução de 2026-11-05
+
+#### Registro de decisões
+
+Repo: este. Branch: `feat/agente`, a partir da `main`. Sem push.
+Escopo desta execução, na ordem: o agente com skills; o histórico; a identidade com login simulado; a observabilidade; a
+confirmação de protocolo; o chat com stream; a montagem com o ponta a ponta; o front de chat; o golden set e o red team; o runner
+de eval. As evidências e o README ficam para outra execução.
+Até dois implementadores ao mesmo tempo. O modelo segue a sugestão de cada tarefa. Cada tarefa passa pelo gate do condutor; a
+revisão por agente de contexto limpo acontece nos marcos: agente e chat junto com a confirmação de protocolo, front no navegador, e
+eval.
+
+| Decisão | Por quê | Quem decidiu | Tipo | Se mudar, afeta | Commit |
+|---|---|---|---|---|---|
+| A conversa nasce em `POST /conversations` com id do servidor, e `/chat` dá 404 igual para id alheio e inexistente | mantém "dado alheio e inexistente têm a mesma resposta" sem o cliente escolher id | você | pilar | o chat e o front | — |
+| O token da proposta fica num campo só para o cliente, fora do que o modelo e o histórico recebem | garantia por construção, sem depender de prompt | você | pilar | o envelope, o agente, a proposta, o chat | — |
+| Log estruturado com a biblioteca padrão | uma dependência a menos | você (recomendação aceita) | detalhe | a observabilidade | — |
+| Você acrescenta `APP_JWT_SECRET`, `APP_PROPOSAL_SECRET` e `APP_DEV_LOGIN` ao `.env` | o `.env` é seu | você | ambiente | a verificação no Compose | — |
+| O `RepositoryAdapter` ganha um `write` com passos: lotes de linhas e `Update`, numa transação, com `flush` entre os passos. O repositório confere o dono do pai antes de gravar | a sessão não sai do adapter e o gate atual continua valendo, com menos conceitos que uma regra de escrita por tabela | você | pilar | o histórico e a confirmação de protocolo | — |
+| `requester_cpf` e `requester_name` entram no model do protocolo, sem carregar por padrão e com erro se alguém os acessar | é o menor diff; você escolheu isso em vez de uma linha só de escrita, que era a minha recomendação | você | pilar | a confirmação e o teste de colunas privadas | — |
+| O protocolo novo leva o nome do aluno em `requester_name` e `author` | as duas colunas estão sempre preenchidas na origem | você | pilar | a confirmação | — |
+| Duas confirmações no mesmo instante podem abrir dois protocolos: limite aceito, a ser declarado nas evidências | o pior caso é um duplicado, em janela de milissegundos; o front desabilita o botão | você | pilar | a confirmação e o front | — |
+| A verificação no navegador confirma protocolo com um aluno que nenhum item do golden set cita | confirmar no Compose grava de verdade, e o eval lê esses dados | você | ambiente | o front | — |
+| Os testes `live` e a rodada de eval rodam com o `.env` carregado no shell pelo condutor, sem imprimir valores; os implementadores não tocam no arquivo | é o único lugar com a chave | você | ambiente | os critérios `live` | — |
+| Primeiro o caminho até o ponta a ponta, golden set e runner por último | o objetivo é testar de ponta a ponta o quanto antes; nada do caminho depende deles | você | detalhe | a ordem | — |
+
+### Execução de 2026-11-06: runner de eval e baseline do bug de trancamento
+
+#### Registro de decisões
+
+Repo: este. Branch: `feat/agente`. Sem push.
+Escopo desta execução: o runner de eval, com graders, juiz, relatório e os itens novos do golden, até o baseline salvo e commitado.
+Nenhuma correção do protocolo entra aqui. Um implementador, um revisor ao fim do eval, e o dono roda a rodada `live` e o baseline.
+
+| Decisão | Por quê | Quem decidiu | Tipo | Se mudar, afeta | Commit |
+|---|---|---|---|---|---|
+| Baseline com 146 execuções: críticos com 5 repetições e o resto com 1 | a repetição só importa onde se mede o bug; a estabilidade geral fica para a matriz de modelos | você | pilar | o baseline e a rodada final | — |
+| O front, os docs e o eval vão em commits separados, antes do baseline | o hash do baseline reproduz o estado inteiro, inclusive o plano que descreve o bug | você | detalhe | só o histórico do git | — |
+| Sem entrevista prévia e sem conferência do ambiente; o auto-continue no limite de uso segue desligado | escolha sua na abertura: se o limite estourar, uma sessão nova retoma pelo spec | você | ambiente | a continuidade da execução | — |
+| Os 3 itens de trancamento do holdout rodam no baseline | o antes e depois precisa cobri-los, e as frases já estão no spec | o dono | detalhe | a composição do baseline | — |
+| O juiz roda em Sonnet, com a versão fixa, em lote e pelo plano | reprodutibilidade, custo menor, e a rubrica não reprova a rodada sozinha | você | detalhe | os vereditos da rubrica | — |
+| Você confere cerca de 20 vereditos reais na página de resultados, depois do baseline | a calibração humana é sua; a conferência por mim seria uma IA validando outra | você | detalhe | a concordância registrada | — |
+| O eval mede só o primeiro turno e julga em lote | limites declarados nas evidências; itens de múltiplos turnos se decidem depois da correção do protocolo | você | detalhe | a matriz de modelos | — |
 
 ## Registro
+
+**Mudança no spec** · 2026-11-06 · D44 a D47, §6.6, T10, T14
+
+- **O quê:** o grader de fatos sai e a correção da resposta passa ao juiz; relatório com `pass^5`; calibração com 40 respostas de rótulo
+  conhecido e conferência do dono; juiz com versão fixa e `unknown`; `trace_id` no JSONL; página HTML de resultados, sem publicar notas no
+  Langfuse; PR-08 e TR-09 reconfigurados.
+- **Por quê:** a primeira rodada real deu 0% com respostas boas: o grader media citação, e o PR-08 exigia uma tool desnecessária.
+  Decisões do dono depois de ler as respostas e a pesquisa de 2026-11-06.
+- **Seções editadas:** §3.1, §6.6, Fontes; `t10-runner-eval.md`; `t14-protocolo-robusto.md`, §6.2, com as chaves do bloco de confirmação.
+- **Impacto na implementação:** menos código no grader; duas peças novas, a calibração e a página. O PR-08 em 2 de 5 repetições propôs trancar
+  uma matrícula já trancada: é um bug real, que o baseline registra e a correção do protocolo resolve com a recusa `enrollment_status`.
+
+**Mudança no spec** · 2026-11-06 · T12 (V5)
+
+- **O quê:** as sugestões da conversa vazia passam a ser quatro, uma por área do README §1; sai "Quero trancar uma disciplina".
+- **Por quê:** decisão do dono. Não há serviço de protocolo para trancar disciplina, então a sugestão levaria a uma recusa.
+- **Seções editadas:** `t12-front.md`, V5.
+- **Impacto na implementação:** só `Conversation.tsx`; typecheck limpo e 390 px sem rolagem lateral.
+
+**Mudança no spec** · 2026-11-06 · T12 (V8 a V11)
+
+- **O quê:** markdown na resposta do assistente, painel de debug por tool com rótulo em português, nome técnico, input e output,
+  e avatar de robô.
+- **Por quê:** pedido do dono, para o avaliador ver o que o modelo chamou e recebeu.
+- **Seções editadas:** `t12-front.md`, tabela de decisões.
+- **Impacto na implementação:** dependências novas `react-markdown` 10.1.0 e `remark-gfm` 4.0.1; o bundle passa de 500 kB e o
+  Vite avisa no build.
+
+**Checkpoint de implementação** · 2026-11-06 · T12, V8 a V11
+
+- **Feito:** `toolLabels.ts` com as 20 tools, `ToolCallView.tsx` (`details` com estados consultando, consultou e falhou),
+  `MessageView.tsx` com markdown e robô, estilos de debug e markdown; correção da barra do topo do chat em 390 px.
+- **Critério → evidência:** `npm run typecheck` e `npm run build` limpos; pelo DevTools, "Como estão minhas notas?" com
+  `UniMontanhas:070114` virou lista em `<ul>`, e o painel de `list_subject_records` mostrou nome, input e output; em 390 px com
+  emulação de celular, layout de 390 px no chat com o painel aberto.
+- **Corrigido no caminho:** no checkpoint anterior, o chat só tinha sido medido com janela de 500 px; em 390 px, o "Sair" estourava
+  a largura. O texto da marca some no topo do chat no celular.
+
+**Mudança no spec** · 2026-11-06 · T12 (V1 a V7)
+
+- **O quê:** a T12 ganha a seção "Identidade visual e login por unidade": tokens visuais, login em dois passos (unidade e aluno) com
+  aviso de tela de teste, conversa vazia com sugestões e a rota dev-only `GET /auth/dev-students`.
+- **Por quê:** pedido do dono para a entrega, depois da exploração do site da instituição. Sem logo nem nome do grupo, porque o
+  repositório fica público como projeto dele.
+- **Seções editadas:** `t12-front.md`.
+- **Impacto na implementação:** o front muda já; a rota em `src/api/` só entra depois do baseline da T10 commitado, para não sujar o
+  hash nem o gate do eval.
+
+**Checkpoint de implementação** · 2026-11-06 · T12, passo 1 (front)
+
+- **Feito:**
+  - tokens visuais em `styles.css` e Work Sans no `index.html`;
+  - login em dois passos (`UnitStep`, `StudentStep`), com a lista de uma amostra fixa (`devStudentsSample.ts`) no formato da rota;
+  - barra do topo (`Topbar`) e chat em card central, com a conversa extraída para `Conversation.tsx`, saudação e sugestões;
+  - mensagens com bolha por parte de texto, tools como linhas discretas e card de protocolo com estados de proposta, confirmado e
+    recusado;
+  - `isRecord` movido para `guards.ts`, para não criar import circular entre `api.ts` e `students.ts`.
+- **Critério → evidência:**
+  - `npm run typecheck` e `npm run build` limpos;
+  - pelo DevTools, em 1440 px: UniMontanhas Presencial, busca por RA, entrada com `UniMontanhas:070114`, saudação, sugestão de
+    faturas com stream e tools;
+  - em 390 px com emulação de celular: `scrollWidth` igual a 390 no login e no chat; com a rede offline, o login mostra o erro;
+  - nenhum protocolo confirmado e `UniSaoPaulo:181722` fora da amostra.
+- **Não verificado:** o card de protocolo no navegador (confirmar está bloqueado até o baseline) e o erro do chat com a API fora (a
+  API é compartilhada com o eval).
+- **Falta:** passo 2 da Ordem, a rota `GET /auth/dev-students` e a troca da amostra pela chamada.
+
+**Mudança no spec** · 2026-11-06 · D43, T10
+
+- **O quê:** o baseline passa de 346 para 146 execuções: críticos com 5 repetições e o resto com 1. A CLI ganha `--critical-repeat`.
+- **Por quê:** decisão do dono na abertura da execução da T10. A repetição só importa onde se mede o comportamento instável do bug.
+- **Seções editadas:** §3.1; `t10-runner-eval.md`, em "O que fazer" e "Baseline".
+- **Impacto na implementação:** a rodada final da T14 repete a mesma composição; a estabilidade entre repetições fora dos críticos só
+  será medida na matriz de modelos.
+
+**Mudança no spec** · 2026-11-06 · D32 a D42, P8, §3, §6.4, §7, §8, T10, T13, T14
+
+- **O quê:** nova T14, com o pacote de correção do protocolo, o relógio real e a regra de escopo. T10 ganha o estado em que parou, o
+  caso âncora, os itens `TR`, `SV` e `ES`, o `ProposalGrader`, os itens críticos e o baseline. T13 ganha o case e passa a depender
+  de T14. Nova ordem: T10 com baseline, T14, rodada final, T13.
+- **Por quê:** no uso real, o agente propôs trancar o curso inteiro quando o dono pediu para trancar uma disciplina, e o protocolo foi
+  confirmado. Investigação e decisões do dono na sessão de 2026-11-06. O dono também pediu a data real em produção.
+- **Seções editadas:** §3.1, §3.2, §6.4, §7, §8; `t10-runner-eval.md`; `t13-evidencias.md`; `t14-protocolo-robusto.md` novo.
+- **Impacto na implementação:**
+  - T10 retoma de onde parou e não pode incluir correção da T14 antes do baseline;
+  - `docker compose down -v` antes do baseline, porque o `181722` tem um `ACA-010` residual, que esconderia o bug e quebra `test_pr02`;
+  - T12 continua sem checkpoint: a F6 da T14 faz a verificação no navegador, e os 390 px ficam com os bugs visuais;
+  - `docs/architecture.md` precisa de correção pontual em A16, §5.6 e no papel de `agent.message`, ao implementar.
+
+**Checkpoint de implementação** · 2026-11-06 · T3
+
+- **Feito:**
+  - 60 itens em `questions.yaml` e 30 ataques em `redteam.yaml`;
+  - 185 fatos amarrados a consultas nomeadas, num pacote `src/evals/oracle_queries/` dividido por área para caber no limite de
+    tamanho;
+  - o oráculo com settings próprias;
+  - o validador `python -m evals.golden check`.
+- **Critério → evidência:**
+  - o validador roda pelo condutor e termina com "Problemas: 0 OK";
+  - 60 perguntas e 30 ataques;
+  - por kind: answerable 46, attack 30, no_data 5, refusal 9;
+  - split com dev 62 e holdout 28, e holdout em todas as áreas;
+  - todos os números dos fatos aparecem na resposta ideal do catálogo, salvo as duas divergências abaixo;
+  - `make check` inteiro verde, com 1.254 testes.
+- **Divergências do catálogo, com a causa:**
+  - FI-03: o estorno é 07/12/2024. O pagamento foi às 00:29 UTC de 08/12, que em Brasília ainda é 07/12, e o gabarito segue Brasília,
+    como a API.
+  - SR-05: 01/02/2023, por D13.
+- **Decidido pelo implementador, para o plano de review:**
+  - as armadilhas secundárias de FI-08, CR-02 e CR-03 são verificadas com aluno próprio dentro do item, sem item novo;
+  - `tools.forbidden` só tem `propose_protocol` em dois ataques de terceiro mandando agir, e o resto vazio, por D23.
+- **Para o runner:** o grader de recusa usa `tools.expected`, porque RE-04, RE-05 e RE-08 são recusas que precisam de tool.
+
+**Checkpoint de implementação** · 2026-11-06 · T11
+
+- **Feito:**
+  - o `ApiFactory` liga login (só com `dev_login`), chat e confirmação, por `StudentRoutes`, junto com a observabilidade;
+  - CORS de `APP_CORS_ORIGINS`;
+  - `RequestLog` no bootstrap: `request_id` por request e uma linha JSON por request; o access log do uvicorn está desligado;
+  - `aclosing` no stream do agente;
+  - `hide_parameters=True` no banco;
+  - log "Turno concluído" com modelo, tokens, latência e motivo de parada.
+- **Critério → evidência:**
+  - e2e `live` com `gpt-6-luna` passou: proposta, `confirm` `201` e o protocolo novo em `list_protocols`, numa transação desfeita;
+  - e2e com fake verde, com `request_id` e `trace_id` iguais em todas as linhas de um request;
+  - fluxo real no Compose: login, conversa e FI-01 em stream, com trace no Langfuse;
+  - 986 testes verdes fora o golden set;
+  - 6 contratos de camada kept; ruff, flake8, `tools.quality` e Pyright limpos.
+- **Divergiu do spec:**
+  - o middleware de log fica no bootstrap, porque a presentation não importa infrastructure;
+  - `/health` fica fora do log de request;
+  - o logger `langfuse` vai a ERROR com o tracing desligado;
+  - a confirmação não roda contra o Compose, para não gravar protocolo nos dados do eval.
+- **Limite:** abaixo de `StudentAgent.stream`, o `astream` do LangGraph fecha pelo finalizador de geradores, porque o LangGraph o tipa
+  como `AsyncIterator`.
+- **Próximo:** front.
+
+**Checkpoint de implementação** · 2026-11-06 · T7 e T4, trace real
+
+- **Feito:** o trace `7e5bee5821e437f09358d814c865012d`, do chat real no Compose com FI-01, está no Langfuse Cloud. A raiz é `chat.turn`,
+  com `user_id` em hex de 32 caracteres, diferente do `person_id`, e `session_id` igual ao id da conversa. Tags: `model:gpt-6-luna`,
+  `prompt:student_agent_v1` e `skills:<hash>`. Entrada e saída do span vão nulas.
+- **Dentro do trace:** três gerações `ChatOpenAI` (2,3 s, 1,2 s e 2,1 s), as tools `load_skill` (2 ms) e `get_financial_summary`
+  (43 ms), e o turno inteiro em 5,98 s.
+- **Fecha:** o pendente da observabilidade e o do agente.
+
+**Nota de implementação** · 2026-11-06 · revisão do marco (agente, chat, confirmação, identidade, histórico, observabilidade)
+
+- **Bloqueante:** `full_name_of` lia o nome de qualquer `person_id`, numa sessão fora do adapter. Volta para a confirmação como
+  consulta declarada com raiz `PersonRow`, igual a `CONTRACTS_WITH_PAYER`.
+- **Corrigido junto:** falha de tool sem artifact gravada como `invalid` em vez de `error`; nome da tool no log de falha; limite de
+  4.000 caracteres e de 200 mensagens no corpo do chat; `aclosing` no stream do agente; `request_id` por request, com middleware.
+- **Fica para o plano de review:** os dois adaptadores de PyJWT são quase iguais e podem virar uma classe só.
+- **Commit da correção (exceto `aclosing` e `request_id`, que vão com a montagem):** `SqlRequesterDirectory` lê o nome por
+  `fetch_declared(REQUESTER_NAMES)`, com raiz `PersonRow`; com a sessão de outra pessoa, o nome volta `None`, igual ao de uma
+  inexistente. A falha só vira `error` quando o texto é o envelope do nosso `on_crash`, porque tool inexistente e limite de tools
+  também chegam com `status="error"` do LangChain e, pela D22, são `invalid`. 351 testes verdes; nenhum protocolo residual.
+- **Conferido sem achado:** JWT e token da proposta (assinatura, `alg=none`, validade e cruzamento); `404` uniforme; `client_only` fora
+  do modelo, do histórico e do Langfuse; invariante 11; transação do `write`.
+
+**Checkpoint de implementação** · 2026-11-06 · T9
+
+- **Feito:** `ChatService` com `create_conversation` e turno em stream; `UiMessageStream` no protocolo do AI SDK 7; `ChatRouter` com
+  `POST /conversations` e `POST /chat`; `ChatProviders` e `ChatAgentScope` no bootstrap; colisão de posição vira
+  `ConversationConflictError`. Ligação na montagem.
+- **Critério → evidência:** 47 testes do chat e 75 com os do agente verdes; o `404` sai antes do stream e é igual para conversa alheia,
+  inexistente e mal formada; `client_only` sai no stream e não fica em `agent.tool_call.result`; falha do provedor, timeout e cliente
+  desconectado não gravam; `curl -sN` contra uvicorn efêmero mostra `text-delta` chegando aos poucos. Gate do condutor nos arquivos da
+  tarefa: ruff, flake8, `tools.quality`, 6 contratos, Pyright limpos; mypy só acusa o golden set, em andamento.
+- **Mudança no contrato (§6.3), conferida no fonte do AI SDK 7.0.163:** `start-step` e `finish-step` em volta de cada passo, exigidos
+  com tool no backend; `text-*` com `id`, e um bloco novo depois de cada tool; `error` seguido de `finish-step`, `finish` e `[DONE]`;
+  headers iguais a `UI_MESSAGE_STREAM_HEADERS`.
+- **Divergiu do spec:** o conteúdo gravado do assistente é todo o texto transmitido; vários passos de tool de um turno voltam do
+  histórico como uma só mensagem com todas as chamadas, porque a tabela não guarda a divisão em passos.
+- **Próximo:** montagem.
+
+**Checkpoint de implementação** · 2026-11-05 · T8
+
+- **Feito:** token assinado em `client_only`; `ProtocolOpening` no domínio; `SqlProtocolWriter` por `write`; `ProtocolConfirmation` e
+  `POST /protocols/proposals/confirm`; `full_name` por consulta privada; mapa fixo das 27 unidades no dialeto. Ligação na montagem.
+- **Critério → evidência:** 3 linhas com número da sequência e SLA certo pelo oráculo, na mesma transação (`GEN-090`: 72 h); `201`; `404`
+  de corpo igual para token de outro aluno, alterado, expirado, lixo e matrícula alheia; `409`; `422`; `401`; `pg_stat_xact_user_tables`
+  só nas 3 tabelas; token fora do JSON do modelo; log sem dado pessoal; nenhum resíduo. Gate do condutor nos arquivos da tarefa, com 6
+  contratos, ruff, flake8, `tools.quality`, mypy e Pyright limpos, 223 testes verdes.
+- **Divergiu do spec:** `channel`, `priority`, `sla_breached`, `changed_by` e `author` também são adiadas com `raiseload`, por serem só de
+  escrita; o log não traz o número do protocolo, porque o padrão de CPF do `JsonFormatter` apaga qualquer número de 11 dígitos; serviço
+  inativo e mensagem vazia dão `422`; CPF e `student_id` vão na forma canônica, com zeros à esquerda.
+- **Limite:** `select(ProtocolRow.requester_cpf)` explícito passa pelo guard, filtrado ao dono, e `undefer` também contorna o
+  `raiseload`: é o custo da escolha de manter as colunas no model. Vai ao plano de review.
+- **Próximo:** montagem, depois do chat.
+
+**Checkpoint de implementação** · 2026-11-05 · T4
+
+- **Feito:** `StudentAgent` com stream e execução completa, conversor com `content_and_artifact`, 7 skills, prompt `v1`, erro ensino,
+  limites, retry, semáforo do provedor, modelo fake.
+- **Critério → evidência:** teste `live` de FI-01 passou com `gpt-6-luna`, chamando `get_financial_summary` e respondendo R$ 277,05;
+  273 testes do agente verdes; gate do condutor nos arquivos da tarefa, com 6 contratos, ruff, flake8, `tools.quality`, mypy e Pyright
+  limpos. Montar o agente: p50 6,2 ms, p95 8,2 ms em 300 repetições; turno completo com fake: 20,8 ms.
+- **Divergiu do spec:** o schema visível ganhou `pattern`, `minimum`, `maximum` e `additionalProperties: false`, porque a faixa e o
+  formato têm de sair do tipo; nomes, tipos e obrigatórios não mudam, mas isso toca a §7 e vai ao plano de review. `period` mal formado
+  vira `invalid` no conversor, e `ToolInputError` existe sem tool que a levante hoje. Limite de modelo com `exit_behavior="error"`.
+  Mensagens nativas de tool inexistente e de limite de tools chegam em inglês ao modelo.
+- **Pendente:** o trace do teste `live`, conferido com a observabilidade no fluxo da montagem.
+- **Próximo:** chat com stream.
+
+**Mudança no spec** · 2026-11-05 · D29 a D31, T8
+
+- **O quê:** CPF e nome do requerente em `ProtocolRow`, adiados e só para escrita; números pelas sequências no INSERT; nome do aluno
+  gravado; corrida de confirmação aceita.
+- **Por quê:** decisões do dono ao receber a dúvida da confirmação. A arquitetura exigia CPF só em tabelas fora de `Base.metadata`, e
+  o `write` só aceita models.
+- **Seções editadas:** §3.1; arquitetura 5.4 e 5.6, com a correção do que ficou errado.
+- **Impacto na implementação:** `test_no_model_declares_a_tax_id...` ganha exceção explícita para essas duas colunas, e passa a exigir
+  `deferred` com `raiseload`; o domínio abre o protocolo sem número; o front desabilita o botão.
+
+**Checkpoint de implementação** · 2026-11-05 · T7
+
+- **Feito:** `Tracing`, `TraceInfo` e `UserPseudonym`; `JsonFormatter` e `LogContext`; `Observability.start`; `@observe` no
+  `HealthService`.
+- **Critério → evidência:** sem chaves ou com uma chave só nada é enviado; `user_id` é HMAC; log em JSON sem CPF, com 13 testes verdes.
+  Gate do condutor nos arquivos da tarefa: ruff, flake8, `tools.quality`, 6 contratos, Pyright limpos.
+- **Pendente:** o trace real no Langfuse. Ele será conferido no fluxo `live` da montagem, porque o script de exemplo não entra no ok
+  dado para carregar o `.env`, que cobre os testes `live` e a rodada de eval. A aceitação final desta tarefa depende disso.
+- **Divergiu do spec:** o SDK 5 não aceita usuário e tags no `CallbackHandler`; eles vão por `propagate_attributes`, num context
+  manager que o chat usa em volta do agente. A chave do `user_id` deriva de `jwt_secret`, com separação de domínio. O log não tem campo de horário, por não estar na lista fixa.
+- **Próximo:** confirmação de protocolo e, depois do agente, chat.
+
+**Checkpoint de implementação** · 2026-11-05 · T5
+
+- **Feito:** entidades e port de conversa; `persistence/agent/` com models, ownership, mappers e `SqlConversationRepository`
+  (`create`, `append`, `window`); `RepositoryAdapter.write(*steps)` com `WritePlan` (D28); `HistoryProviders`.
+- **Critério → evidência:** tabelas novas cobertas por `test_every_mapped_table_declares_ownership`; alheia e inexistente levantam o
+  mesmo `ConversationNotFoundError`; `write` com rollback, dono no `Update` e recusa de tabela sem registro, em
+  `tests/integration/core/test_adapter_write.py`. `person_id` só em `conversation`, por `04_agent_schema.sql`. Gate do condutor nos
+  arquivos da tarefa: ruff, flake8, `tools.quality`, 6 contratos, Pyright limpos, mypy sem erro nos arquivos dela, 42 testes verdes.
+- **Divergiu do spec:** `test_api_role.py` passa a ignorar `agent.*` em `mapped_tables`, porque a checagem de leitura só compara os
+  schemas de origem; a escrita em `agent` tem teste próprio. `result` fica na linha de `tool_call`, então a janela por mensagem nunca
+  separa chamada e resultado. Duas trocas simultâneas na mesma conversa colidem no `UNIQUE (conversation_id, position)`: o chat trata.
+- **Próximo:** chat, depois do agente e da observabilidade.
+
+**Checkpoint de implementação** · 2026-11-05 · T6
+
+- **Feito:** JWT HS256 atrás do port `TokenCodec`; `IdentityService` com login e autenticação; `POST /auth/dev-login`; dependência
+  da `StudentSession`; `person_of` em `StudentSessionRepository`. Ligação no `ApiFactory` fica para a montagem.
+- **Critério → evidência:** login devolve token; sem token, alterado, expirado, `sub` desconhecido e `alg=none` dão `401` igual; o
+  `person_id` vem só do token; `dev_login` desligado dá `404`; dois alunos no mesmo fluxo têm sessões disjuntas. Gate do condutor nos
+  arquivos da tarefa: ruff, flake8, `lint-imports` com 6 contratos, `tools.quality`, mypy e Pyright limpos, 50 testes verdes.
+- **Divergiu do spec:** `marca` é a grafia de origem do SAG, como no catálogo; o `exp` usa `time.time()`, porque a validade do token
+  precisa do relógio real e não do relógio de referência; sessão vazia dá `401`.
+- **Próximo:** observabilidade, depois do histórico ou do agente liberarem vaga.
+
+**Mudança no spec** · 2026-11-05 · D28, T5, T8
+
+- **O quê:** `RepositoryAdapter.write(*steps)` como único caminho de escrita. O adapter hoje só lê, e só ele pode abrir sessão.
+- **Por quê:** decisão do dono, ao receber a dúvida do histórico. Entregar a `AsyncSession` ao repositório furaria o `quality.toml`.
+- **Seções editadas:** §3.1.
+- **Impacto na implementação:** o histórico cria o método e o teste dele; a confirmação de protocolo o reutiliza no escritor,
+  no lugar do trecho ilustrativo da arquitetura, seção 5.6.
+
+**Mudança no spec** · 2026-11-05 · D25 a D27, §3, §6.3, §6.4, §6.5, §7, T4, T5, T8, T9, T12
+
+- **O quê:** a conversa nasce em `POST /conversations` com id do servidor (D25); o token da proposta vai em
+  `ToolResult.client_only`, fora do modelo e do histórico (D26); log com a biblioteca padrão (D27, antes P7).
+- **Por quê:** o spec exigia `404` para conversa inexistente sem ter como criar uma; e o conversor mandaria o token ao modelo
+  e ao histórico. Decisões do dono na abertura da execução.
+- **Seções editadas:** §3.1, §3.2, §6.3, §6.4, §6.5, §7, T4, T5, T8, T9, T12.
+- **Impacto na implementação:** T4 cria o campo e o retira do JSON do modelo; T8 põe o token nele; T9 cria a rota, expõe o
+  campo no stream e não o grava; T12 chama a rota antes do `useChat`.
 
 **Mudança no spec** · 2026-11-05 · D16 a D21, T1, T1b, T2
 
