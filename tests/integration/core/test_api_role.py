@@ -23,7 +23,8 @@ GRANTED = """
 
 def mapped_tables() -> set[str]:
     OwnershipRegistry.assert_complete()
-    return set(Base.metadata.tables) | set(IDENTITY_METADATA.tables)
+    tables = set(Base.metadata.tables) | set(IDENTITY_METADATA.tables)
+    return {table for table in tables if not table.startswith("agent.")}
 
 
 async def test_the_role_reads_exactly_the_mapped_tables() -> None:

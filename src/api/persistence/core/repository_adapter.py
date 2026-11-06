@@ -2,11 +2,20 @@ from collections.abc import Sequence
 
 from sqlalchemy import FromClause, Select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.sql.base import Executable
 
 from api.domain.identity.session import StudentSession
-from api.persistence.core.ownership import DeclaredQuery, DeclaredRows, Public, Via
+from api.persistence.core.base import Base
+from api.persistence.core.ownership import (
+    DeclaredQuery,
+    DeclaredRows,
+    Public,
+    Update,
+    Via,
+)
 from api.persistence.core.ownership_registry import OwnershipRegistry
 from api.persistence.core.query_guard import QueryGuard
+from api.persistence.core.write_plan import WritePlan
 
 
 class RepositoryAdapter:
@@ -37,6 +46,16 @@ class RepositoryAdapter:
         async with self._db_session_factory() as db:
             result = await db.execute(guarded)
             return result.all()
+
+    async def write(self, *steps: Sequence[Base] | Update) -> None:
+        prepared = [WritePlan.prepare(step, self._student_session) for step in steps]
+        async with self._db_session_factory() as db, db.begin():
+            for step in prepared:
+                if isinstance(step, Executable):
+                    await db.execute(step)
+                else:
+                    db.add_all(step)
+                    await db.flush()
 
     def _with_ownership[*RowT](self, stmt: Select[*RowT]) -> Select[*RowT]:
         tables = QueryGuard.tables_in(stmt)
