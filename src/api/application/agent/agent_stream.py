@@ -12,7 +12,11 @@ from api.application.agent.events import (
     ToolCallRequested,
     ToolResultReceived,
 )
-from api.application.agent.langchain_tools import ToolExecution
+from api.application.agent.langchain_tools import (
+    CRASH_CONTENT,
+    UNEXPECTED_FAILURE,
+    ToolExecution,
+)
 from api.application.shared.tool_result import ToolResult, ToolStatus
 
 MESSAGES_KEY = "messages"
@@ -85,6 +89,9 @@ class ToolResultEvents:
     def _execution_of(message: ToolMessage) -> ToolExecution:
         if isinstance(message.artifact, ToolExecution):
             return message.artifact
+        if message.status == "error" and message.text == CRASH_CONTENT:
+            failed = ToolResult[object](status=ToolStatus.ERROR, explanation=UNEXPECTED_FAILURE)
+            return ToolExecution(failed, duration_ms=0)
         result = ToolResult[object](status=ToolStatus.INVALID, explanation=message.text)
         return ToolExecution(result, duration_ms=0)
 

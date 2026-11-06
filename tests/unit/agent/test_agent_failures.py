@@ -54,7 +54,7 @@ async def test_an_unexpected_failure_is_logged_with_the_trace_id(
 
     record = next(item for item in caplog.records if item.name.endswith("langchain_tools"))
     assert getattr(record, "trace_id", None) == "trace-teste"
-    assert getattr(record, "tool", None) == "explode"
+    assert record.getMessage() == "Falha inesperada na tool explode"
 
 
 async def test_an_expected_tool_error_returns_its_own_paragraph() -> None:
@@ -76,6 +76,32 @@ async def test_a_handler_that_breaks_the_contract_does_not_end_the_turn() -> Non
     result = support.tool_results(run.events)[0]
     assert UNEXPECTED_FAILURE in result.seen_by_model
     assert run.text == support.FINAL_ANSWER
+
+
+async def test_a_handler_that_breaks_the_contract_records_an_error() -> None:
+    tools = support.registered_of(WrongReturnTools())
+    model = support.RecordingModel(responses=[support.call("misbehave"), support.answer()])
+
+    run = await support.agent_with(model, tools).run("Teste")
+
+    result = support.tool_results(run.events)[0]
+    assert result.status == "error"
+    assert result.complete["status"] == "error"
+    assert result.complete["explanation"] == UNEXPECTED_FAILURE
+
+
+async def test_a_handler_that_breaks_the_contract_is_logged_with_the_tool_name(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    tools = support.registered_of(WrongReturnTools())
+    model = support.RecordingModel(responses=[support.call("misbehave"), support.answer()])
+
+    with caplog.at_level(logging.ERROR):
+        await support.agent_with(model, tools).run("Teste")
+
+    record = next(item for item in caplog.records if item.name.endswith("langchain_tools"))
+    assert getattr(record, "trace_id", None) == "trace-teste"
+    assert record.getMessage() == "Falha inesperada na tool misbehave"
 
 
 @pytest.mark.parametrize("reserved", ["config", "run_manager", "self"])

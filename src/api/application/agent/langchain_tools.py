@@ -16,7 +16,10 @@ from api.application.shared.tool_result import ToolResult, ToolStatus
 UNEXPECTED_FAILURE = (
     "Não consegui consultar agora; tente de novo ou diga ao aluno que a consulta falhou."
 )
-FAILURE_LOG = "Falha inesperada na tool"
+FAILURE_LOG = "Falha inesperada na tool %s"
+CRASH_CONTENT = ToolResult[object](
+    status=ToolStatus.ERROR, explanation=UNEXPECTED_FAILURE
+).model_dump_json()
 MILLISECONDS = 1000
 
 logger = logging.getLogger(__name__)
@@ -50,9 +53,9 @@ class LangchainTools:
         )
 
     def on_crash(self, error: Exception, request: ToolCallRequest) -> str:
-        fields = self._log_fields(request.tool_call["name"])
-        logger.error(FAILURE_LOG, exc_info=error, extra=fields)
-        return self._envelope(ToolStatus.ERROR, UNEXPECTED_FAILURE).model_dump_json()
+        name = request.tool_call["name"]
+        logger.error(FAILURE_LOG, name, exc_info=error, extra=self._log_fields())
+        return CRASH_CONTENT
 
     async def _result_of(
         self, tool: RegisteredTool, schema: ToolSchema, arguments: Mapping[str, object]
@@ -71,14 +74,15 @@ class LangchainTools:
         except ToolInputError as error:
             return self._envelope(ToolStatus.INVALID, error.explanation)
         except Exception:
-            logger.exception(FAILURE_LOG, extra=self._log_fields(tool.definition.name))
+            name = tool.definition.name
+            logger.exception(FAILURE_LOG, name, extra=self._log_fields())
             return self._envelope(ToolStatus.ERROR, UNEXPECTED_FAILURE)
         if isinstance(result, ToolResult):
             return result
         raise TypeError("A tool não devolveu ToolResult")
 
-    def _log_fields(self, tool_name: str) -> dict[str, str]:
-        return {"trace_id": self._trace_id, "tool": tool_name}
+    def _log_fields(self) -> dict[str, str]:
+        return {"trace_id": self._trace_id}
 
     @staticmethod
     def _envelope(status: ToolStatus, explanation: str) -> ToolResult[object]:

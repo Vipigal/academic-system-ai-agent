@@ -26,11 +26,6 @@ class StudentSessionRepository:
             result = await db.scalars(IdentityQueries.person_of(brand, student_id))
             return result.one_or_none()
 
-    async def full_name_of(self, person_id: str) -> str | None:
-        async with self._db_session_factory() as db:
-            result = await db.scalars(IdentityQueries.full_name_of(person_id))
-            return result.one_or_none()
-
     @staticmethod
     def _empty_session() -> StudentSession:
         return StudentSession(person_ids=frozenset(), cpf="", enrollment_keys=frozenset())

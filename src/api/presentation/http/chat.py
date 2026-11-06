@@ -13,11 +13,13 @@ from api.presentation.http.ui_stream import HEADERS, UiMessageStream
 
 USER_ROLE = "user"
 TEXT_PART = "text"
+MAX_PART_TEXT = 4000
+MAX_MESSAGES = 200
 
 
 class UiMessagePart(BaseModel):
     type: str
-    text: str = ""
+    text: str = Field(default="", max_length=MAX_PART_TEXT)
 
 
 class UiMessage(BaseModel):
@@ -31,7 +33,7 @@ class UiMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     id: str
-    messages: list[UiMessage]
+    messages: list[UiMessage] = Field(max_length=MAX_MESSAGES)
 
     @property
     def last_user_text(self) -> str:

@@ -11,10 +11,6 @@ class IdentityQueries:
         return select(PERSON_CPF.c.cpf).where(PERSON_CPF.c.person_id == person_id)
 
     @staticmethod
-    def full_name_of(person_id: str) -> Select[str]:
-        return select(PERSON_CPF.c.full_name).where(PERSON_CPF.c.person_id == person_id)
-
-    @staticmethod
     def identities_of(cpf: str) -> Select[str, str, str]:
         person = EnrollmentRow.person_id == PERSON_CPF.c.person_id
         return (

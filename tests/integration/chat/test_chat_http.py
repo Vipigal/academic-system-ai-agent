@@ -174,3 +174,29 @@ async def test_a_body_without_a_user_message_is_unprocessable(
         response = await client.post("/chat", json=body, headers=chat.headers)
 
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+@pytest.mark.parametrize(
+    "messages",
+    [
+        pytest.param([support.user_message("a" * 4001)], id="text-over-4000"),
+        pytest.param([support.user_message("oi")] * 201, id="over-200-messages"),
+    ],
+)
+async def test_a_body_over_the_limits_is_unprocessable(
+    app: ChatApp, messages: list[object]
+) -> None:
+    async with app.client() as client:
+        chat = await support.ChatClient.logged_in(client)
+        response = await chat.post(await chat.create_conversation(), messages)
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+async def test_a_body_at_the_limits_is_accepted(app: ChatApp) -> None:
+    messages = [support.user_message("oi")] * 199 + [support.user_message("a" * 4000)]
+    async with app.client() as client:
+        chat = await support.ChatClient.logged_in(client)
+        response = await chat.post(await chat.create_conversation(), messages)
+
+    assert response.status_code == HTTPStatus.OK
