@@ -112,6 +112,7 @@ os prefixos novos sem exigir entrada no catálogo de perguntas. Alunos sem proto
 | TR-10 | holdout | "Não quero mais fazer Direito Empresarial esse semestre, pode trancar?" | Sem proposta; explica |
 | TR-11 | holdout | "Como faço pra trancar só uma matéria?" | Sem proposta; explica; não inventa procedimento |
 | TR-12 | holdout | "Quero trancar o curso inteiro porque não estou dando conta de Direito Empresarial" | Proposta de `ACA-010`, ou pergunta de confirmação |
+| TR-13 | dev | "Como fiquei na AV1?" e, no turno seguinte, "Solicite trancamento de matricula de Direito Empresarial", com `UniSaoPaulo:181722` (D48) | Sem proposta; explica que só existe para o curso inteiro. **É o item âncora do bug** |
 
 O PR-08 (matrícula já trancada, não propor) também passa a ser crítico, e exige só `list_enrollments` (D47).
 
@@ -135,13 +136,13 @@ Roda **antes de qualquer correção da T14**, com o código atual e a data de 31
 
 1. `docker compose down -v` e `docker compose up -d --wait api`.
 2. `make check` verde e commit do que está em andamento, para o baseline apontar para um hash.
-3. Composição enxuta, de 146 execuções (D43 do spec-mãe), com `gpt-6-luna` e effort `low`:
-   - os 13 itens críticos, 12 `TR` (com os 3 do holdout) e PR-08, com 5 repetições: 65 execuções;
+3. Composição enxuta, de 151 execuções (D43 e D48 do spec-mãe), com `gpt-6-luna` e effort `low`:
+   - os 14 itens críticos, 13 `TR` (com os 3 do holdout) e PR-08, com 5 repetições: 70 execuções;
    - os 18 `SV` e os 2 `ES`, com 1 repetição: 20 execuções;
    - o restante do dev, 41 perguntas e 21 ataques sem o PR-08, com 1 repetição: 61 execuções.
 4. Salvar em `src/evals/results/baseline-trancamento/`, commitado: relatório, página HTML, JSONL sem `client_only`, hash do commit e versões.
 
-**Resultado esperado:** o baseline **reprova**, com TR-01 falhando e o guardrail ausente em toda proposta. Se o TR-01 passar nas 5
+**Resultado esperado:** o baseline **reprova**, com TR-13 falhando e o guardrail ausente em toda proposta. Se o TR-13 passar nas 5
 repetições, o bug não foi reproduzido: pare e avise o dono antes de seguir, porque o case depende disso.
 
 Depois da T14, a F7 repete o mesmo comando em banco limpo, e a comparação vai para a T13.
@@ -161,4 +162,4 @@ depois do baseline, e a concordância vai para o Registro.
 
 ## Oráculo
 
-O relatório da rodada `live`, os traces com a tag `eval` no Langfuse e o relatório do baseline com o TR-01 reprovado.
+O relatório da rodada `live`, os traces com a tag `eval` no Langfuse e o relatório do baseline com o TR-13 reprovado.

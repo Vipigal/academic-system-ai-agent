@@ -108,6 +108,7 @@ latência e como a qualidade foi avaliada. Nenhum existe ainda.
 | D44 | O código mede o efeito verificável (proposta), as tools sem as quais não há resposta, a recusa e o que não pode aparecer na resposta. Se a resposta está correta e satisfatória é com o juiz. O grader de fatos sai. Os 185 fatos ficam no golden, para provar pelo banco que a referência, o gabarito do juiz, está certa | Decisão do dono: avaliamos o que o modelo diz a pessoas, e checar citação mede completude e reprova resposta válida. A Anthropic recomenda rubrica para agentes conversacionais, porque responder pode ter várias formas corretas[^evals] |
 | D45 | O juiz é calibrado em duas etapas: 40 respostas de rótulo conhecido antes do baseline (20 referências corretas e 20 adulteradas), com TPR e TNR e meta de 18 em 20 em cada classe; e a conferência do dono em cerca de 20 vereditos reais, depois do baseline | Decisão do dono: a calibração humana é dele, como especialista do domínio. 40 fica abaixo dos 60 que Hamel Husain indica para um intervalo útil[^evals], limite declarado nas evidências |
 | D46 | Os resultados aparecem numa página HTML única, gerada da rodada e commitada com ela, com a abertura pela regra crítica, `pass^5`, itens, resposta, juiz e a conferência do dono. Notas não são publicadas no Langfuse; o trace entra só como link opcional | Decisão do dono: o examinador pode não ter tempo nem acesso ao Langfuse, que serve de inspiração para a página |
+| D48 | Item do golden pode trazer `history`: perguntas anteriores que o runner executa de verdade, avaliando só o último turno. O TR-13 usa isso e passa a ser o item âncora do bug. O baseline e a rodada final têm 151 execuções | Decisão do dono: no primeiro turno a frase do bug não reproduz (0 de 5), e com as notas antes na conversa reproduz em 4 de 5 |
 | D47 | PR-08 exige só `list_enrollments`. TR-09 aceita perguntar qual matrícula ou propor `ACA-010` na ativa | Decisão do dono: a base não tem aluno com duas matrículas ativas, e a matrícula formada não pode ser trancada. O backend passa a garantir isso na correção do protocolo |
 
 ### 3.2 Pendentes (confirmar na revisão)
@@ -418,8 +419,18 @@ Nenhuma correção do protocolo entra aqui. Um implementador, um revisor ao fim 
 | O juiz roda em Sonnet, com a versão fixa, em lote e pelo plano | reprodutibilidade, custo menor, e a rubrica não reprova a rodada sozinha | você | detalhe | os vereditos da rubrica | — |
 | Você confere cerca de 20 vereditos reais na página de resultados, depois do baseline | a calibração humana é sua; a conferência por mim seria uma IA validando outra | você | detalhe | a concordância registrada | — |
 | O eval mede só o primeiro turno e julga em lote | limites declarados nas evidências; itens de múltiplos turnos se decidem depois da correção do protocolo | você | detalhe | a matriz de modelos | — |
+| O eval reproduz o bug com um item novo com histórico: "Como fiquei na AV1?" e depois a frase literal, com o aluno real | no primeiro turno a frase literal propôs em 0 de 5; com as notas antes na conversa, em 4 de 5 | você | pilar | os itens de trancamento, o runner e a composição do baseline | — |
 
 ## Registro
+
+**Mudança no spec** · 2026-11-06 · D48, T10
+
+- **O quê:** o campo `history` no golden e o item TR-13, novo âncora do bug. Baseline com 151 execuções.
+- **Por quê:** o baseline de 146 execuções, não commitado, teve TR-01 sem proposta em 5 de 5. O trace original mostra que o pedido foi o 5º da
+  conversa. Medido com 5 repetições por condição, sem confirmar: frase no 1º turno 0; depois dos serviços 1; depois da conversa inteira 3;
+  depois das notas 4; `UniMontanhas:070114` com "Gestão Estratégica II", no 1º turno, 4.
+- **Seções editadas:** §3.1; `t10-runner-eval.md`, nos itens, no baseline e no oráculo.
+- **Impacto na implementação:** o TR-01 fica como está. O runner executa os turnos anteriores de verdade, e só o último vai aos graders e ao juiz.
 
 **Mudança no spec** · 2026-11-06 · D44 a D47, §6.6, T10, T14
 
