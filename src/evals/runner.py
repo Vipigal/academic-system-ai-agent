@@ -17,9 +17,15 @@ class RunListener(Protocol):
 
     def bind_trace(self, trace_id: str) -> None: ...
 
+    def begin_final_turn(self) -> None: ...
+
+    def add_usage(self, tokens_in: int, tokens_out: int) -> None: ...
+
 
 class AgentDriver(Protocol):
-    async def run(self, student: str, question: str, listener: RunListener) -> None: ...
+    async def run(
+        self, student: str, question: str, history: tuple[str, ...], listener: RunListener
+    ) -> None: ...
 
 
 class ExecutionSink(Protocol):
@@ -55,7 +61,9 @@ class EvalRunner:
         context = planned.context
         recorder = ExecutionRecorder(context.item.id, planned.repetition, context.question)
         try:
-            await self._driver.run(context.item.student, context.question, recorder)
+            await self._driver.run(
+                context.item.student, context.question, context.item.history, recorder
+            )
         except AgentFailedError as error:
             return recorder.finish(type(error).__name__)
         return recorder.finish()

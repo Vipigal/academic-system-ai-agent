@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from evals.critical_consistency import CriticalConsistency
+from evals.critical_consistency import PROPOSAL_NOTE, CriticalConsistency
 from evals.critical_rule import CriticalRule, RoundResult
 from evals.golden.parts import FrozenModel
 from evals.judge.verdicts import CriterionOutcome
@@ -27,6 +27,7 @@ class PageExecution(FrozenModel):
     area: str
     kind: str
     critical: bool
+    history: tuple[str, ...]
     question: str
     answer: str
     reference: str | None
@@ -51,6 +52,7 @@ class PagePayload(FrozenModel):
     indicators: tuple[PageIndicator, ...]
     consistency_label: str
     consistency_note: str
+    proposal_note: str
     critical: tuple[CriticalRow, ...]
     executions: tuple[PageExecution, ...]
     review: tuple[ReviewCard, ...]
@@ -73,6 +75,7 @@ class PageExecutions:
             area=record.area,
             kind=record.kind.value,
             critical=record.critical,
+            history=record.history,
             question=record.question,
             answer=record.answer,
             reference=request.reference if request else None,
@@ -125,6 +128,7 @@ class PagePayloads:
             indicators=tuple(PageIndicators.of(data)),
             consistency_label=summary.label,
             consistency_note=summary.note,
+            proposal_note=PROPOSAL_NOTE,
             critical=tuple(CriticalRows.of(data)),
             executions=tuple(PageExecutions(data).all()),
             review=ReviewSample.of(data),

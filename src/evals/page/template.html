@@ -139,6 +139,7 @@ a { color: var(--accent); }
       el("h2", { text: "Itens críticos" }),
       el("p", { "class": "note", text: run.consistency_note }),
       el("p", { "class": "note", text: "A rubrica aparece ao lado e não reprova a rodada sozinha." }),
+      el("p", { "class": "note", text: run.proposal_note }),
       rows.length
         ? table([["Item"], ["Repetições aprovadas"], [run.consistency_label], ["Proposta"], ["Trajetória"], ["Rubrica"]], rows)
         : el("p", { text: "Nenhum item crítico nesta rodada." }));
@@ -182,6 +183,11 @@ a { color: var(--accent); }
   }
 
   function section(title, content) { return el("div", {}, el("h3", { text: title }), content); }
+  function historyOf(history) {
+    var list = el("ul", { "class": "list" });
+    history.forEach(function (earlier) { list.appendChild(el("li", {}, tag("contexto", "none"), el("span", { text: " " + earlier }))); });
+    return list;
+  }
   function detailOf(execution) {
     var tools = el("ul", { "class": "list" });
     execution.steps.forEach(function (step) {
@@ -208,7 +214,8 @@ a { color: var(--accent); }
       : el("p", { "class": "note", text: "Sem link de trace nesta execução." });
     return el("div", {},
       execution.error ? el("p", {}, tag("erro: " + execution.error, "bad")) : null,
-      section("Pergunta", el("div", { "class": "text", text: execution.question })),
+      execution.history.length ? section("Contexto: perguntas anteriores do aluno", historyOf(execution.history)) : null,
+      section(execution.history.length ? "Pergunta avaliada" : "Pergunta", el("div", { "class": "text", text: execution.question })),
       section("Resposta", el("div", { "class": "text", text: execution.answer || "(sem resposta)" })),
       execution.reference ? section("Referência", el("div", { "class": "text", text: execution.reference })) : null,
       section("Tools chamadas", tools),
@@ -345,7 +352,8 @@ a { color: var(--accent); }
     return el("article", { "class": "card" },
       el("div", {}, el("code", { text: card.execution + " " }), outcomeTag(card.judge_verdict)),
       section("Critério", el("div", { text: card.criterion })),
-      section("Pergunta", el("div", { "class": "text", text: card.question })),
+      card.history.length ? section("Contexto: perguntas anteriores do aluno", historyOf(card.history)) : null,
+      section(card.history.length ? "Pergunta avaliada" : "Pergunta", el("div", { "class": "text", text: card.question })),
       section("Resposta", el("div", { "class": "text", text: card.answer })),
       section("Referência", el("div", { "class": "text", text: card.reference })),
       section("Raciocínio do juiz", el("div", { "class": "note", text: card.reasoning })),

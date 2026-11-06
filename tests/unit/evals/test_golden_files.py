@@ -28,7 +28,7 @@ def test_the_protocol_actions_cover_every_service_and_mark_the_critical_items() 
         for item in golden.actions
         if item.area == "SV"
     }
-    assert areas == {"TR": 12, "SV": 18, "ES": 2}
+    assert areas == {"TR": 13, "SV": 18, "ES": 2}
     assert len(set(services.values())) == 18
     anchors = {item.id for item in golden.actions if item.area == "TR"}
     assert {item.id for item in golden.items if item.critical} == {"PR-08", *anchors}
@@ -46,3 +46,12 @@ def test_a_service_with_a_fee_expects_no_proposal_and_a_free_one_expects_itself(
 def test_no_anchor_item_forbids_the_call_that_may_be_refused() -> None:
     for item in GoldenLoader.load().actions:
         assert "propose_protocol" not in item.tools.forbidden, item.id
+
+
+def test_the_bug_anchor_runs_the_grades_question_before_the_literal_phrase() -> None:
+    items = {item.id: item for item in GoldenLoader.load().items}
+    anchor = items["TR-13"]
+    assert anchor.history == ("Como fiquei na AV1?",)
+    assert anchor.critical
+    assert anchor.question == items["TR-01"].question
+    assert items["TR-01"].history == ()

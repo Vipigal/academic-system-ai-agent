@@ -70,6 +70,7 @@ class ExecutionRecord(FrozenModel):
     kind: Kind
     split: Split
     critical: bool
+    history: tuple[str, ...] = ()
     question: str
     answer: str
     steps: tuple[StepRecord, ...]
@@ -109,6 +110,7 @@ class ExecutionRecords:
             kind=item.kind,
             split=item.split,
             critical=item.critical,
+            history=item.history,
             question=execution.question,
             answer=execution.answer,
             steps=tuple(StepRecord.of(step) for step in execution.steps),

@@ -17,6 +17,7 @@ class ReviewCard(FrozenModel):
     execution: str
     area: str
     criterion: str
+    history: tuple[str, ...] = ()
     question: str
     answer: str
     reference: str
@@ -48,6 +49,7 @@ class ReviewCards:
                 execution=request.id,
                 area=area,
                 criterion=text,
+                history=request.history,
                 question=request.question,
                 answer=request.answer,
                 reference=request.reference,

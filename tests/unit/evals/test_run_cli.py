@@ -19,8 +19,8 @@ def planned_by(command: str) -> int:
     return len(RunPlan.of(items, request.repetitions))
 
 
-def test_the_baseline_command_plans_146_executions() -> None:
-    assert planned_by(BASELINE) == 146
+def test_the_baseline_command_plans_151_executions() -> None:
+    assert planned_by(BASELINE) == 151
 
 
 def test_the_command_of_the_spec_runs_dev_questions_with_repetitions() -> None:

@@ -37,6 +37,7 @@ class GoldenItem(FrozenModel):
     divergences: tuple[CatalogDivergence, ...] = ()
     critical: bool = False
     proposal: ExpectedProposal = ExpectedProposal()
+    history: tuple[str, ...] = ()
 
     @property
     def area(self) -> str:

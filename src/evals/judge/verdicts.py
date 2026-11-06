@@ -17,6 +17,7 @@ class JudgeRequest(FrozenModel):
     answer: str
     reference: str
     rubric: tuple[str, ...]
+    history: tuple[str, ...] = ()
 
 
 class CriterionVerdict(FrozenModel):

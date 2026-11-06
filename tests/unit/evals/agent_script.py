@@ -1,7 +1,9 @@
-from collections.abc import Callable, Sequence
+from collections.abc import AsyncGenerator, Callable, Sequence
 
 from api.application.agent import agent_errors
 from api.application.agent import events as agent_events
+from api.application.agent.history import PastMessage
+from evals.conversation import Conversation
 from evals.runner import RunListener
 
 SIGNED_VALUE = "valor-assinado-do-aluno"
@@ -41,9 +43,13 @@ class ScriptedDriver:
         self._script = script
         self._trace_id = trace_id
         self.asked: list[str] = []
+        self.histories: list[tuple[str, ...]] = []
 
-    async def run(self, student: str, question: str, listener: RunListener) -> None:
+    async def run(
+        self, student: str, question: str, history: tuple[str, ...], listener: RunListener
+    ) -> None:
         self.asked.append(question)
+        self.histories.append(history)
         if self._trace_id is not None:
             listener.bind_trace(self._trace_id)
         events = self._script(question)
@@ -51,3 +57,34 @@ class ScriptedDriver:
             raise agent_errors.AgentTimeoutError(student)
         for event in events:
             listener.receive(event)
+
+
+type Call = tuple[str, tuple[PastMessage, ...]]
+
+
+class ScriptedAgent:
+    def __init__(
+        self,
+        script: Callable[[str], Sequence[agent_events.AgentEvent]],
+    ) -> None:
+        self._script = script
+        self.calls: list[Call] = []
+
+    async def stream(
+        self, message: str, past: Sequence[PastMessage] = ()
+    ) -> AsyncGenerator[agent_events.AgentEvent]:
+        self.calls.append((message, tuple(past)))
+        for event in self._script(message):
+            yield event
+
+
+class ConversationDriver:
+    def __init__(self, agent: ScriptedAgent) -> None:
+        self.agent = agent
+        self.students: list[str] = []
+
+    async def run(
+        self, student: str, question: str, history: tuple[str, ...], listener: RunListener
+    ) -> None:
+        self.students.append(student)
+        await Conversation.play(self.agent, history, question, listener)

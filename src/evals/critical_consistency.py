@@ -4,6 +4,11 @@ from dataclasses import dataclass
 from evals.critical_rule import CRITICAL_GRADERS, KEY_SEPARATOR
 from evals.records import ExecutionRecord, RunManifest
 
+PROPOSAL_NOTE = (
+    "Proposta 5/5 significa que o agente fez o esperado em todas as repetições: não propor quando "
+    "o item pede nenhuma proposta, ou propor o serviço certo quando pede. Proposta aceita pelo "
+    "servidor não é sinônimo de correta: num item que pede nenhuma, ela é o bug."
+)
 CONSISTENCY_LIMIT = "Limite: 5 em 5 não prova ausência de bug."
 
 

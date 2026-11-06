@@ -123,6 +123,19 @@ class DetailSection:
         by_kind = GroupedAccuracy.by(self._records, lambda record: record.kind.value)
         yield from MarkdownTable.accuracy("Acerto por kind", by_kind)
 
+    def histories(self) -> Iterator[str]:
+        keyed = {record.item_id: record for record in self._records if record.history}
+        if not keyed:
+            return
+        yield "## Itens com conversa anterior"
+        yield ""
+        yield "As perguntas anteriores são contexto: só a última é avaliada."
+        yield ""
+        for item_id, record in keyed.items():
+            earlier = "; ".join(record.history)
+            yield f"- {item_id}, contexto: {earlier}. Avaliada: {record.question}"
+        yield ""
+
     def failures(self) -> Iterator[str]:
         yield "## Falhas dos graders"
         yield ""
@@ -146,6 +159,7 @@ class RunReport:
             *OverviewSection(data).lines(),
             *critical.table(),
             *detail.accuracy(),
+            *detail.histories(),
             *detail.failures(),
         )
         return "\n".join(lines)

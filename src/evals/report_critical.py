@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from evals.critical_consistency import CriticalConsistency
+from evals.critical_consistency import PROPOSAL_NOTE, CriticalConsistency
 from evals.critical_rule import CriticalFailure, CriticalRule
 from evals.graders.verdict import GraderName
 from evals.report_indicators import CriticalRow, CriticalRows
@@ -45,11 +45,17 @@ class CriticalSection:
         yield ""
         yield summary.note
         yield ""
-        yield "A rubrica aparece ao lado e não reprova a rodada sozinha."
-        yield ""
+        yield from self._notes()
         header = ("Item", "k", "Aprovadas", summary.label, "Proposta", "Trajetória", "Rubrica")
         rows = map(self._row, CriticalRows.of(self._data))
         yield from MarkdownTable.of(header, rows)
+        yield ""
+
+    @staticmethod
+    def _notes() -> Iterator[str]:
+        yield "A rubrica aparece ao lado e não reprova a rodada sozinha."
+        yield ""
+        yield PROPOSAL_NOTE
         yield ""
 
     @staticmethod

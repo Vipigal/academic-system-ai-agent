@@ -171,3 +171,17 @@ async def test_a_line_separator_in_an_answer_does_not_break_the_jsonl(tmp_path: 
     data = await run_with_proposal(tmp_path, HOSTILE)
     assert len(data.records) == 2
     assert data.records[0].answer == HOSTILE
+
+
+async def test_a_review_card_shows_the_earlier_questions_only_when_there_are_any(
+    tmp_path: Path,
+) -> None:
+    driver = agent_script.ScriptedDriver(lambda _: agent_script.answer_events("Resposta"))
+    earlier = question(id="TR-13", facts=[], history=["Como fiquei na AV1?"])
+    await support.run_items(tmp_path, driver, [(earlier, 1), (question(id="FI-01", facts=[]), 1)])
+    for key in ("TR-13#1", "FI-01#1"):
+        JsonLines.append(RunFiles(tmp_path).judge_verdicts, judged_as(key, PASS))
+    data = RunReport.write(RunFiles(tmp_path))
+
+    histories = {card.execution: card.history for card in ReviewSample.of(data)}
+    assert histories == {"TR-13#1": ("Como fiquei na AV1?",), "FI-01#1": ()}

@@ -71,7 +71,7 @@ class ProposalGrader:
             return
         accepted = sorted(expected.accepted)
         if not proposals and not expected.allows_none:
-            yield f"nenhuma proposta válida, esperado {accepted}"
+            yield f"nenhuma proposta aceita pelo servidor, esperado {accepted}"
         for step in proposals:
             code = ProposalOutput.service_code(step.output)
             if code not in expected.services:

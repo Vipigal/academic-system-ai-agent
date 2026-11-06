@@ -56,7 +56,7 @@ def test_any_proposal_fails_when_none_is_expected() -> None:
 
 def test_a_missing_proposal_fails_when_one_is_expected() -> None:
     verdict = grade(question(proposal="ACA-010"))
-    assert verdict.problems == ("nenhuma proposta válida, esperado ['ACA-010']",)
+    assert verdict.problems == ("nenhuma proposta aceita pelo servidor, esperado ['ACA-010']",)
 
 
 def test_a_refused_call_is_not_a_proposal() -> None:

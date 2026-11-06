@@ -11,6 +11,7 @@ A mensagem traz um lote em JSON. Cada item tem:
 
 - `id`: o identificador do item, que você devolve igual;
 - `question`: a pergunta do aluno;
+- `history`: as perguntas anteriores do aluno na mesma conversa, quando houver; serve só de contexto da conversa, sem respostas;
 - `answer`: a resposta do assistente avaliado;
 - `reference`: a resposta ideal, escrita a partir dos dados reais do aluno;
 - `rubric`: a lista de critérios, numerados a partir de 1 na ordem da lista.

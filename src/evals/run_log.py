@@ -37,4 +37,5 @@ class RunLog:
             answer=execution.answer,
             reference=item.reference,
             rubric=item.rubric,
+            history=item.history,
         )

@@ -1,4 +1,3 @@
-from contextlib import aclosing
 from uuid import uuid4
 
 from langfuse import observe, propagate_attributes
@@ -9,6 +8,7 @@ from api.bootstrap.singletons import Singletons
 from api.infrastructure.logging import trace_id_var
 from api.infrastructure.tracing import Tracing
 from api.persistence.identity.student_session_repository import StudentSessionRepository
+from evals.conversation import Conversation
 from evals.records import RunVersions
 from evals.runner import RunListener
 from evals.trace_links import TraceLinks
@@ -30,7 +30,9 @@ class StudentDriver:
         return TraceLinks.prefix() if self._tracing.enabled else None
 
     @observe(name="eval.execution", capture_input=False, capture_output=False)
-    async def run(self, student: str, question: str, listener: RunListener) -> None:
+    async def run(
+        self, student: str, question: str, history: tuple[str, ...], listener: RunListener
+    ) -> None:
         person_id = await self._person_of(student)
         session = await self._identities.load(person_id)
         with (
@@ -39,9 +41,7 @@ class StudentDriver:
         ):
             if self._tracing.enabled:
                 listener.bind_trace(trace_id_var.get())
-            async with aclosing(agent.stream(question)) as events:
-                async for event in events:
-                    listener.receive(event)
+            await Conversation.play(agent, history, question, listener)
 
     async def close(self) -> None:
         self._tracing.flush()

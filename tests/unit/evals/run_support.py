@@ -9,8 +9,7 @@ from evals.report import RunReport
 from evals.run_data import RunData
 from evals.run_files import RunFiles
 from evals.run_log import RunLog
-from evals.runner import ContextualizedExecution, EvalRunner
-from tests.unit.evals.agent_script import ScriptedDriver
+from evals.runner import AgentDriver, ContextualizedExecution, EvalRunner
 
 VERSIONS = RunVersions(
     model="gpt-6-luna",
@@ -52,7 +51,7 @@ def write_manifest(files: RunFiles, manifest: RunManifest) -> None:
 
 async def run_items(
     directory: Path,
-    driver: ScriptedDriver,
+    driver: AgentDriver,
     items: Sequence[tuple[GoldenItem, int]],
     golden_critical: tuple[str, ...] | None = None,
     extra_planned: tuple[str, ...] = (),

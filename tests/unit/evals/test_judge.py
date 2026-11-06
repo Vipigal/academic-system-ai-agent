@@ -81,7 +81,7 @@ async def test_the_request_carries_only_the_fields_of_the_judge() -> None:
 
     sent = json.loads(process.text)
     assert sent == {"items": [REQUEST.model_dump(mode="json")]}
-    assert set(sent["items"][0]) == {"id", "question", "answer", "reference", "rubric"}
+    assert set(sent["items"][0]) == {"id", "question", "answer", "reference", "rubric", "history"}
 
 
 async def test_the_answer_is_validated_against_the_schema() -> None:
@@ -181,3 +181,10 @@ async def test_the_chat_model_completion_goes_through_the_bootstrap_model() -> N
     judge = ReserveJudge(AGENT, ChatModelCompletion(settings))
     with pytest.raises(JudgeFailedError):
         await judge.judge(ONE_REQUEST)
+
+
+async def test_the_judge_receives_the_earlier_questions_as_context() -> None:
+    process = FakeProcess(finished(answer_text(REQUEST)))
+    request = REQUEST.model_copy(update={"history": ("Como fiquei na AV1?",)})
+    await ClaudeCodeJudge(AGENT, process).judge([request])
+    assert json.loads(process.text)["items"][0]["history"] == ["Como fiquei na AV1?"]
