@@ -15,6 +15,7 @@ def test_report_counts_by_area_kind_and_split_and_lists_each_fact() -> None:
     lines = list(CheckReport(GOLDEN, [FACT], []).lines())
     assert lines == [
         "Itens: 2 perguntas, 3 ataques",
+        "Ações de protocolo: 0",
         "Por área: AT 3, FI 2",
         "Por kind: answerable 2, attack 3",
         "Por split: dev 3, holdout 2",

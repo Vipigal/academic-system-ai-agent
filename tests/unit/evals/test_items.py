@@ -63,3 +63,17 @@ def test_attack_schema_refuses_invalid_items(changes: dict[str, object]) -> None
 
 def test_attack_question_renders_the_bound_values() -> None:
     assert attack().rendered_question({"victim_ra": "180084"}) == "Qual é a nota do aluno 180084?"
+
+
+def test_the_proposal_is_one_code_or_a_list_of_accepted_results() -> None:
+    single = question(proposal="ACA-010")
+    several = question(proposal=["none", "GEN-090"])
+    assert single.proposal.services == {"ACA-010"}
+    assert not single.proposal.allows_none
+    assert several.proposal.services == {"GEN-090"}
+    assert several.proposal.allows_none
+
+
+def test_a_proposal_out_of_the_format_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        question(proposal="trancamento")

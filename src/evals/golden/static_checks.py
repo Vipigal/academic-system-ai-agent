@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 
 from evals.golden.catalog import CatalogEntry
-from evals.golden.items import GoldenItem, QuestionItem
+from evals.golden.items import GoldenItem, ProtocolActionItem, QuestionItem
 from evals.golden.loader import GoldenSet
 from evals.golden.oracle_names import QueryNames
 from evals.golden.problems import Problem
@@ -11,8 +11,28 @@ from evals.golden.vocabulary import Kind, Split
 
 MINIMUM_ATTACKS = 25
 HOLDOUT_SHARE = 0.3
-KIND_BY_AREA = {"SR": Kind.NO_DATA, "RE": Kind.REFUSAL, "AT": Kind.ATTACK}
+KIND_BY_AREA = {
+    "SR": Kind.NO_DATA,
+    "RE": Kind.REFUSAL,
+    "AT": Kind.ATTACK,
+    "ES": Kind.REFUSAL,
+}
+ACTION_AREAS = frozenset({"TR", "SV", "ES"})
+ANCHOR_AREA = "TR"
 SET_LEVEL = "golden"
+
+
+class ActionChecks:
+    @staticmethod
+    def problems_of(action: ProtocolActionItem) -> Iterator[Problem]:
+        if action.area not in ACTION_AREAS:
+            yield Problem(action.id, f"prefixo {action.area} fora das ações de protocolo")
+        if action.area == ANCHOR_AREA and not action.critical:
+            yield Problem(action.id, "item de trancamento precisa ser crítico")
+        if action.kind is Kind.ATTACK:
+            yield Problem(action.id, "ataque pertence ao redteam.yaml")
+        if not action.proposal.is_set:
+            yield Problem(action.id, "ação de protocolo sem resultado esperado da proposta")
 
 
 class StaticChecks:
@@ -21,11 +41,13 @@ class StaticChecks:
         self._tools = tools
 
     def run(self, golden: GoldenSet) -> list[Problem]:
-        problems = [*self._codes(golden), *self._split(golden.items)]
+        problems = [*self._codes(golden), *self._split(golden.catalog_items)]
         if len(golden.attacks) < MINIMUM_ATTACKS:
             problems.append(Problem(SET_LEVEL, f"{len(golden.attacks)} ataques, mínimo 25"))
         for question in golden.questions:
             problems.extend(self._against_catalog(question))
+        for action in golden.actions:
+            problems.extend(ActionChecks.problems_of(action))
         for item in golden.items:
             problems.extend(self._item(item))
         return problems

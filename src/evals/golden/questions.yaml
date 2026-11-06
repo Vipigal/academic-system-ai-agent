@@ -1386,13 +1386,13 @@
 - id: PR-08
   kind: answerable
   split: dev
+  critical: true
+  proposal: none
   question: Quero trancar minha matrícula.
   student: UniSaoPaulo:180882
   tools:
     expected:
     - list_enrollments
-    - list_protocols
-    - propose_protocol
     forbidden: []
   facts:
   - name: locked_on

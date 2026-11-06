@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultado do eval</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f7f7f5; --surface: #ffffff; --text: #1f2328; --muted: #5b6470; --line: #d9dce1;
+  --ok: #17693a; --ok-bg: #e4f4ea; --bad: #a12626; --bad-bg: #fbe9e7; --warn: #8a5a00; --warn-bg: #fdf2d8;
+  --accent: #2b5fb8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --surface: #1e2125; --text: #e7e9ec; --muted: #a0a8b3; --line: #343941;
+    --ok: #6fd69a; --ok-bg: #173324; --bad: #f19a8f; --bad-bg: #3a1d1a; --warn: #e9c46a; --warn-bg: #3a2f12;
+    --accent: #8ab4f8;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.page { max-width: 1120px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 20px; margin: 0 0 8px; }
+h2 { font-size: 16px; margin: 20px 0 8px; }
+h3 { font-size: 14px; margin: 14px 0 4px; }
+.banner { border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--line); }
+.banner strong { font-size: 18px; display: block; }
+.REPROVADA { background: var(--bad-bg); color: var(--bad); }
+.APROVADA { background: var(--ok-bg); color: var(--ok); }
+.INCOMPLETA { background: var(--warn-bg); color: var(--warn); }
+.banner ul { margin: 8px 0 0; padding-left: 18px; color: var(--text); max-height: 180px; overflow: auto; font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.tile span { display: block; color: var(--muted); font-size: 12px; }
+.tile b { overflow-wrap: anywhere; }
+.tabs { display: flex; gap: 4px; margin: 16px 0 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; color: var(--muted); font: inherit; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.note { color: var(--muted); font-size: 13px; margin: 6px 0; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+tr.row { cursor: pointer; }
+tr.row:hover { background: var(--bg); }
+td.detail { white-space: normal; background: var(--bg); padding: 12px; }
+.tag { display: inline-block; padding: 0 7px; border-radius: 10px; font-size: 12px; }
+.tag.ok { background: var(--ok-bg); color: var(--ok); }
+.tag.bad { background: var(--bad-bg); color: var(--bad); }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+.tag.none { color: var(--muted); border: 1px solid var(--line); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+select, input[type=search], textarea { font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; max-width: 100%; }
+.text { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+code, .args { font: 12px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; white-space: pre-wrap; }
+.list { margin: 0; padding: 0; list-style: none; }
+.list li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+.card .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+button.mark, button.plain { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 12px; cursor: pointer; }
+button.mark[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.card textarea { width: 100%; margin-top: 8px; }
+a { color: var(--accent); }
+@media (max-width: 640px) { .hide-narrow { display: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Resultado do eval</h1>
+  <div id="opening"></div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <section id="tab-resultado"></section>
+  <section id="tab-execucoes" hidden></section>
+  <section id="tab-conferencia" hidden></section>
+</div>
+<script type="application/json" id="run-data">__RUN_DATA__</script>
+<script>
+(function () {
+  "use strict";
+  var run = JSON.parse(document.getElementById("run-data").textContent);
+  var OUTCOME = { pass: ["aprovado", "ok"], fail: ["reprovado", "bad"], unknown: ["unknown", "warn"] };
+
+  function el(tag, attrs) {
+    var node = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (name) {
+      if (name === "text") { node.textContent = attrs[name]; }
+      else if (name === "on") { Object.keys(attrs.on).forEach(function (ev) { node.addEventListener(ev, attrs.on[ev]); }); }
+      else { node.setAttribute(name, attrs[name]); }
+    });
+    for (var i = 2; i < arguments.length; i++) { if (arguments[i]) { node.appendChild(arguments[i]); } }
+    return node;
+  }
+  function tag(label, tone) { return el("span", { "class": "tag " + tone, text: label }); }
+  function outcomeTag(outcome) {
+    if (!outcome) { return tag("sem julgamento", "none"); }
+    return tag(OUTCOME[outcome][0], OUTCOME[outcome][1]);
+  }
+  function fill(node) {
+    node.textContent = "";
+    for (var i = 1; i < arguments.length; i++) { if (arguments[i]) { node.appendChild(arguments[i]); } }
+  }
+  function table(headers, rows) {
+    var head = el("tr");
+    headers.forEach(function (h) {
+      head.appendChild(el("th", { text: h[0], "class": h[1] || "" }));
+    });
+    var body = el("tbody");
+    rows.forEach(function (row) { body.appendChild(row); });
+    return el("div", { "class": "table-wrap" }, el("table", {}, el("thead", {}, head), body));
+  }
+
+  function renderOpening() {
+    var banner = el("div", { "class": "banner " + run.state },
+      el("strong", { text: "Rodada " + run.state }),
+      el("div", { text: run.reason }));
+    if (run.problems.length) {
+      var list = el("ul");
+      run.problems.forEach(function (p) { list.appendChild(el("li", { text: p })); });
+      banner.appendChild(list);
+    }
+    var grid = el("div", { "class": "grid" });
+    run.indicators.forEach(function (i) {
+      grid.appendChild(el("div", { "class": "tile" }, el("span", { text: i.label }), el("b", { text: i.value })));
+    });
+    fill(document.getElementById("opening"), banner, grid);
+  }
+
+  function renderResult() {
+    var rows = run.critical.map(function (row) {
+      return el("tr", { "class": "row", on: { click: function () { showItem(row.item); } } },
+        el("td", { text: row.item }),
+        el("td", { text: row.approved + "/" + row.planned }),
+        el("td", {}, row.passed_all ? tag("sim", "ok") : tag("não", "bad")),
+        el("td", { text: row.proposal }),
+        el("td", { text: row.trajectory }),
+        el("td", { text: row.rubric }));
+    });
+    fill(document.getElementById("tab-resultado"),
+      el("h2", { text: "Itens críticos" }),
+      el("p", { "class": "note", text: run.consistency_note }),
+      el("p", { "class": "note", text: "A rubrica aparece ao lado e não reprova a rodada sozinha." }),
+      rows.length
+        ? table([["Item"], ["Repetições aprovadas"], [run.consistency_label], ["Proposta"], ["Trajetória"], ["Rubrica"]], rows)
+        : el("p", { text: "Nenhum item crítico nesta rodada." }));
+  }
+
+  var filters = { area: "", kind: "", grader: "", failures: false, item: "" };
+  var filterInputs = {};
+
+  function graderFailed(execution, grader) {
+    if (grader === "judge") { return Boolean(execution.judge_outcome) && execution.judge_outcome !== "pass"; }
+    return execution.verdicts.some(function (v) { return v.grader === grader && !v.passed; });
+  }
+  function hasGrader(execution, grader) {
+    if (grader === "judge") { return Boolean(execution.judge_outcome); }
+    return execution.verdicts.some(function (v) { return v.grader === grader; });
+  }
+  function failed(execution) {
+    return !execution.passed || graderFailed(execution, "judge");
+  }
+  function visible(execution) {
+    if (filters.area && execution.area !== filters.area) { return false; }
+    if (filters.kind && execution.kind !== filters.kind) { return false; }
+    if (filters.item && execution.key.toUpperCase().indexOf(filters.item.toUpperCase()) < 0) { return false; }
+    if (filters.grader && !hasGrader(execution, filters.grader)) { return false; }
+    if (filters.failures) {
+      return filters.grader ? graderFailed(execution, filters.grader) : failed(execution);
+    }
+    return true;
+  }
+  function select(name, label, values) {
+    var node = el("select", { name: name, "aria-label": label, on: { change: function () { filters[name] = node.value; renderRows(); } } },
+      el("option", { value: "", text: label + ": todos" }));
+    values.forEach(function (value) { node.appendChild(el("option", { value: value, text: value })); });
+    filterInputs[name] = node;
+    return node;
+  }
+  function unique(read) {
+    var seen = {};
+    run.executions.forEach(function (execution) { read(execution).forEach(function (v) { seen[v] = true; }); });
+    return Object.keys(seen).sort();
+  }
+
+  function section(title, content) { return el("div", {}, el("h3", { text: title }), content); }
+  function detailOf(execution) {
+    var tools = el("ul", { "class": "list" });
+    execution.steps.forEach(function (step) {
+      var line = el("li", {},
+        el("code", { text: step.name + " " }),
+        tag(step.status, step.status === "ok" ? "ok" : "none"),
+        el("span", { "class": "note", text: " " + step.duration_ms + " ms" }),
+        el("div", { "class": "args", text: JSON.stringify(step.arguments) }));
+      step.guardrail_problems.forEach(function (p) { line.appendChild(el("div", {}, tag(p, "bad"))); });
+      tools.appendChild(line);
+    });
+    if (!execution.steps.length) { tools.appendChild(el("li", { "class": "note", text: "Nenhuma tool chamada." })); }
+    var graders = el("ul", { "class": "list" });
+    execution.verdicts.forEach(function (v) {
+      graders.appendChild(el("li", {}, tag(v.grader, v.passed ? "ok" : "bad"), el("span", { text: " " + v.problems.join("; ") })));
+    });
+    var judge = el("ul", { "class": "list" });
+    execution.criteria.forEach(function (c) {
+      judge.appendChild(el("li", {}, outcomeTag(c.verdict), el("b", { text: " " + c.text }), el("div", { "class": "note", text: c.reasoning })));
+    });
+    if (!execution.criteria.length) { judge.appendChild(el("li", { "class": "note", text: "Sem julgamento." })); }
+    var trace = execution.trace_url
+      ? el("p", {}, el("a", { href: execution.trace_url, target: "_blank", rel: "noopener", text: "Abrir o trace" }))
+      : el("p", { "class": "note", text: "Sem link de trace nesta execução." });
+    return el("div", {},
+      execution.error ? el("p", {}, tag("erro: " + execution.error, "bad")) : null,
+      section("Pergunta", el("div", { "class": "text", text: execution.question })),
+      section("Resposta", el("div", { "class": "text", text: execution.answer || "(sem resposta)" })),
+      execution.reference ? section("Referência", el("div", { "class": "text", text: execution.reference })) : null,
+      section("Tools chamadas", tools),
+      section("Graders", graders),
+      section("Juiz" + (execution.judge_model ? " (" + execution.judge_model + ")" : ""), judge),
+      trace);
+  }
+  function rowsOf(execution) {
+    var row = el("tr", { "class": "row", tabindex: "0" },
+      el("td", {}, el("code", { text: execution.key }), execution.critical ? el("span", { text: " " }) : null, execution.critical ? tag("crítico", "warn") : null),
+      el("td", { "class": "hide-narrow", text: execution.area }),
+      el("td", { "class": "hide-narrow", text: execution.kind }),
+      el("td", {}, execution.error ? tag("erro", "bad") : execution.passed ? tag("passou", "ok") : tag("falhou", "bad")),
+      el("td", {}, outcomeTag(execution.judge_outcome)),
+      el("td", { "class": "hide-narrow", text: Math.round(execution.total_ms) + " ms" }));
+    var open = null;
+    function toggle() {
+      if (open) { open.remove(); open = null; return; }
+      open = el("tr", {}, el("td", { "class": "detail", colspan: "6" }, detailOf(execution)));
+      row.after(open);
+    }
+    row.addEventListener("click", toggle);
+    row.addEventListener("keydown", function (e) { if (e.key === "Enter") { toggle(); } });
+    return row;
+  }
+  var rowsBox, countBox;
+  function renderRows() {
+    var shown = run.executions.filter(visible);
+    countBox.textContent = shown.length + " de " + run.executions.length + " execuções";
+    fill(rowsBox, shown.length
+      ? table([["Execução"], ["Área", "hide-narrow"], ["Kind", "hide-narrow"], ["Graders"], ["Juiz"], ["Latência", "hide-narrow"]], shown.map(rowsOf))
+      : el("p", { "class": "note", text: "Nenhuma execução com esses filtros." }));
+  }
+  function renderExecutions() {
+    rowsBox = el("div");
+    countBox = el("span", { "class": "note" });
+    var only = el("input", { type: "checkbox", id: "only-failures", name: "only-failures", on: { change: function () { filters.failures = only.checked; renderRows(); } } });
+    filterInputs.failures = only;
+    var search = el("input", { type: "search", name: "item", placeholder: "Item", "aria-label": "Item", on: { input: function () { filters.item = search.value; renderRows(); } } });
+    filterInputs.item = search;
+    var graders = unique(function (e) { return e.verdicts.map(function (v) { return v.grader; }).concat(e.judge_outcome ? ["judge"] : []); });
+    fill(document.getElementById("tab-execucoes"),
+      el("div", { "class": "filters" },
+        search,
+        select("area", "Área", unique(function (e) { return [e.area]; })),
+        select("kind", "Kind", unique(function (e) { return [e.kind]; })),
+        select("grader", "Grader", graders),
+        el("label", {}, only, el("span", { text: " Só as falhas" })),
+        countBox),
+      rowsBox);
+    renderRows();
+  }
+  function showItem(item) {
+    filters.item = item + "#";
+    filterInputs.item.value = filters.item;
+    renderRows();
+    selectTab("execucoes");
+  }
+
+  var STORAGE_KEY = "eval-conferencia:" + run.run_id;
+  var marks = readMarks();
+  function readMarks() {
+    try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY)) || {}; } catch (error) { return {}; }
+  }
+  function saveMarks() {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(marks)); } catch (error) { return; }
+  }
+  function metrics() {
+    var counts = { tp: 0, fn: 0, tn: 0, fp: 0, agree: 0, total: 0 };
+    run.review.forEach(function (card) {
+      var mark = marks[card.id] && marks[card.id].mark;
+      if (!mark) { return; }
+      var agreed = mark === "agree";
+      var approved = card.judge_verdict === "pass";
+      counts.total += 1;
+      counts.agree += agreed ? 1 : 0;
+      if (approved) { counts[agreed ? "tp" : "fp"] += 1; } else { counts[agreed ? "tn" : "fn"] += 1; }
+    });
+    return counts;
+  }
+  function ratio(part, whole) { return whole ? Math.round(100 * part / whole) + "% (" + part + "/" + whole + ")" : "não conferido"; }
+  var scoreBox;
+  function renderScore() {
+    var c = metrics();
+    var tiles = [
+      ["Conferidos", c.total + " de " + run.review.length],
+      ["TPR (certas que o juiz aprovou)", ratio(c.tp, c.tp + c.fn)],
+      ["TNR (erradas que o juiz reprovou)", ratio(c.tn, c.tn + c.fp)],
+      ["Concordância", ratio(c.agree, c.total)]
+    ];
+    var grid = el("div", { "class": "grid" });
+    tiles.forEach(function (t) { grid.appendChild(el("div", { "class": "tile" }, el("span", { text: t[0] }), el("b", { text: t[1] }))); });
+    fill(scoreBox, grid);
+  }
+  function exportLabels() {
+    var labels = run.review.map(function (card) {
+      var mark = marks[card.id] || {};
+      return { id: card.id, execution: card.execution, area: card.area, criterion: card.criterion, judge_verdict: card.judge_verdict, mark: mark.mark || "nao_conferido", note: mark.note || "" };
+    });
+    var blob = new Blob([JSON.stringify({ run_id: run.run_id, metrics: metrics(), labels: labels }, null, 2)], { type: "application/json" });
+    var link = el("a", { href: URL.createObjectURL(blob), download: "conferencia-do-juiz.json" });
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+  function cardOf(card) {
+    var status = el("span", { "class": "note" });
+    var note = el("textarea", { rows: "2", name: "nota-" + card.id, placeholder: "Nota opcional", "aria-label": "Nota opcional" });
+    var buttons = {};
+    function paint() {
+      var mark = marks[card.id] && marks[card.id].mark;
+      status.textContent = mark === "agree" ? "concordo" : mark === "disagree" ? "discordo" : "não conferido";
+      buttons.agree.setAttribute("aria-pressed", String(mark === "agree"));
+      buttons.disagree.setAttribute("aria-pressed", String(mark === "disagree"));
+    }
+    function choose(mark) {
+      var current = marks[card.id] || {};
+      current.mark = current.mark === mark ? undefined : mark;
+      marks[card.id] = current;
+      saveMarks();
+      paint();
+      renderScore();
+    }
+    buttons.agree = el("button", { "class": "mark", type: "button", text: "Concordo", on: { click: function () { choose("agree"); } } });
+    buttons.disagree = el("button", { "class": "mark", type: "button", text: "Discordo", on: { click: function () { choose("disagree"); } } });
+    note.value = (marks[card.id] && marks[card.id].note) || "";
+    note.addEventListener("input", function () {
+      var current = marks[card.id] || {};
+      current.note = note.value;
+      marks[card.id] = current;
+      saveMarks();
+    });
+    paint();
+    return el("article", { "class": "card" },
+      el("div", {}, el("code", { text: card.execution + " " }), outcomeTag(card.judge_verdict)),
+      section("Critério", el("div", { text: card.criterion })),
+      section("Pergunta", el("div", { "class": "text", text: card.question })),
+      section("Resposta", el("div", { "class": "text", text: card.answer })),
+      section("Referência", el("div", { "class": "text", text: card.reference })),
+      section("Raciocínio do juiz", el("div", { "class": "note", text: card.reasoning })),
+      el("div", { "class": "actions" }, buttons.agree, buttons.disagree, status),
+      note);
+  }
+  function renderReview() {
+    var box = document.getElementById("tab-conferencia");
+    var guide = el("div", { "class": "card" },
+      el("h2", { text: "Como decidir" }),
+      el("p", { text: "Marque se o veredito do juiz está certo para este critério. O que importa é o aluno entender e a informação estar certa." }));
+    var rules = el("ul");
+    [
+      "Forma diferente passa: outras palavras, outra ordem ou outro formato de valor.",
+      "Omissão passa ou não conforme o critério pedir: se ele exige o dado, faltar reprova; se não exige, passa.",
+      "Dado afirmado que a referência não sustenta reprova.",
+      "Identificador técnico serve para reconhecer o objeto: basta a resposta identificá-lo de um jeito que o aluno reconheça."
+    ].forEach(function (rule) { rules.appendChild(el("li", { text: rule })); });
+    guide.appendChild(rules);
+    scoreBox = el("div");
+    var cards = el("div");
+    run.review.forEach(function (card) { cards.appendChild(cardOf(card)); });
+    fill(box, guide, scoreBox,
+      el("p", {}, el("button", { "class": "plain", type: "button", text: "Exportar JSON", on: { click: exportLabels } })),
+      run.review.length ? cards : el("p", { "class": "note", text: "Ainda não há vereditos do juiz para conferir." }));
+    renderScore();
+  }
+
+  var TABS = [["resultado", "Resultado"], ["execucoes", "Execuções"], ["conferencia", "Conferência"]];
+  function selectTab(name) {
+    TABS.forEach(function (tab) {
+      document.getElementById("tab-" + tab[0]).hidden = tab[0] !== name;
+      document.getElementById("button-" + tab[0]).setAttribute("aria-selected", String(tab[0] === name));
+    });
+  }
+  TABS.forEach(function (tab) {
+    document.getElementById("tabs").appendChild(el("button", { id: "button-" + tab[0], role: "tab", type: "button", text: tab[1], on: { click: function () { selectTab(tab[0]); } } }));
+  });
+  renderOpening();
+  renderExecutions();
+  renderResult();
+  renderReview();
+  selectTab("resultado");
+}());
+</script>
+</body>
+</html>

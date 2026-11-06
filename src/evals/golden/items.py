@@ -4,6 +4,7 @@ from typing import Self
 
 from pydantic import Field, model_validator
 
+from evals.golden.expected_proposal import ExpectedProposal
 from evals.golden.parts import (
     STUDENT_KEY,
     CatalogDivergence,
@@ -34,6 +35,8 @@ class GoldenItem(FrozenModel):
     rubric: tuple[str, ...] = Field(min_length=1)
     reference: str = Field(min_length=1)
     divergences: tuple[CatalogDivergence, ...] = ()
+    critical: bool = False
+    proposal: ExpectedProposal = ExpectedProposal()
 
     @property
     def area(self) -> str:
@@ -72,6 +75,10 @@ class QuestionItem(GoldenItem):
         if self.kind is Kind.ATTACK:
             raise ValueError(f"{self.id}: ataque pertence ao redteam.yaml")
         return self
+
+
+class ProtocolActionItem(GoldenItem):
+    pass
 
 
 class AttackItem(GoldenItem):

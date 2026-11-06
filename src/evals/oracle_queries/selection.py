@@ -1,4 +1,70 @@
 SELECTION_QUERIES = {
+    "choose_student_free_of_service": """
+        SELECT min(enrollment.brand || ':' || enrollment.student_id)
+        FROM sag.enrollment JOIN sag.person USING (person_id)
+        WHERE enrollment.brand = :brand AND enrollment.enrollment_status = :status
+          AND regexp_replace(person.cpf, '\\D', '', 'g') IN (
+              SELECT regexp_replace(single.cpf, '\\D', '', 'g')
+              FROM sag.enrollment JOIN sag.person single USING (person_id)
+              GROUP BY 1 HAVING count(*) = 1
+          )
+          AND regexp_replace(person.cpf, '\\D', '', 'g') NOT IN (
+              SELECT lpad(requester_cpf, 11, '0') FROM secretary.protocol
+              WHERE demand = :service AND requester_cpf IS NOT NULL
+          )
+          AND enrollment.student_id NOT IN (
+              SELECT lpad(stu_id, 6, '0') FROM secretary.protocol
+              WHERE demand = :service AND stu_id IS NOT NULL
+          )
+    """,
+    "choose_indebted_student_free_of_service": """
+        SELECT min(enrollment.brand || ':' || enrollment.student_id)
+        FROM sag.enrollment JOIN sag.person USING (person_id)
+        WHERE enrollment.brand = 'UniLitoral' AND enrollment.enrollment_status = 'ACTIVE'
+          AND regexp_replace(person.cpf, '\\D', '', 'g') IN (
+              SELECT regexp_replace(single.cpf, '\\D', '', 'g')
+              FROM sag.enrollment JOIN sag.person single USING (person_id)
+              GROUP BY 1 HAVING count(*) = 1
+          )
+          AND regexp_replace(person.cpf, '\\D', '', 'g') NOT IN (
+              SELECT lpad(requester_cpf, 11, '0') FROM secretary.protocol
+              WHERE demand = :service AND requester_cpf IS NOT NULL
+          )
+          AND enrollment.student_id NOT IN (
+              SELECT lpad(stu_id, 6, '0') FROM secretary.protocol
+              WHERE demand = :service AND stu_id IS NOT NULL
+          )
+          AND left(enrollment.student_id, 5) IN (
+              SELECT lpad(split_part(trim(contract.academicref), '-', 1), 5, '0')
+              FROM finance.contract JOIN finance.invoice USING (contractid)
+              WHERE contract.companycode = '1030' AND contract.businessarea = 'PRESENCIAL'
+                AND invoice.status = 'OVERDUE'
+          )
+    """,
+    "choose_graduated_student_with_cancelled_service": """
+        SELECT min(enrollment.brand || ':' || enrollment.student_id)
+        FROM sag.enrollment JOIN sag.person USING (person_id)
+        JOIN secretary.protocol
+          ON lpad(protocol.requester_cpf, 11, '0') = regexp_replace(person.cpf, '\\D', '', 'g')
+         AND lpad(protocol.stu_id, 6, '0') = enrollment.student_id
+        WHERE enrollment.enrollment_status = 'GRADUATED' AND protocol.demand = :service
+          AND protocol.demand_status = 'Cancelled'
+          AND regexp_replace(person.cpf, '\\D', '', 'g') IN (
+              SELECT regexp_replace(single.cpf, '\\D', '', 'g')
+              FROM sag.enrollment JOIN sag.person single USING (person_id)
+              GROUP BY 1 HAVING count(*) = 1
+          )
+    """,
+    "choose_student_with_active_and_graduated_enrollments": """
+        SELECT min(enrollment.brand || ':' || enrollment.student_id)
+        FROM sag.enrollment JOIN sag.person USING (person_id)
+        WHERE enrollment.enrollment_status = 'ACTIVE'
+          AND regexp_replace(person.cpf, '\\D', '', 'g') IN (
+              SELECT regexp_replace(graduated.cpf, '\\D', '', 'g')
+              FROM sag.enrollment JOIN sag.person graduated USING (person_id)
+              WHERE enrollment.enrollment_status = 'GRADUATED'
+          )
+    """,
     "choose_active_student": """
         SELECT brand || ':' || student_id FROM sag.enrollment
         WHERE enrollment_status = 'ACTIVE' AND brand = 'UniSaoPaulo'

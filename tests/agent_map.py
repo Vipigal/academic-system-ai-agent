@@ -64,7 +64,7 @@ QUESTIONS = (
     ),
     MappedQuestion(
         "PR-08",
-        ("list_enrollments", "list_protocols", "propose_protocol"),
+        ("list_enrollments",),
         ("trancamento", "servico", "prazo_de_atendimento"),
     ),
     MappedQuestion("PR-09", ("get_protocol",), ("pedido_de_terceiro", "protocolo")),
