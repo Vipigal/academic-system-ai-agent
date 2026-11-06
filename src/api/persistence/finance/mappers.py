@@ -2,9 +2,9 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from datetime import date
 
-from api.domain.invoice import Invoice, Payment
-from api.domain.money import Money
-from api.persistence.brasilia import BrasiliaTime
+from api.domain.finance.invoice import Invoice, Payment
+from api.domain.shared.money import Money
+from api.persistence.core.brasilia import BrasiliaTime
 from api.persistence.finance.charge_models import LateChargeRow
 from api.persistence.finance.dialect import FinanceDialect
 from api.persistence.finance.labels import WAIVED, FinanceLabels

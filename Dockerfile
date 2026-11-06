@@ -14,4 +14,4 @@ USER nobody
 
 EXPOSE 8000
 
-CMD ["uvicorn", "--factory", "api.main:ApiFactory.create", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "--factory", "api.bootstrap.app:ApiFactory.create", "--app-dir", "src", "--host", "0.0.0.0", "--port", "8000"]

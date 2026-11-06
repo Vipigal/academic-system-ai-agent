@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column
 
-from api.persistence.base import Base
+from api.persistence.core.base import Base
 
 SECRETARY_SCHEMA = {"schema": "secretary"}
 PROTOCOL_COLUMN = "protocol"

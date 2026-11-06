@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from typing import Protocol
 
-from api.domain.protocol import Protocol as StudentProtocol
-from api.domain.protocol_catalog import Service
+from api.domain.protocol.catalog import Service
+from api.domain.protocol.request import Protocol as StudentProtocol
 
 
 class ProtocolRepository(Protocol):

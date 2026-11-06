@@ -3,12 +3,12 @@ from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
-from api.domain.protocol import Protocol
-from api.domain.protocol_catalog import Service
-from api.domain.protocol_document import ProtocolDocument
-from api.domain.protocol_message import ProtocolMessage
-from api.domain.protocol_status import ProtocolStatusChange
-from api.persistence.brasilia import BrasiliaTime
+from api.domain.protocol.catalog import Service
+from api.domain.protocol.document import ProtocolDocument
+from api.domain.protocol.message import ProtocolMessage
+from api.domain.protocol.request import Protocol
+from api.domain.protocol.status import ProtocolStatusChange
+from api.persistence.core.brasilia import BrasiliaTime
 from api.persistence.secretary.models import (
     DemandTypeRow,
     IssuedDocumentRow,

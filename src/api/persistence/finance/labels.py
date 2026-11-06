@@ -1,7 +1,7 @@
-from api.domain.finance_agreement import AgreementStatus
-from api.domain.finance_contract import ContractSituation
-from api.domain.invoice import InvoiceKind, PaymentStatus
-from api.persistence.dialect_lookup import DialectLookup
+from api.domain.finance.agreement import AgreementStatus
+from api.domain.finance.contract import ContractSituation
+from api.domain.finance.invoice import InvoiceKind, PaymentStatus
+from api.persistence.core.dialect_lookup import DialectLookup
 
 COMPANY_CUSTOMER = "COMPANY"
 WAIVED = "True"

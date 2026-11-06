@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from api.domain.academic import Enrollment, StatusChange, TermStatus
-from api.persistence.sag.academic_vocabulary import AcademicVocabulary, SourceColumn
+from api.domain.academic.enrollment import Enrollment, StatusChange, TermStatus
 from api.persistence.sag.catalog_models import CourseRow, CurriculumRow, UnitRow
 from api.persistence.sag.dialect import SagDialect
 from api.persistence.sag.models import EnrollmentHistoryRow, EnrollmentRow, TermEnrollmentRow
+from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 @dataclass(frozen=True, slots=True)

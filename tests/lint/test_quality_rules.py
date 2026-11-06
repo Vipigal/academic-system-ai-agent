@@ -70,7 +70,7 @@ def test_rejects_docstring(source: str) -> None:
 
 def test_accepts_docstring_in_agent_tools() -> None:
     source = 'def list_invoices() -> None:\n    """Lista as faturas do aluno."""\n'
-    assert codes_of(source, "src/api/presentation/tools/finance.py") == []
+    assert codes_of(source, "src/api/application/agent/tools/finance.py") == []
 
 
 @pytest.mark.parametrize(
@@ -107,7 +107,7 @@ def test_counts_async_functions() -> None:
     ],
 )
 def test_rejects_domain_import(source: str) -> None:
-    assert "QA006" in codes_of(source, "src/api/domain/invoice.py")
+    assert "QA006" in codes_of(source, "src/api/domain/finance/invoice.py")
 
 
 @pytest.mark.parametrize(
@@ -119,7 +119,7 @@ def test_rejects_domain_import(source: str) -> None:
     ],
 )
 def test_accepts_domain_import(source: str) -> None:
-    assert codes_of(source, "src/api/domain/invoice.py") == []
+    assert codes_of(source, "src/api/domain/finance/invoice.py") == []
 
 
 @pytest.mark.parametrize(
@@ -127,7 +127,7 @@ def test_accepts_domain_import(source: str) -> None:
     [
         "src/api/persistence/finance/repositories.py",
         "src/api/persistence/sag/repositories.py",
-        "src/api/application/financial_service.py",
+        "src/api/application/finance/service.py",
     ],
 )
 def test_rejects_opening_database_session_outside_the_adapter(path: str) -> None:
@@ -137,9 +137,9 @@ def test_rejects_opening_database_session_outside_the_adapter(path: str) -> None
 @pytest.mark.parametrize(
     "path",
     [
-        "src/api/persistence/database.py",
-        "src/api/persistence/repository_adapter.py",
-        "src/api/persistence/student_session_repository.py",
+        "src/api/persistence/core/database.py",
+        "src/api/persistence/core/repository_adapter.py",
+        "src/api/persistence/identity/student_session_repository.py",
         "tests/integration/conftest.py",
     ],
 )
@@ -150,8 +150,8 @@ def test_accepts_database_session_in_its_owners(path: str) -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "src/api/domain/invoice.py",
-        "src/api/application/financial_service.py",
+        "src/api/domain/finance/invoice.py",
+        "src/api/application/finance/service.py",
         "tools/quality/rules.py",
     ],
 )
@@ -160,7 +160,7 @@ def test_rejects_dynamic_import_anywhere(path: str) -> None:
 
 
 def test_outer_layers_may_import_third_party() -> None:
-    assert codes_of("import sqlalchemy\n", "src/api/persistence/database.py") == []
+    assert codes_of("import sqlalchemy\n", "src/api/persistence/core/database.py") == []
 
 
 def test_reports_syntax_error_instead_of_crashing() -> None:

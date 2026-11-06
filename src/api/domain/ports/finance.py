@@ -1,9 +1,9 @@
 from collections.abc import Mapping, Sequence
 from typing import Protocol
 
-from api.domain.finance_agreement import Agreement
-from api.domain.finance_contract import Contract
-from api.domain.invoice import Invoice
+from api.domain.finance.agreement import Agreement
+from api.domain.finance.contract import Contract
+from api.domain.finance.invoice import Invoice
 
 
 class FinanceRepository(Protocol):

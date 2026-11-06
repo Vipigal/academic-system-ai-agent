@@ -2,9 +2,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
 
-from api.domain.academic import CourseOffer, SubjectTeacher
-from api.domain.academic_calendar import AcademicCalendar, Term
-from api.persistence.sag.academic_vocabulary import AcademicVocabulary, SourceColumn
+from api.domain.academic.enrollment import CourseOffer, SubjectTeacher
+from api.domain.academic.term_calendar import AcademicCalendar, Term
 from api.persistence.sag.catalog_models import (
     CourseOfferRow,
     CourseRow,
@@ -13,6 +12,7 @@ from api.persistence.sag.catalog_models import (
     UnitRow,
 )
 from api.persistence.sag.class_models import ClassSectionRow, ProfessorRow
+from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 class UnitNames:

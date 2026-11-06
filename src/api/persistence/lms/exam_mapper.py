@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from operator import attrgetter
 
-from api.domain.brand import Brand
-from api.domain.lms import ExamAttempt, OnlineExam
+from api.domain.lms.exam import ExamAttempt, OnlineExam
+from api.domain.shared.brand import Brand
 from api.persistence.lms.dialect import LmsDialect
 from api.persistence.lms.models import LmsCourseRow, LmsQuizAttemptRow, LmsQuizRow
 from api.persistence.lms.vocabulary import CourseLabel, LmsVocabulary

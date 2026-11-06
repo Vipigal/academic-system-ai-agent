@@ -3,9 +3,10 @@ from collections.abc import Collection
 
 from sqlalchemy import ColumnElement, false, func
 
-from api.domain.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
-from api.persistence.dialect_lookup import DialectLookup
-from api.persistence.identity_tables import PERSON_CPF
+from api.domain.identity.session import EnrollmentKey
+from api.domain.shared.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
+from api.persistence.core.dialect_lookup import DialectLookup
+from api.persistence.identity.tables import PERSON_CPF
 
 BRAND_BY_SOURCE = {
     "UniSaoPaulo": Brand.SAO_PAULO,
@@ -27,6 +28,14 @@ class SagDialect:
             BRAND_BY_SOURCE, brand.removesuffix(ONLINE_SUFFIX), "BRAND"
         )
         return EnrollmentRef(canonical_brand, modality, student_id[:STUDENT_NUMBER_LENGTH])
+
+    @classmethod
+    def enrollment_key(cls, brand: str, student_id: str) -> EnrollmentKey:
+        return EnrollmentKey(brand, student_id, cls.enrollment_ref(brand, student_id))
+
+    @staticmethod
+    def source_keys(keys: Collection[EnrollmentKey]) -> list[tuple[str, str]]:
+        return [(key.source_brand, key.student_id) for key in keys]
 
     @staticmethod
     def normalized_cpf(cpf: str) -> str:

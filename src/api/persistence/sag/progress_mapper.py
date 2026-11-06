@@ -2,14 +2,14 @@ from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from api.domain.academic import Enrollment
-from api.domain.academic_curriculum import CurriculumSubject, EnrollmentProgress
-from api.domain.academic_record import Grades, SubjectRecord
-from api.persistence.sag.academic_vocabulary import AcademicVocabulary, SourceColumn
+from api.domain.academic.curriculum import CurriculumSubject, EnrollmentProgress
+from api.domain.academic.enrollment import Enrollment
+from api.domain.academic.record import Grades, SubjectRecord
 from api.persistence.sag.catalog_models import CurriculumSubjectRow, SubjectRow, TermRow, UnitRow
 from api.persistence.sag.class_models import ClassSectionRow, StudentClassRow
 from api.persistence.sag.dialect import SagDialect
 from api.persistence.sag.mappers import CatalogMapper, UnitNames
+from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 @dataclass(frozen=True, slots=True)

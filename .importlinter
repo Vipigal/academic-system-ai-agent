@@ -6,28 +6,28 @@ include_external_packages = True
 name = Camadas seguem a regra de dependência
 type = layers
 layers =
-    api.main
-    api.settings
+    api.bootstrap
     api.presentation
-    api.application | api.persistence
+    api.application | api.persistence | api.infrastructure
     api.domain
 
-[importlinter:contract:presentation-persistence]
-name = Presentation fala com a persistence só pela application
+[importlinter:contract:presentation-only-application]
+name = Presentation fala só com a application
 type = forbidden
 source_modules =
     api.presentation
 forbidden_modules =
     api.persistence
+    api.infrastructure
 
 [importlinter:contract:database-drivers]
 name = Apenas a persistence importa SQLAlchemy e asyncpg
 type = forbidden
 source_modules =
-    api.main
-    api.settings
+    api.bootstrap
     api.presentation
     api.application
+    api.infrastructure
     api.domain
 forbidden_modules =
     sqlalchemy
@@ -35,11 +35,12 @@ forbidden_modules =
 allow_indirect_imports = True
 
 [importlinter:contract:http-framework]
-name = HTTP fica na presentation e na composição
+name = HTTP fica na presentation e no bootstrap
 type = forbidden
 source_modules =
     api.application
     api.persistence
+    api.infrastructure
     api.domain
 forbidden_modules =
     fastapi
@@ -47,11 +48,34 @@ forbidden_modules =
 allow_indirect_imports = True
 
 [importlinter:contract:agent-framework]
-name = Framework do agente não entra em domain nem persistence
+name = Framework do agente fica na application e no bootstrap
 type = forbidden
 source_modules =
+    api.presentation
     api.persistence
+    api.infrastructure
     api.domain
 forbidden_modules =
-    pydantic_ai
+    langchain
+    langchain_core
+    langchain_openai
+    langgraph
+allow_indirect_imports = True
+
+[importlinter:contract:agent-package]
+name = Na application, o LangChain fica só no pacote do agente
+type = forbidden
+source_modules =
+    api.application
+forbidden_modules =
+    langchain
+    langchain_core
+    langchain_openai
+    langgraph
+unmatched_ignore_imports_alerting = none
+ignore_imports =
+    api.application.agent.** -> langchain
+    api.application.agent.** -> langchain_core
+    api.application.agent.** -> langchain_openai
+    api.application.agent.** -> langgraph
 allow_indirect_imports = True

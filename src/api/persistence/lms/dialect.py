@@ -2,8 +2,8 @@ from collections.abc import Collection
 
 from sqlalchemy import ColumnElement, func, tuple_
 
-from api.domain.brand import Brand, EnrollmentRef, Modality
-from api.persistence.dialect_lookup import DialectLookup
+from api.domain.shared.brand import Brand, EnrollmentRef, Modality
+from api.persistence.core.dialect_lookup import DialectLookup
 from api.persistence.lms.models import LmsUserRow
 
 TENANT_BY_BRAND = {

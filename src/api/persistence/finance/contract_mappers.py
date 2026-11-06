@@ -3,11 +3,11 @@ from collections.abc import Iterable, Sequence
 from datetime import date
 from decimal import Decimal
 
-from api.domain.finance_agreement import Agreement
-from api.domain.finance_contract import Contract, PayerType, Scholarship
-from api.domain.invoice import Invoice
-from api.domain.money import Money
-from api.persistence.brasilia import BrasiliaTime
+from api.domain.finance.agreement import Agreement
+from api.domain.finance.contract import Contract, PayerType, Scholarship
+from api.domain.finance.invoice import Invoice
+from api.domain.shared.money import Money
+from api.persistence.core.brasilia import BrasiliaTime
 from api.persistence.finance.charge_models import AgreementRow, DiscountRow
 from api.persistence.finance.labels import FinanceLabels
 from api.persistence.finance.models import ContractRow
@@ -17,10 +17,8 @@ class ContractMapper:
     @classmethod
     def to_entities(
         cls,
-        rows: Iterable[ContractRow],
+        rows: Iterable[tuple[ContractRow, str]],
         discounts: Iterable[DiscountRow],
-        self_paid: frozenset[str],
-        company_paid: frozenset[str],
     ) -> Sequence[Contract]:
         scholarships: defaultdict[str, list[Scholarship]] = defaultdict(list)
         for discount in discounts:
@@ -30,21 +28,11 @@ class ContractMapper:
                 id=row.id,
                 course_code=row.product_code,
                 situation=FinanceLabels.contract_situation(row.status),
-                payer=cls._payer(row, self_paid, company_paid),
+                payer=PayerType(payer),
                 scholarships=tuple(scholarships[row.id]),
             )
-            for row in rows
+            for row, payer in rows
         ]
-
-    @staticmethod
-    def _payer(
-        row: ContractRow, self_paid: frozenset[str], company_paid: frozenset[str]
-    ) -> PayerType:
-        if row.id in self_paid:
-            return PayerType.SELF
-        if row.id in company_paid:
-            return PayerType.COMPANY
-        return PayerType.OTHER_PERSON
 
     @staticmethod
     def _scholarship(row: DiscountRow) -> Scholarship:

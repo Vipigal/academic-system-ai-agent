@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from operator import attrgetter
 
-from api.domain.lms_material import CourseMaterial
+from api.domain.lms.material import CourseMaterial
 from api.persistence.lms.models import LmsCourseModuleRow, LmsCourseRow, LmsLogRow
 from api.persistence.lms.vocabulary import CourseLabel, LmsVocabulary
 from api.persistence.sag.catalog_models import SubjectRow

@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Self
 
-from api.domain.academic_record import Delivery
-from api.domain.lms import AttemptState, ExamKind
-from api.domain.lms_material import MaterialKind
-from api.persistence.brasilia import BrasiliaTime
-from api.persistence.dialect_lookup import DialectLookup
+from api.domain.academic.record import Delivery
+from api.domain.lms.exam import AttemptState, ExamKind
+from api.domain.lms.material import MaterialKind
+from api.persistence.core.brasilia import BrasiliaTime
+from api.persistence.core.dialect_lookup import DialectLookup
 
 COURSE_SHORTNAME = re.compile(
     r"(?P<subject>[A-Z]+\d+)_(?P<year>\d{4})-(?P<semester>\d)_(?P<delivery>[A-Z]+)_"

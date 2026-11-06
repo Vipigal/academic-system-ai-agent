@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from typing import Protocol
 
-from api.domain.academic import CourseOffer, Enrollment, SubjectTeacher
-from api.domain.academic_calendar import AcademicCalendar
-from api.domain.academic_curriculum import EnrollmentProgress
+from api.domain.academic.curriculum import EnrollmentProgress
+from api.domain.academic.enrollment import CourseOffer, Enrollment, SubjectTeacher
+from api.domain.academic.term_calendar import AcademicCalendar
 
 
 class AcademicCatalogRepository(Protocol):

@@ -1,7 +1,7 @@
 from sqlalchemy import tuple_
 
-from api.persistence.base import Base
-from api.persistence.ownership import OwnershipRule, Public, Via
+from api.persistence.core.base import Base
+from api.persistence.core.ownership import OwnershipRule, Public, Via
 from api.persistence.sag.catalog_models import (
     CourseOfferRow,
     CourseRow,
@@ -25,12 +25,12 @@ SAG_OWNERSHIP: dict[type[Base], OwnershipRule] = {
     EnrollmentRow: lambda session: EnrollmentRow.person_id.in_(session.person_ids),
     EnrollmentHistoryRow: lambda session: tuple_(
         EnrollmentHistoryRow.brand, EnrollmentHistoryRow.student_id
-    ).in_(session.enrollment_keys),
+    ).in_(SagDialect.source_keys(session.enrollment_keys)),
     TermEnrollmentRow: lambda session: tuple_(
         TermEnrollmentRow.brand, TermEnrollmentRow.student_id
-    ).in_(session.enrollment_keys),
+    ).in_(SagDialect.source_keys(session.enrollment_keys)),
     StudentClassRow: lambda session: tuple_(StudentClassRow.brand, StudentClassRow.student_id).in_(
-        session.enrollment_keys
+        SagDialect.source_keys(session.enrollment_keys)
     ),
     UnitRow: lambda session: UnitRow.brand.in_(SagDialect.source_brands(session.brands)),
     CourseOfferRow: Via(UnitRow, CourseOfferRow.unit_id == UnitRow.id),

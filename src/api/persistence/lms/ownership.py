@@ -1,4 +1,5 @@
-from api.persistence.base import Base
+from api.persistence.core.base import Base
+from api.persistence.core.ownership import OwnershipRule, Via
 from api.persistence.lms.dialect import LmsDialect
 from api.persistence.lms.models import (
     LmsCourseModuleRow,
@@ -9,13 +10,12 @@ from api.persistence.lms.models import (
     LmsQuizRow,
     LmsUserRow,
 )
-from api.persistence.ownership import OwnershipRule, Via
 
 LMS_OWNERSHIP: dict[type[Base], OwnershipRule] = {
-    LmsUserRow: lambda session: LmsUserRow.id.in_(session.lms_user_ids),
-    LmsEnrolmentRow: lambda session: LmsEnrolmentRow.user_id.in_(session.lms_user_ids),
-    LmsQuizAttemptRow: lambda session: LmsQuizAttemptRow.user_id.in_(session.lms_user_ids),
-    LmsLogRow: lambda session: LmsLogRow.user_id.in_(session.lms_user_ids),
+    LmsUserRow: lambda session: LmsDialect.account_of(session.enrollments),
+    LmsEnrolmentRow: Via(LmsUserRow, LmsEnrolmentRow.user_id == LmsUserRow.id),
+    LmsQuizAttemptRow: Via(LmsUserRow, LmsQuizAttemptRow.user_id == LmsUserRow.id),
+    LmsLogRow: Via(LmsUserRow, LmsLogRow.user_id == LmsUserRow.id),
     LmsCourseRow: lambda session: LmsCourseRow.tenant_id.in_(LmsDialect.tenants_of(session.brands)),
     LmsQuizRow: Via(LmsCourseRow, LmsQuizRow.course_id == LmsCourseRow.id),
     LmsCourseModuleRow: Via(LmsCourseRow, LmsCourseModuleRow.course_id == LmsCourseRow.id),

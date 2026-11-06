@@ -1,13 +1,13 @@
 import re
 
-from api.domain.brand import Brand, Modality
-from api.domain.money import Money
-from api.domain.protocol import Requester
-from api.domain.protocol_catalog import ServiceArea
-from api.domain.protocol_document import DocumentDelivery, DocumentType
-from api.domain.protocol_message import MessageSender
-from api.domain.protocol_status import ProtocolStatus, Resolution
-from api.persistence.dialect_lookup import DialectLookup
+from api.domain.protocol.catalog import ServiceArea
+from api.domain.protocol.document import DocumentDelivery, DocumentType
+from api.domain.protocol.message import MessageSender
+from api.domain.protocol.request import Requester
+from api.domain.protocol.status import ProtocolStatus, Resolution
+from api.domain.shared.brand import Brand, Modality
+from api.domain.shared.money import Money
+from api.persistence.core.dialect_lookup import DialectLookup
 from api.persistence.sag.dialect import BRAND_BY_SOURCE, ONLINE_SUFFIX, SagDialect
 from api.persistence.secretary.dialect import UNIT_PREFIX_BY_BRAND
 

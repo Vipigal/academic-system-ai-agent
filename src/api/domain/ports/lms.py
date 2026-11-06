@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from typing import Protocol
 
-from api.domain.lms import OnlineExam
-from api.domain.lms_account import LmsAccount
-from api.domain.lms_material import CourseMaterial
+from api.domain.lms.account import LmsAccount
+from api.domain.lms.exam import OnlineExam
+from api.domain.lms.material import CourseMaterial
 
 
 class LmsRepository(Protocol):

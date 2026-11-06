@@ -3,11 +3,14 @@
 ## Base
 
 - [Arquitetura do agente de atendimento ao aluno](/docs/architecture.md): Decisões, desenho e restrições da API que dá ao agente acesso seguro e normalizado aos quatro sistemas do grupo educacional.
+- [Ontologia do atendimento ao aluno](/docs/ontology.md): Os conceitos do agente, com definição, sistema oficial, origem, evidência e relações.
 
 ## Processo
 
 - [Guia de autoria](/docs/authoring-guide.md): Quando e como escrever documentos OKF neste projeto, para que sejam poucos, curtos, duráveis e digam apenas o que o código não diz.
 - [Pendências](/docs/pendencias.md): O que falta definir e preparar para começar a implementação, para marcar ao longo das sessões.
+- [Ontologia e topologia de tools](/docs/plans/ontologia-e-tools.md): Spec da tarefa que cria a classe Ontology, as 19 tools do agente, o envelope de resposta com paginação e a correção do cálculo de dívida.
+- [Agente, eval e fluxo ponta a ponta](/docs/plans/agente/index.md): Spec-mãe da fase que reorganiza as camadas com o bootstrap, cria o agente LangChain com skills, o histórico, a confirmação de protocolo, o chat com stream, o eval de modelos e as evidências do case.
 
 ## Referência
 
