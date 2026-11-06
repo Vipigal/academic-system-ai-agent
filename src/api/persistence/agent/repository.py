@@ -2,8 +2,9 @@ from collections.abc import Sequence
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
-from api.domain.conversation.errors import ConversationNotFoundError
+from api.domain.conversation.errors import ConversationConflictError, ConversationNotFoundError
 from api.domain.conversation.message import Message
 from api.persistence.agent.mappers import MessageMapper
 from api.persistence.agent.models import ConversationRow, MessageRow, ToolCallRow
@@ -31,7 +32,10 @@ class SqlConversationRepository:
         first = await self._next_position(conversation_id)
         rows = MessageMapper.message_rows(conversation_id, first, messages)
         calls = MessageMapper.call_rows(rows, messages)
-        await self._adapter.write(rows, calls, self._touch(conversation_id))
+        try:
+            await self._adapter.write(rows, calls, self._touch(conversation_id))
+        except IntegrityError as error:
+            raise ConversationConflictError from error
 
     async def window(self, conversation_id: UUID, limit: int) -> Sequence[Message]:
         await self._require(conversation_id)
