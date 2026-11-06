@@ -22,6 +22,9 @@ ITEM = question(
     facts=[],
 )
 ITEM_IDS = [area + "-" + str(number).zfill(2) for area in ("FI", "PR") for number in range(1, 16)]
+PASS = CriterionOutcome.APPROVED
+FAIL = CriterionOutcome.REJECTED
+UNKNOWN = CriterionOutcome.UNKNOWN
 DATA_BLOCK = re.compile(r'<script type="application/json" id="run-data">(.*?)</script>', re.DOTALL)
 
 
@@ -93,6 +96,35 @@ async def test_the_page_is_rewritten_with_the_judge_and_links_the_trace(tmp_path
     assert execution.judge_outcome is CriterionOutcome.UNKNOWN
     assert execution.criteria[0].reasoning == "Raciocínio do juiz."
     assert "| Vereditos unknown do juiz | 1 |" in files.report.read_text(encoding="utf-8")
+
+
+def judged_with(key: str, outcomes: tuple[CriterionOutcome, ...]) -> JudgedVerdict:
+    criteria = tuple(
+        CriterionVerdict(criterion=number, reasoning="Raciocínio.", verdict=outcome)
+        for number, outcome in enumerate(outcomes, start=1)
+    )
+    return JudgedVerdict(id=key, criteria=criteria, judge_model="claude-sonnet-5-5")
+
+
+async def test_criteria_approved_count_judged_ones_and_leave_unknown_apart(tmp_path: Path) -> None:
+    rubric = ITEM.model_copy(update={"rubric": ("Um", "Dois", "Três")})
+    driver = agent_script.ScriptedDriver(lambda _: agent_script.answer_events("Não."))
+    await support.run_items(tmp_path, driver, [(rubric, 2)])
+    files = RunFiles(tmp_path)
+    JsonLines.append(files.judge_verdicts, judged_with("TR-01#1", (PASS, PASS, FAIL)))
+    JsonLines.append(files.judge_verdicts, judged_with("TR-01#2", (PASS, UNKNOWN, UNKNOWN)))
+    RunReport.write(files)
+
+    assert "| Critérios da rubrica aprovados | 3 de 4 (75.0%) |" in files.report.read_text("utf-8")
+    indicators = payload_of(files.page.read_text("utf-8")).indicators
+    assert ("Critérios aprovados", "3 de 4 (75.0%)") in [(i.label, i.value) for i in indicators]
+
+
+async def test_without_a_judged_run_the_criteria_say_so(tmp_path: Path) -> None:
+    await run_with_proposal(tmp_path)
+    assert "| Critérios da rubrica aprovados | sem julgamento |" in (
+        tmp_path / "report.md"
+    ).read_text("utf-8")
 
 
 async def test_without_a_prefix_or_a_trace_the_link_is_absent(tmp_path: Path) -> None:

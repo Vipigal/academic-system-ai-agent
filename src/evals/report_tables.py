@@ -15,6 +15,12 @@ class Shown:
     def share(value: float) -> str:
         return format(value, ".1%")
 
+    @classmethod
+    def criteria(cls, accuracy: Accuracy) -> str:
+        if not accuracy.total:
+            return "sem julgamento"
+        return f"{accuracy.passed} de {accuracy.total} ({cls.share(accuracy.share)})"
+
     @staticmethod
     def milliseconds(value: float | None) -> str:
         if value is None:

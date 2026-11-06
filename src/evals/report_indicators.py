@@ -79,6 +79,7 @@ class RunIndicators:
         rubric = judged.accuracy(data.records)
         unknown = judged.unknown(data.records)
         yield "pass@1 médio", Shown.share(Repeatability.pass_at_one(results))
+        yield "Critérios aprovados", Shown.criteria(judged.criteria(data.records))
         yield "Rubrica", f"{rubric.passed} aprovadas de {rubric.total} julgadas, {unknown} unknown"
 
     @staticmethod

@@ -98,6 +98,14 @@ class JudgedResult:
         results = [self._verdicts[record.key].passed for record in judged]
         return Accuracy.of(GraderName.JUDGE.value, results)
 
+    def criteria(self, records: Iterable[ExecutionRecord]) -> Accuracy:
+        verdicts = [self._verdicts[record.key] for record in self.judged_of(records)]
+        outcomes = [criterion.verdict for verdict in verdicts for criterion in verdict.criteria]
+        decided = [outcome for outcome in outcomes if outcome is not CriterionOutcome.UNKNOWN]
+        return Accuracy.of(
+            "critérios", [outcome is CriterionOutcome.APPROVED for outcome in decided]
+        )
+
     def unknown(self, records: Iterable[ExecutionRecord]) -> int:
         outcomes = [self._verdicts[record.key].outcome for record in self.judged_of(records)]
         return outcomes.count(CriterionOutcome.UNKNOWN)

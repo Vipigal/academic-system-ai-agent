@@ -65,6 +65,7 @@ class OverviewSection:
         pass_at_one = Repeatability.pass_at_one(deterministic)
         yield "pass@1 médio, determinísticos", Shown.share(pass_at_one)
         yield "pass@1 médio, com a rubrica", self._rubric_share(with_rubric)
+        yield "Critérios da rubrica aprovados", Shown.criteria(judged.criteria(self._records))
         yield "Estabilidade entre repetições", f"{stable.passed} de {stable.total} itens"
 
     @staticmethod
