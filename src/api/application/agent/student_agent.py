@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from collections.abc import AsyncIterator, Sequence
+from collections.abc import AsyncGenerator, AsyncIterator, Sequence
 
 from langchain.agents.middleware.model_call_limit import ModelCallLimitExceededError
 from langchain_core.callbacks import BaseCallbackHandler
@@ -32,7 +32,7 @@ class StudentAgent:
 
     async def stream(
         self, message: str, past: Sequence[history.PastMessage] = ()
-    ) -> AsyncIterator[events.AgentEvent]:
+    ) -> AsyncGenerator[events.AgentEvent]:
         translator = StreamTranslator()
         stop_reason = events.StopReason.COMPLETED
         try:

@@ -23,7 +23,7 @@ class ChatAgentScope:
     def traced_agent(
         self, session: StudentSession, person_id: str, conversation: UUID
     ) -> Generator[StudentAgent]:
-        CurrentTrace().bind_to_log()
+        CurrentTrace(enabled=self._tracing.enabled).bind_to_log()
         handler = self._tracing.handler()
         tools = ToolProviders.tools_for(self._students.services_for(session))
         with self._tracing.request(self._info_of(person_id, conversation)):

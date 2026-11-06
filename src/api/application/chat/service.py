@@ -1,15 +1,15 @@
 import logging
 from collections.abc import AsyncGenerator
+from contextlib import aclosing
 from uuid import UUID
 
 from langfuse import observe
 
-from api.application.agent.events import AgentEvent, AgentFinished
 from api.application.chat.dto.conversation import ConversationDto
 from api.application.chat.events import ChatEvent, TurnFailed
 from api.application.chat.past_messages import PastMessages
+from api.application.chat.recorded_turn import RecordedTurn
 from api.application.chat.turn_input import AgentScope, ChatOptions, TurnInput
-from api.application.chat.turn_record import TurnRecord
 from api.domain.conversation.errors import ConversationNotFoundError
 from api.domain.ports.conversation import ConversationRepository
 
@@ -37,20 +37,21 @@ class ChatService:
 
     @observe(name="chat.turn", capture_input=False, capture_output=False)
     async def _turn(self, turn: TurnInput) -> AsyncGenerator[ChatEvent]:
-        record = TurnRecord(turn.message, self._options.model)
+        recorded = RecordedTurn.start(self._conversations, turn, self._options.model)
         try:
-            with self._agent_scope(turn.conversation) as agent:
-                async for event in agent.stream(turn.message, turn.past):
-                    await self._record(turn.conversation, record, event)
+            async with aclosing(self._events(turn, recorded)) as events:
+                async for event in events:
                     yield event
         except Exception:
             logger.exception("Falha no turno do chat")
             yield TurnFailed()
 
-    async def _record(self, conversation: UUID, record: TurnRecord, event: AgentEvent) -> None:
-        record.add(event)
-        if isinstance(event, AgentFinished):
-            await self._conversations.append(conversation, record.messages(event.usage))
+    async def _events(self, turn: TurnInput, recorded: RecordedTurn) -> AsyncGenerator[ChatEvent]:
+        with self._agent_scope(turn.conversation) as agent:
+            async with aclosing(agent.stream(turn.message, turn.past)) as events:
+                async for event in events:
+                    await recorded.see(event)
+                    yield event
 
     @staticmethod
     def _parsed(conversation_id: str) -> UUID:

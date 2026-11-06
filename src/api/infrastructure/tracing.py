@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import logging
 from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from langfuse.langchain import CallbackHandler
 from api.infrastructure.logging import LogContext
 
 PSEUDONYM_LENGTH = 32
+LANGFUSE_LOGGER = "langfuse"
 KEY_PURPOSE = b"langfuse-user-id"
 
 
@@ -35,8 +37,12 @@ class UserPseudonym:
 
 
 class CurrentTrace:
+    def __init__(self, *, enabled: bool = False) -> None:
+        self._enabled = enabled
+
     def bind_to_log(self) -> None:
-        LogContext.bind_trace(get_client().get_current_trace_id() or uuid4().hex)
+        active = get_client().get_current_trace_id() if self._enabled else None
+        LogContext.bind_trace(active or uuid4().hex)
 
 
 class Tracing:
@@ -52,6 +58,9 @@ class Tracing:
             Langfuse(public_key=public_key, secret_key=secret_key, base_url=base_url)
             if public_key and secret_key
             else None
+        )
+        logging.getLogger(LANGFUSE_LOGGER).setLevel(
+            logging.NOTSET if self._client else logging.ERROR
         )
 
     @property

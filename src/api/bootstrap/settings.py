@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     proposal_secret: SecretStr | None = None
     proposal_ttl_minutes: int = 15
 
+    cors_origins: list[str] = ["http://localhost:5173"]
+
     langfuse_public_key: SecretStr | None = Field(
         default=None, validation_alias="LANGFUSE_PUBLIC_KEY"
     )

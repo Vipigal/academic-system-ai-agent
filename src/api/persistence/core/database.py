@@ -7,7 +7,9 @@ CONNECT_TIMEOUT_SECONDS = 5
 
 class Database:
     def __init__(self, url: str) -> None:
-        self._engine = create_async_engine(url, connect_args={"timeout": CONNECT_TIMEOUT_SECONDS})
+        self._engine = create_async_engine(
+            url, connect_args={"timeout": CONNECT_TIMEOUT_SECONDS}, hide_parameters=True
+        )
         self.db_session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
 
     async def is_available(self) -> bool:
