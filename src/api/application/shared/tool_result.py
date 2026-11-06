@@ -18,6 +18,8 @@ class ToolStatus(StrEnum):
     NOT_FOUND = "not_found"
     AMBIGUOUS = "ambiguous"
     REFUSED = "refused"
+    INVALID = "invalid"
+    ERROR = "error"
 
 
 class DataState(StrEnum):
@@ -82,6 +84,10 @@ class ToolResult[T](BaseModel):
     caveats: tuple[Caveat, ...] = ()
     coverage: Coverage | None = Field(default=None, exclude_if=lambda coverage: coverage is None)
     candidates: tuple[Candidate, ...] = ()
+    explanation: str | None = Field(
+        default=None, exclude_if=lambda explanation: explanation is None
+    )
+    client_only: Mapping[str, str] | None = Field(default=None, exclude=True, repr=False)
 
     @classmethod
     def ok(
@@ -144,3 +150,6 @@ class ToolResult[T](BaseModel):
     @classmethod
     def refused(cls, data: T | None = None, *, caveats: tuple[Caveat, ...] = ()) -> Self:
         return cls(status=ToolStatus.REFUSED, data=data, caveats=caveats)
+
+    def with_client_only(self, payload: Mapping[str, str]) -> Self:
+        return self.model_copy(update={"client_only": payload})

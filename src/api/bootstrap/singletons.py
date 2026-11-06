@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Self
 
+from api.bootstrap.agent_providers import AgentProviders
 from api.bootstrap.settings import Settings
 from api.domain.ports.clock import Clock
 from api.infrastructure.clock import ReferenceClock
@@ -12,13 +13,16 @@ class Singletons:
     settings: Settings
     database: Database
     clock: Clock
+    agent: AgentProviders
 
     @classmethod
     def create(cls, settings: Settings) -> Self:
+        clock = ReferenceClock(settings.reference_date)
         return cls(
             settings=settings,
             database=Database(settings.database_url.get_secret_value()),
-            clock=ReferenceClock(settings.reference_date),
+            clock=clock,
+            agent=AgentProviders(settings, clock),
         )
 
     async def dispose(self) -> None:
