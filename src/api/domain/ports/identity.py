@@ -11,6 +11,10 @@ class PersonDirectory(Protocol):
     async def person_of(self, brand: str, student_id: str) -> str | None: ...
 
 
+class RequesterDirectory(Protocol):
+    async def full_name_of(self, person_id: str) -> str | None: ...
+
+
 class TokenCodec(Protocol):
     def issue(self, person_id: str) -> str: ...
 

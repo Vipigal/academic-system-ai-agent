@@ -3,9 +3,12 @@ import hmac
 from collections.abc import Generator
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
+from uuid import uuid4
 
-from langfuse import Langfuse, propagate_attributes
+from langfuse import Langfuse, get_client, propagate_attributes
 from langfuse.langchain import CallbackHandler
+
+from api.infrastructure.logging import LogContext
 
 PSEUDONYM_LENGTH = 32
 KEY_PURPOSE = b"langfuse-user-id"
@@ -29,6 +32,11 @@ class UserPseudonym:
     def of(self, person_id: str) -> str:
         digest = hmac.new(self._key, person_id.encode(), hashlib.sha256).hexdigest()
         return digest[:PSEUDONYM_LENGTH]
+
+
+class CurrentTrace:
+    def bind_to_log(self) -> None:
+        LogContext.bind_trace(get_client().get_current_trace_id() or uuid4().hex)
 
 
 class Tracing:

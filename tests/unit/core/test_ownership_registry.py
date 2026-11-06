@@ -1,5 +1,6 @@
 import pytest
-from sqlalchemy import Column, MetaData, String, Table
+from sqlalchemy import Column, MetaData, String, Table, select
+from sqlalchemy.orm import ColumnProperty
 
 from api.bootstrap.app import ApiFactory
 from api.persistence.core.base import Base
@@ -45,6 +46,10 @@ PRIVATE_COLUMNS = frozenset(
     {"cpf", "taxid", "customerid", "requester_cpf", "requester_name", "email", "phone"}
 )
 PROFESSOR_CONTACT = ("sag.professor", "email")
+REQUESTER_COLUMNS = {
+    ("secretary.protocol", "requester_cpf"): ProtocolRow.requester_cpf,
+    ("secretary.protocol", "requester_name"): ProtocolRow.requester_name,
+}
 
 
 def test_no_model_declares_a_tax_id_or_contact_except_the_professor_email() -> None:
@@ -54,7 +59,19 @@ def test_no_model_declares_a_tax_id_or_contact_except_the_professor_email() -> N
         for column in table.columns
         if column.name in PRIVATE_COLUMNS
     }
-    assert declared == {PROFESSOR_CONTACT}
+    assert declared == {PROFESSOR_CONTACT, *REQUESTER_COLUMNS}
+    for attribute in REQUESTER_COLUMNS.values():
+        column = attribute.property
+        assert isinstance(column, ColumnProperty)
+        assert column.deferred
+        assert column.raiseload
+
+
+def test_selecting_the_protocol_row_never_reads_the_requester() -> None:
+    compiled = str(select(ProtocolRow).compile())
+    assert "requester_type" in compiled
+    assert "requester_cpf" not in compiled
+    assert "requester_name" not in compiled
 
 
 @pytest.mark.parametrize("row", [LmsUserRow, ProtocolRow, PersonRow, EnrollmentRow, ContractRow])

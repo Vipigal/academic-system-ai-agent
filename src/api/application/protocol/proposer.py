@@ -8,16 +8,26 @@ from api.application.protocol.dto.proposal import (
 from api.application.protocol.scope import EnrollmentChoice, ProtocolCandidates
 from api.application.shared.name_search import NameSearch
 from api.application.shared.tool_result import ToolResult
+from api.domain.academic.enrollment import Enrollment
+from api.domain.identity.session import StudentSession
 from api.domain.ports.academic import StudentAcademicRepository
-from api.domain.ports.protocol import ProtocolRepository
+from api.domain.ports.protocol import ProposalSigner, ProtocolRepository
 from api.domain.protocol.catalog import Service
-from api.domain.protocol.proposal import ProposalRules, RefusalReason
+from api.domain.protocol.proposal import ProposalRules, RefusalReason, SignedProposal
 
 
 class ProtocolProposer:
-    def __init__(self, protocols: ProtocolRepository, academic: StudentAcademicRepository) -> None:
+    def __init__(
+        self,
+        protocols: ProtocolRepository,
+        academic: StudentAcademicRepository,
+        signer: ProposalSigner,
+        session: StudentSession,
+    ) -> None:
         self._protocols = protocols
         self._academic = academic
+        self._signer = signer
+        self._session = session
 
     async def propose(
         self, service: str, enrollment: str | None, message: str
@@ -49,4 +59,12 @@ class ProtocolProposer:
         if duplicate is not None:
             reason = RefusalReason.DUPLICATE_IN_PROGRESS
             return ToolResult.refused(ProtocolRefusalDto.of(reason, service, duplicate.number))
-        return ToolResult.ok(ProtocolProposalDto.of(service, choice.selected, message))
+        return self._signed(service, choice.selected, message)
+
+    def _signed(
+        self, service: Service, enrollment: Enrollment, message: str
+    ) -> ToolResult[Proposal]:
+        signed = SignedProposal.of(self._session, service, enrollment, message)
+        proposal = ProtocolProposalDto.of(service, enrollment, message)
+        token = self._signer.sign(signed)
+        return ToolResult[Proposal].ok(proposal).with_client_only({"token": token})

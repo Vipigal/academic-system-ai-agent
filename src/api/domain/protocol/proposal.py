@@ -1,8 +1,11 @@
 import re
 from collections.abc import Iterable
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Self
 
 from api.domain.academic.enrollment import Enrollment
+from api.domain.identity.session import StudentSession
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.request import Protocol
 
@@ -14,6 +17,20 @@ class RefusalReason(Enum):
     SERVICE_INACTIVE = "service_inactive"
     EMPTY_MESSAGE = "empty_message"
     DUPLICATE_IN_PROGRESS = "duplicate_in_progress"
+
+
+@dataclass(frozen=True, slots=True)
+class SignedProposal:
+    person_id: str
+    enrollment: str
+    service_code: str
+    message: str = field(repr=False)
+
+    @classmethod
+    def of(
+        cls, session: StudentSession, service: Service, enrollment: Enrollment, message: str
+    ) -> Self:
+        return cls(min(session.person_ids), enrollment.reference, service.code, message)
 
 
 class ProtocolNumber:

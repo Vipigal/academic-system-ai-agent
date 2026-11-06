@@ -1,19 +1,22 @@
 from api.application.agent.student_tools import StudentTools
 from api.application.agent.tools.registry import ToolRegistry
+from api.bootstrap.protocol_providers import ProtocolProviders
 from api.bootstrap.student_services import StudentServices
 from api.bootstrap.tool_providers import ToolProviders
 from api.domain.identity.session import StudentSession
 from api.domain.ports.clock import Clock
 from api.domain.ports.identity import StudentSessionLoader
+from api.domain.ports.protocol import ProposalSigner
 from api.persistence.core.database import Database
 from api.persistence.core.repository_adapter import RepositoryAdapter
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 
 
 class StudentProviders:
-    def __init__(self, database: Database, clock: Clock) -> None:
+    def __init__(self, database: Database, clock: Clock, signer: ProposalSigner) -> None:
         self._database = database
         self._clock = clock
+        self._signer = signer
 
     def session_loader(self) -> StudentSessionLoader:
         return StudentSessionRepository(self._database.db_session_factory)
@@ -23,7 +26,9 @@ class StudentProviders:
 
     def services_for(self, session: StudentSession) -> StudentServices:
         adapter = RepositoryAdapter(self._database.db_session_factory, session)
-        return StudentServices(adapter, self._clock)
+        return StudentServices(
+            adapter, self._clock, ProtocolProviders(adapter, self._clock, self._signer)
+        )
 
     async def tools_of(self, person_id: str) -> StudentTools:
         return ToolProviders.tools_for(await self.services_of(person_id))
