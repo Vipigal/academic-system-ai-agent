@@ -1,4 +1,4 @@
-docstring_allowed_paths = ["src/api/presentation/tools/**"]
+docstring_allowed_paths = ["src/api/application/agent/tools/**"]
 domain_paths = ["src/api/domain/**"]
 domain_package = "api.domain"
 domain_allowed_stdlib = [
@@ -20,9 +20,9 @@ examiner_marker = "examiner:"
 session_access_module = "sqlalchemy.ext.asyncio"
 session_access_scope = ["src/api/**"]
 session_access_allowed = [
-    "src/api/persistence/database.py",
-    "src/api/persistence/repository_adapter.py",
-    "src/api/persistence/student_session_repository.py",
+    "src/api/persistence/core/database.py",
+    "src/api/persistence/core/repository_adapter.py",
+    "src/api/persistence/identity/student_session_repository.py",
 ]
 
 [limits]

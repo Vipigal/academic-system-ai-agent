@@ -1,0 +1,7 @@
+{
+  "get_financial_summary": "Resume os contratos do aluno. Use para saber dívida, próximo boleto, bolsas e pagador.",
+  "get_tuition_changes": "Lista as mudanças de valor da mensalidade. Use para explicar por que ela mudou.",
+  "list_agreements": "Lista os acordos de renegociação do aluno. Use para saber quantas parcelas faltam.",
+  "list_invoices": "Lista faturas com pagamentos e saldo. Use para explicar uma fatura. period: AAAA-MM.",
+  "list_payments": "Lista os pagamentos confirmados do aluno. Use para saber o que já foi pago."
+}

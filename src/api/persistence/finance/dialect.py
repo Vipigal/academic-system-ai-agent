@@ -2,9 +2,9 @@ from collections.abc import Collection
 
 from sqlalchemy import ColumnElement, func, tuple_
 
-from api.domain.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
-from api.domain.invoice import InvoiceStatus
-from api.persistence.dialect_lookup import DialectLookup
+from api.domain.finance.invoice import InvoiceStatus
+from api.domain.shared.brand import STUDENT_NUMBER_LENGTH, Brand, EnrollmentRef, Modality
+from api.persistence.core.dialect_lookup import DialectLookup
 from api.persistence.finance.models import ContractRow
 
 COMPANY_BY_BRAND = {

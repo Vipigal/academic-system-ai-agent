@@ -1,0 +1,5 @@
+{
+  "get_lms_account": "Mostra, por matrícula, se há conta no AVA, se está suspensa e o último acesso.\n\nUse quando o aluno não consegue entrar no AVA ou pergunta do último acesso.",
+  "list_material_views": "Lista os materiais de uma disciplina no AVA com os acessos do aluno, sem o conteúdo.\n\nUse para saber se o aluno já abriu um material, como a aula de uma semana.",
+  "list_online_exams": "Lista as provas online do aluno com janela, tentativas e nota do AVA e do histórico.\n\nUse para prazo, tentativas restantes, entrega registrada ou nota de AV e simulado."
+}

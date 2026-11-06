@@ -7,11 +7,12 @@ from tests.lint.support import PROJECT_ROOT, ToolRunner
 
 LAYER_MODULES = (
     "api/__init__.py",
-    "api/main.py",
-    "api/settings.py",
+    "api/bootstrap/__init__.py",
     "api/presentation/__init__.py",
     "api/application/__init__.py",
+    "api/application/agent/__init__.py",
     "api/persistence/__init__.py",
+    "api/infrastructure/__init__.py",
     "api/domain/__init__.py",
 )
 
@@ -52,10 +53,22 @@ def contracts_result(project: Path, module: str, source: str) -> tuple[int, str]
             id="persistence-imports-application",
         ),
         pytest.param(
+            "api/infrastructure/clock.py",
+            "import api.persistence\n",
+            "Camadas",
+            id="infrastructure-imports-persistence",
+        ),
+        pytest.param(
             "api/presentation/route.py",
             "import api.persistence\n",
             "Presentation",
             id="presentation-imports-persistence",
+        ),
+        pytest.param(
+            "api/presentation/route.py",
+            "import api.infrastructure\n",
+            "Presentation",
+            id="presentation-imports-infrastructure",
         ),
         pytest.param(
             "api/application/service.py",
@@ -77,9 +90,21 @@ def contracts_result(project: Path, module: str, source: str) -> tuple[int, str]
         ),
         pytest.param(
             "api/persistence/repo.py",
-            "import pydantic_ai\n",
+            "import langchain\n",
             "Framework do agente",
             id="persistence-imports-agent-framework",
+        ),
+        pytest.param(
+            "api/presentation/route.py",
+            "import langchain_core\n",
+            "Framework do agente",
+            id="presentation-imports-agent-framework",
+        ),
+        pytest.param(
+            "api/application/service.py",
+            "import langchain\n",
+            "pacote do agente",
+            id="application-imports-langchain-outside-agent",
         ),
     ],
 )
@@ -98,9 +123,15 @@ def test_breaks_contract(tmp_path: Path, module: str, source: str, broken_contra
         ),
         pytest.param("api/application/service.py", "import api.domain\n", id="application-down"),
         pytest.param("api/persistence/repo.py", "import api.domain\n", id="persistence-down"),
+        pytest.param(
+            "api/infrastructure/clock.py", "import api.domain\n", id="infrastructure-down"
+        ),
         pytest.param("api/persistence/repo.py", "import sqlalchemy\n", id="persistence-sqlalchemy"),
         pytest.param("api/presentation/route.py", "import fastapi\n", id="presentation-fastapi"),
-        pytest.param("api/main.py", "import api.persistence\n", id="composition-root"),
+        pytest.param(
+            "api/application/agent/student_agent.py", "import langchain\n", id="agent-langchain"
+        ),
+        pytest.param("api/bootstrap/app.py", "import api.persistence\n", id="composition-root"),
     ],
 )
 def test_keeps_contracts(tmp_path: Path, module: str, source: str) -> None:

@@ -10,9 +10,12 @@ requires-python = ">=3.14,<3.15"
 dependencies = [
     "asyncpg==0.32.0",
     "fastapi==0.162.0",
+    "langchain==1.4.9",
+    "langchain-openai==1.7.4",
+    "langfuse==5.2.0",
     "pydantic==2.14.2",
-    "pydantic-ai-slim==2.66.0",
     "pydantic-settings==2.16.2",
+    "pyjwt==2.15.1",
     "sqlalchemy[asyncio]==2.1.8",
     "uvicorn==0.54.0",
 ]
@@ -22,10 +25,13 @@ dev = [
     "flake8==7.5.0",
     "httpx==0.28.1",
     "import-linter==2.15",
+    "locust==2.47.0",
     "mypy==2.4.1",
     "pyright==1.1.414",
     "pytest==9.2.0",
     "pytest-asyncio==1.4.1.post1",
+    "pytest-xdist==3.8.0",
+    "pyyaml==6.0.3",
     "ruff==0.17.3",
     "wemake-python-styleguide==1.8.1",
 ]
@@ -41,3 +47,10 @@ testpaths = ["tests"]
 pythonpath = ["src", "."]
 norecursedirs = ["fixtures"]
 addopts = "--strict-markers --strict-config"
+markers = [
+    "unit: teste sem banco, aplicado por pasta",
+    "integration: teste contra o banco, aplicado por pasta",
+    "sweep: varre muitas pessoas ou confere volume contra o oráculo",
+    "slow: leva mais de 5 segundos",
+    "live: chama o provedor de LLM; só roda com --live",
+]

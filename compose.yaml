@@ -1,10 +1,3 @@
-# Subir o banco (a carga dos CSVs roda só na criação do volume):
-#   docker compose up -d --wait
-# Subir também o editor web, em http://localhost:8081:
-#   docker compose --profile tools up -d --wait
-# Recarregar os CSVs do zero (apaga o volume):
-#   docker compose down -v && docker compose up -d --wait
-
 services:
   db:
     image: pgvector/pgvector:0.8.7-pg18-trixie
@@ -12,17 +5,14 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-cruzeiro}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:-api}
     ports:
-      # Só localhost: o usuário padrão é superuser e a senha é de desenvolvimento.
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
-      # A partir do Postgres 18, o volume é montado no diretório pai de PGDATA.
       - db-data:/var/lib/postgresql
       - ./data:/data:ro
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      # Via TCP de propósito: durante a carga o Postgres aceita só o socket local,
-      # então o serviço fica healthy apenas quando os CSVs já estão carregados.
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 2s
       timeout: 3s
@@ -30,9 +20,12 @@ services:
 
   api:
     build: .
-    command: uvicorn --factory api.main:ApiFactory.create --app-dir src --host 0.0.0.0 --port 8000 --reload --reload-dir src/api
+    command: uvicorn --factory api.bootstrap.app:ApiFactory.create --app-dir src --host 0.0.0.0 --port 8000 --reload --reload-dir src/api
+    env_file:
+      - path: .env
+        required: false
     environment:
-      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-cruzeiro}
+      APP_DATABASE_URL: postgresql+asyncpg://api:${API_DB_PASSWORD:-api}@db:5432/${POSTGRES_DB:-cruzeiro}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:

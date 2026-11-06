@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Response
 
-from api.application.dto.health_dto import HealthDto
-from api.application.health_service import HealthService
+from api.application.health.dto.check import HealthDto
+from api.application.health.service import HealthService
 
 
 class HealthRouter:

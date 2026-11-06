@@ -14,7 +14,7 @@ Lista viva. Marcar um item não cria regra; o que for durável vira documento, c
 
 ## Preparo para os agentes
 
-- [ ] Revisar e verificar o [Guia de autoria](/docs/authoring-guide.md).
+- [x] Revisar e verificar o [Guia de autoria](/docs/authoring-guide.md).
 - [x] Criar o `CLAUDE.md`: comandos, regras essenciais e ponto de entrada em `docs/index.md`.
 - [x] Preencher o `.gitignore`, que está vazio: no mínimo `.env`, ambiente virtual e caches.
 - [x] Transformar o briefing em [análise exploratória](/docs/eda.md), sem recomendações.
@@ -26,28 +26,28 @@ Lista viva. Marcar um item não cria regra; o que for durável vira documento, c
 Nesta ordem, porque cada uma depende da anterior:
 
 - [x] **Catálogo de perguntas:** 40 a 60 perguntas por área do enunciado, incluindo as que cruzam sistemas, sem resposta e recusadas, com intenção, dados e armadilha.
-- [ ] **Ontologia:** dicionário de dados e glossário de termos, decidindo onde cada um fica. Referência: [pesquisa do Auto Ontology](/docs/research-auto-ontology.md).
-- [ ] **Topologia de tools:** uma tool por intenção, com filtros tipados e sem SQL livre, validada contra o catálogo.
-- [ ] **Contrato de resposta:** envelope comum para distinguir vazio, zero e não registrado, indicar truncamento e período coberto, tratar erros e devolver evidências.
+- [x] **Ontologia:** dicionário de dados e glossário de termos, decidindo onde cada um fica. Referência: [pesquisa do Auto Ontology](/docs/research-auto-ontology.md).
+- [x] **Topologia de tools:** uma tool por intenção, com filtros tipados e sem SQL livre, validada contra o catálogo.
+- [x] **Contrato de resposta:** envelope comum para distinguir vazio, zero e não registrado, paginar com total e próximo offset, indicar período coberto, tratar erros e devolver evidências.
 
 ## Stack e ferramentas
 
-- [ ] Framework do agente e modelos, considerando o provedor da chave de LLM do avaliador.
-- [ ] Formato das skills e como são carregadas.
+- [x] Modelos, considerando o provedor da chave de LLM do avaliador. O framework do agente é o LangChain; versão e API são conferidas no spec do agente.
+- [x] Formato das skills e como são carregadas.
 - [x] Base do projeto: gerenciador de pacotes, versão do Python, lint, tipos, testes e teste de importação entre camadas.
 - [ ] Produção: log estruturado, JWT e ferramenta de teste de carga.
-- [ ] Eval: ferramenta e formato do golden set, com gabarito em SQL independente.
-- [ ] Tecnologia da página mínima de chat, necessária para a aprovação com um clique.
-- [ ] RAG: medir se a busca do catálogo precisa de vetores ou se sinônimos bastam.
+- [x] Eval: ferramenta e formato do golden set, com gabarito em SQL independente.
+- [x] Tecnologia da página mínima de chat, necessária para a aprovação com um clique.
+- [x] RAG: decidido não usar. A base não tem texto de conhecimento para indexar.
 
 ## Dúvida externa
 
-- [ ] Confirmar com o recrutador se existe base de regulamentos fora do zip. Sem essa base, o agente diz que não tem a informação, como o enunciado pede.
+- [x] Decidido não perguntar ao recrutador sobre base de regulamentos. O agente diz que não tem a informação, como o enunciado pede.
 
 ## Implementação
 
-- [ ] Dividir o trabalho em planos por ondas e definir quais rodam de forma autônoma.
-- [ ] `02_constraints.sql`: PKs e FKs, com `NOT VALID` nas 5 FKs violadas.
-- [ ] `03_indexes.sql`: índices derivados das consultas reais.
-- [ ] `04_agent_schema.sql`: conversas, logs, auditoria, rascunhos e sequências.
-- [ ] `05_roles.sql`: role restrita da API.
+- [x] Dividir o trabalho em planos por ondas e definir quais rodam de forma autônoma.
+- [x] `02_constraints.sql`: PKs e FKs, com `NOT VALID` nas 5 FKs violadas.
+- [x] `03_indexes.sql`: índices derivados das consultas reais.
+- [x] `04_agent_schema.sql`: conversas, mensagens, chamadas de tool e sequências.
+- [x] `05_roles.sh`: role restrita da API.
