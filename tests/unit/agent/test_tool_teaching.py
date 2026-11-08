@@ -16,9 +16,9 @@ WRONG_VALUES: dict[str, tuple[object, ...]] = {
     "unit": (7,),
     "area": ("biologia", 1),
     "enrollment": ("013161", 13161),
-    "semester": ("terceiro",),
     "subject": (5,),
-    "pending_only": ("talvez",),
+    "filters": (3, {"semester": "terceiro"}, {"pending_only": "talvez"}, {"foo": 1}),
+    "show_ui": ("talvez",),
     "page": (2, {"limit": 0}, {"limit": 101}, {"limit": "muitos"}, {"offset": -1}, {"foo": 1}),
     "status": ("pago", 3),
     "kind": ("boleto",),
@@ -131,7 +131,7 @@ async def test_a_missing_required_parameter_teaches(tool_name: str) -> None:
 
 
 async def test_a_parameter_of_a_tool_without_parameters_shows_the_valid_call() -> None:
-    explanation = await teach_and_correct("get_financial_summary", {"limit": 3})
+    explanation = await teach_and_correct("get_tuition_changes", {"limit": 3})
 
     assert "não recebe parâmetros" in explanation
     assert "{}" in explanation

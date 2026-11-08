@@ -1,5 +1,6 @@
 from datetime import date
 
+from api.application.academic.dto.curriculum import CurriculumFilter
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import DataState, ToolStatus
@@ -71,7 +72,7 @@ async def test_sr04_term_after_the_last_one_is_not_recorded_with_the_caveat(
 async def test_du02_third_semester_comes_from_the_student_curriculum(database: Database) -> None:
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
-    found = support.rows(await tools.get_curriculum(semester=3))
+    found = support.rows(await tools.get_curriculum(filters=CurriculumFilter(semester=3)))
 
     subjects = {subject.code: subject for subject in found}
     assert set(subjects) == await SqlOracle().values(f"{ADS_2024_SUBJECTS} AND semester = '3'")
@@ -83,9 +84,11 @@ async def test_du02_third_semester_comes_from_the_student_curriculum(database: D
 async def test_du03_curriculum_without_final_paper_lists_its_subjects(database: Database) -> None:
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
-    final_paper = await tools.get_curriculum(subject="FINAL PAPER")
-    internship = await tools.get_curriculum(subject="SUPERVISED INTERNSHIP")
-    project = await tools.get_curriculum(subject="integrative project")
+    final_paper = await tools.get_curriculum(filters=CurriculumFilter(subject="FINAL PAPER"))
+    internship = await tools.get_curriculum(
+        filters=CurriculumFilter(subject="SUPERVISED INTERNSHIP")
+    )
+    project = await tools.get_curriculum(filters=CurriculumFilter(subject="integrative project"))
 
     assert final_paper.status is ToolStatus.NOT_FOUND
     assert internship.status is ToolStatus.NOT_FOUND
@@ -99,8 +102,10 @@ async def test_du04_untranslated_name_offers_the_curriculum_as_candidates(
 ) -> None:
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
-    untranslated = await tools.get_curriculum(subject="Programação II")
-    by_name = await tools.get_curriculum(subject="algorithms and programming ii")
+    untranslated = await tools.get_curriculum(filters=CurriculumFilter(subject="Programação II"))
+    by_name = await tools.get_curriculum(
+        filters=CurriculumFilter(subject="algorithms and programming ii")
+    )
 
     assert untranslated.status is ToolStatus.NOT_FOUND
     assert "ADS0404" in support.candidate_codes(untranslated)
@@ -110,7 +115,7 @@ async def test_du04_untranslated_name_offers_the_curriculum_as_candidates(
 async def test_du04_prerequisite_comes_with_the_student_situation(database: Database) -> None:
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
-    subject = support.only(await tools.get_curriculum(subject="ADS0404"))
+    subject = support.only(await tools.get_curriculum(filters=CurriculumFilter(subject="ADS0404")))
 
     assert (subject.semester, subject.mandatory) == (4, False)
     assert subject.situation is SubjectResult.APPROVED

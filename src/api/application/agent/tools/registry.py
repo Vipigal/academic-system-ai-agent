@@ -2,7 +2,7 @@ import inspect
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import dataclass
 from types import FunctionType
-from typing import Self, get_args, get_origin, get_type_hints
+from typing import Self, get_origin, get_type_hints
 
 from pydantic import BaseModel
 
@@ -12,30 +12,6 @@ from api.domain.ontology.model import Ontology
 
 MAX_DESCRIPTION_LENGTH = 200
 DECLARED_ONTOLOGIES = "declared_ontologies"
-ALLOWED_PARAMETERS = frozenset(
-    {
-        "term",
-        "course",
-        "modality",
-        "unit",
-        "area",
-        "enrollment",
-        "semester",
-        "subject",
-        "pending_only",
-        "page",
-        "offset",
-        "limit",
-        "status",
-        "kind",
-        "period",
-        "year",
-        "service",
-        "number",
-        "message",
-        "query",
-    }
-)
 
 
 class ToolContractError(ValueError):
@@ -59,7 +35,6 @@ class ToolDefinition:
         definition._check_ontologies()
         definition._check_async(function)
         definition._check_return(function)
-        definition._check_parameters(function)
         return definition
 
     def _check_description(self) -> None:
@@ -77,11 +52,6 @@ class ToolDefinition:
             if ontology not in ONTOLOGIES:
                 raise ToolContractError(f"{self.name} declara {ontology.key}, fora do catálogo")
 
-    def _check_parameters(self, function: FunctionType) -> None:
-        for parameter in self._parameter_names(function):
-            if parameter not in ALLOWED_PARAMETERS:
-                raise ToolContractError(f"{self.name} recebe {parameter}, fora dos permitidos")
-
     def _check_async(self, function: FunctionType) -> None:
         if not inspect.iscoroutinefunction(function):
             raise ToolContractError(f"{self.name} precisa ser async")
@@ -91,16 +61,6 @@ class ToolDefinition:
         origin = get_origin(returned) or returned
         if not (isinstance(origin, type) and issubclass(origin, ToolResult)):
             raise ToolContractError(f"{self.name} precisa devolver ToolResult")
-
-    @staticmethod
-    def _parameter_names(function: FunctionType) -> Iterator[str]:
-        hints = get_type_hints(function)
-        for name in list(inspect.signature(function).parameters)[1:]:
-            yield name
-            annotation = hints.get(name)
-            for hint in (annotation, *get_args(annotation)):
-                if isinstance(hint, type) and issubclass(hint, BaseModel):
-                    yield from hint.model_fields
 
 
 @dataclass(frozen=True, slots=True)

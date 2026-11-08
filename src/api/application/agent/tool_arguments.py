@@ -58,6 +58,11 @@ GUIDES: Mapping[str, ParameterGuide] = {
     "semester": ParameterGuide("o número do semestre da matriz, inteiro", "3"),
     "subject": ParameterGuide("o código ou o nome da disciplina, em texto", "ADM0104"),
     "pending_only": ParameterGuide("true ou false", "true"),
+    "filters": ParameterGuide(
+        "um objeto com semester, subject e pending_only, todos opcionais",
+        '{"semester": 3, "pending_only": true}',
+    ),
+    "show_ui": ParameterGuide("true ou false", "true"),
     "page": ParameterGuide("um objeto com offset e limit", '{"offset": 0, "limit": 20}'),
     "offset": ParameterGuide(f"um inteiro a partir de {MIN_OFFSET}", str(MIN_OFFSET)),
     "limit": ParameterGuide(f"um inteiro de {MIN_LIMIT} a {MAX_LIMIT}", str(DEFAULT_LIMIT)),

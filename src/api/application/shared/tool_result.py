@@ -87,6 +87,7 @@ class ToolResult[T](BaseModel):
     explanation: str | None = Field(
         default=None, exclude_if=lambda explanation: explanation is None
     )
+    ui: str | None = Field(default=None, exclude_if=lambda ui: ui is None)
     client_only: Mapping[str, str] | None = Field(default=None, exclude=True, repr=False)
 
     @classmethod

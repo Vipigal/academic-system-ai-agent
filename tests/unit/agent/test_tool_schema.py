@@ -40,6 +40,19 @@ def test_the_visible_schema_shows_enums_ranges_and_formats_without_references() 
     assert "$defs" not in parameters
 
 
+def test_the_curriculum_filters_are_one_nested_object_without_references() -> None:
+    tools = {tool.definition.name: tool for tool in stub_student().registry().tools}
+
+    function = convert_to_openai_tool(LangchainTools("t").convert(tools["get_curriculum"]))
+
+    parameters = function["function"]["parameters"]
+    filters = parameters["properties"]["filters"]
+    assert set(parameters["properties"]) == {"enrollment", "filters", "page", "show_ui"}
+    assert set(filters["properties"]) == {"semester", "subject", "pending_only"}
+    assert filters["additionalProperties"] is False
+    assert "$defs" not in parameters
+
+
 def test_converting_twice_does_not_change_the_cached_schema() -> None:
     tool = stub_student().registry().tools[0]
 

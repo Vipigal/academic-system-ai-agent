@@ -3,15 +3,22 @@ from api.application.academic.dto.catalog import (
     CourseOfferDto,
     SubjectProfessorDto,
 )
-from api.application.academic.dto.curriculum import CurriculumSubjectDto
+from api.application.academic.dto.curriculum import (
+    NO_FILTER,
+    CurriculumFilter,
+    CurriculumSubjectDto,
+)
 from api.application.academic.dto.enrollment import EnrollmentDto
 from api.application.academic.dto.record import SubjectRecordDto
 from api.application.academic.service import AcademicService
 from api.application.agent.tools.registry import ToolRegistry
+from api.application.agent.tools.ui import shown
 from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology import academic_enrollment, academic_performance, limits, overview
 from api.domain.shared.brand import Modality
+
+PROGRESS_UI = "Painel do progresso no curso exibido ao aluno."
 
 
 class AcademicTools:
@@ -70,19 +77,24 @@ class AcademicTools:
     async def get_curriculum(
         self,
         enrollment: str | None = None,
-        semester: int | None = None,
-        subject: str | None = None,
+        filters: CurriculumFilter = NO_FILTER,
         *,
-        pending_only: bool = False,
         page: PageRequest = FIRST_PAGE,
+        show_ui: bool = False,
     ) -> ToolResult[list[CurriculumSubjectDto]]:
         """Mostra a matriz do aluno com a situação em cada disciplina.
 
         Use para disciplinas por semestre, pré-requisitos, TCC, estágio ou o que falta.
+        Pode mostrar UI ao aluno com show_ui.
         """
-        return await self._service.get_curriculum(
-            enrollment, semester, subject, pending_only=pending_only, page=page
+        curriculum = await self._service.get_curriculum(
+            enrollment,
+            filters.semester,
+            filters.subject,
+            pending_only=filters.pending_only,
+            page=page,
         )
+        return shown(curriculum, PROGRESS_UI) if show_ui else curriculum
 
     @ToolRegistry.declares(
         academic_performance.RESULTADO,

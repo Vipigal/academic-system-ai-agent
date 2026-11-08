@@ -230,3 +230,10 @@ def test_client_only_never_leaves_through_the_default_serialization() -> None:
     assert "segredo" not in result.model_dump_json()
     assert "client_only" not in result.model_dump(mode="json")
     assert "segredo" not in repr(result)
+
+
+def test_ui_is_serialized_only_when_set() -> None:
+    shown = ToolResult.ok("resumo").model_copy(update={"ui": "Painel exibido ao aluno."})
+
+    assert shown.model_dump(mode="json")["ui"] == "Painel exibido ao aluno."
+    assert "ui" not in ToolResult.ok("resumo").model_dump(mode="json")
