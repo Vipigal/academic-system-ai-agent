@@ -85,15 +85,20 @@ interface ReadyWidget {
   output: JsonRecord;
 }
 
+function asksForUi(call: ToolCall): boolean {
+  return isRecord(call.input) && call.input.show_ui === true;
+}
+
 function widgetsOf(parts: Part[]): ReadyWidget[] {
-  return parts.flatMap((part, index) => {
+  const requested = parts.flatMap((part, index) => {
     const name = toolName(part);
     const Widget = name === null ? undefined : TOOL_WIDGETS[name];
     if (name === null || !Widget) return [];
     const call = toolCallOf(part, name);
-    if (call.state !== ToolCallState.Done || !isRecord(call.output) || call.output.status !== OK) return [];
+    if (!asksForUi(call) || call.state !== ToolCallState.Done || !isRecord(call.output) || call.output.status !== OK) return [];
     return [{ key: `${name}-${index}`, Widget, output: call.output }];
   });
+  return requested.slice(-1);
 }
 
 interface Props {
