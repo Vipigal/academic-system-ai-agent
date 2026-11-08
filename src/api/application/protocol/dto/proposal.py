@@ -35,6 +35,7 @@ class ProtocolProposalDto(BaseModel):
     course_name_pt: str | None
     subject: str | None
     requires_student_message: bool
+    request_text: str
     requires_confirmation: bool
 
     @classmethod
@@ -51,6 +52,7 @@ class ProtocolProposalDto(BaseModel):
             course_name_pt=CourseNames.portuguese(enrollment.course_code),
             subject=subject,
             requires_student_message=action.requires_student_message,
+            request_text=action.request_text,
             requires_confirmation=True,
         )
 

@@ -64,7 +64,7 @@ export function Conversation({ id, token, greeting, onExpired }: Props) {
             <MessageView
               key={message.id}
               message={message}
-              token={token}
+              context={{ token, conversationId: id, busy }}
               streaming={busy && index === messages.length - 1}
             />
           ))}

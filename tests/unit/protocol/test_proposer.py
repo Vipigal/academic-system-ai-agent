@@ -93,6 +93,12 @@ async def test_the_proposal_carries_the_catalog_texts_and_the_portuguese_course(
     assert (found.requires_student_message, found.requires_confirmation) == (False, True)
 
 
+async def test_the_proposal_carries_the_fixed_text_of_the_action() -> None:
+    result = await proposer().propose(LOCK, fakes.ACTIVE.reference, None)
+
+    assert proposal(result).request_text == "Solicito o trancamento da minha matrícula no curso."
+
+
 async def test_the_client_gets_the_token_and_the_confirmation_block() -> None:
     result = await proposer().propose(LOCK, fakes.ACTIVE.reference, None)
 

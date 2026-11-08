@@ -47,13 +47,19 @@ function RobotIcon() {
   );
 }
 
+interface CardContext {
+  token: string;
+  conversationId: string;
+  busy: boolean;
+}
+
 interface PartProps {
   part: Part;
   role: UIMessage["role"];
-  token: string;
+  context: CardContext;
 }
 
-function PartView({ part, role, token }: PartProps) {
+function PartView({ part, role, context }: PartProps) {
   if (part.type === "text") {
     if (!part.text.trim()) return null;
     if (role === "user") return <div className="row user"><div className="bubble user">{part.text}</div></div>;
@@ -74,7 +80,7 @@ function PartView({ part, role, token }: PartProps) {
   return (
     <>
       <ToolCallView call={call} />
-      {name === PROPOSE_TOOL && isRecord(call.output) && <ProtocolCard output={call.output} token={token} />}
+      {name === PROPOSE_TOOL && isRecord(call.output) && <ProtocolCard output={call.output} {...context} />}
     </>
   );
 }
@@ -103,16 +109,16 @@ function widgetsOf(parts: Part[]): ReadyWidget[] {
 
 interface Props {
   message: UIMessage;
-  token: string;
+  context: CardContext;
   streaming: boolean;
 }
 
-export function MessageView({ message, token, streaming }: Props) {
+export function MessageView({ message, context, streaming }: Props) {
   const widgets = streaming ? [] : widgetsOf(message.parts);
   return (
     <div className="turn">
       {message.parts.map((part, index) => (
-        <PartView key={index} part={part} role={message.role} token={token} />
+        <PartView key={index} part={part} role={message.role} context={context} />
       ))}
       {widgets.length > 0 && (
         <div className="widgets">
