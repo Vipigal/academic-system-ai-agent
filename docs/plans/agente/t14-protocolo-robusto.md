@@ -83,7 +83,7 @@ ligação com protocolo; a origem delas não é conhecida.
 
 ## 2. Princípios
 
-- **Quem escreve o pedido é o aluno.** O LLM escolhe a ação; o texto com o nome do aluno não vem do modelo.
+- **O texto gravado nunca vem do modelo.** O LLM escolhe a ação; o texto é o fixo da ação ou, nos pedidos de texto livre, o que o aluno escreveu.
 - **O que a ação faz vem do código, não do modelo.** Skill, DTO e card leem da mesma fonte.
 - **Só o servidor garante.** Regra no front sem regra na rota não conta.
 - **Não prometer o que um modelo não cumpre.** A garantia absoluta está na barreira determinística (§6.8); o eval mede o resto.
@@ -97,13 +97,16 @@ Batidas no spec-mãe, D32 a D42. Resumo do que orienta esta tarefa:
 | D32 | Trancamento é do curso inteiro. Não existe serviço de disciplina, e nenhum será criado. O agente precisa explicar isso |
 | D33 | Fonte única de ações no domínio, com falha fechada |
 | D34 | `propose_protocol(action, enrollment, subject)`, sem `message` |
-| D35 | A mensagem é sempre do aluno, num campo vazio do card, em todos os serviços |
+| D35 | Revisada pela D52: texto fixo do catálogo nos serviços simples, só com o botão; campo vazio do aluno só nos serviços que pedem texto livre |
 | D36 | Palavra digitada, exigida pelo servidor, em ACA-010, ACA-012, ACA-013, ACA-014 e FIN-031 |
 | D37 | Evento de confirmação em `agent.message`, com o papel novo `system_event` |
 | D38 | Pedido de disciplina: diz que não existe, orienta a secretaria e oferece `GEN-090`, sem promessa |
 | D39 | Produção usa a data de hoje, sem variável de ambiente; testes e eval injetam 31/10/2026 |
 | D40 | Regra de escopo no prompt `v2` |
 | D42 | Nome em português e efeito nos DTOs de serviço; nome em português dos 8 cursos |
+| D53 | A busca de serviço por nome casa também o nome em português da D42 |
+| D54 | A skill `overview` trata a rematrícula do próximo período como pendência perto do fim do período |
+| D55 | Segundo item âncora do bug, com outro aluno de Administração e "Gestão Estratégica II", entra no golden junto com a T14 |
 
 ## 4. Escopo
 
@@ -136,7 +139,7 @@ Fatos conferidos em 2026-11-06:
 - **Gravação:** `ProtocolOpeningMapper` (`persistence/secretary/opening_mapper.py`) grava `message` em `protocol_interaction`.
 - **Histórico:** `MessageRole` (`domain/conversation/message.py`), `PastMessages` (`application/chat/past_messages.py`), `AgentMessages` (`application/agent/agent_messages.py`). `agent.message.role` tem `CHECK` em `db/init/04_agent_schema.sql`, e o `append` calcula a posição.
 - **Relógio:** `reference_date` em `.env.example:15`, `bootstrap/settings.py:12` e `bootstrap/singletons.py:20`; `ReferenceClock` em `infrastructure/clock.py`; o port só tem `today()`. A abertura usa meia-noite (`domain/protocol/opening.py`, `time.min`). O prompt recebe a data em `agent_runtime.py:41`. Há referência à data em 16 arquivos de teste.
-- **Dados:** foto de 31/10/2026. As consultas do oráculo fixam essa data em `src/evals/oracle_queries/`.
+- **Dados:** foto de 31/10/2026. As consultas do oráculo fixam essa data em `src/evals/golden/oracle_queries/`.
 - **Front:** `src/app/src/ProtocolCard.tsx` e `api.ts`.
 - **Testes que citam o contrato atual:** `tests/unit/agent/tool_descriptions/ProtocolTools.json`, `tests/agent_map.py`, `tests/e2e/student_flow.py`, `tests/unit/infrastructure/test_proposal_signer.py`, `tests/unit/protocol/test_opening.py`, `tests/integration/protocol/` e `tests/integration/agent/test_tool_invariants.py`.
 - **Inconsistência a corrigir:** `test_pr08_lock_request_is_a_proposal_for_confirmation` recebe proposta para `LOCKED_PERSON`, enquanto o PR-08 do golden diz para não propor novo trancamento.
@@ -203,12 +206,12 @@ Nas ações que aceitam disciplina, `subject` fica na proposta e aparece no card
 | Tudo certo | `201 {protocol_number, status, sla_due_at}` |
 | Token inválido, expirado, de outro aluno; conversa alheia ou inexistente | `404` uniforme |
 | Duplicado | `409` |
-| Mensagem vazia ou acima de 4.000 caracteres | `422` |
+| Mensagem vazia em serviço que pede texto livre, ou acima de 4.000 caracteres | `422` |
 | Palavra ausente ou errada em ação que a exige | `422` |
 | Serviço não aberto, com taxa, ou matrícula em situação incompatível | `422` |
 
 - A palavra é comparada sem diferenciar maiúsculas e ignorando espaços nas pontas.
-- O token perde `message` e deixa de ter o texto em `SignedProposal`. A mensagem digitada é o que vai para `protocol_interaction`.
+- O token perde `message` e deixa de ter o texto em `SignedProposal`. Nos serviços com `requires_student_message`, a mensagem digitada é o que vai para `protocol_interaction`; nos demais, o servidor grava o texto fixo da ação, e `message` é ignorada.
 - A mensagem digitada não entra em log, como hoje.
 
 ### 6.4 Evento no histórico
@@ -227,7 +230,8 @@ Dados só do resultado da tool e de `client_only`, nunca do texto do modelo.
 
 - Título em português e curso em português.
 - Com palavra exigida: a pergunta de confirmação ("Tem certeza de que deseja trancar o curso Ciências Contábeis?"), o efeito, o limite ("Não tranca uma disciplina") e o aviso de que as regras e os efeitos sobre cobranças não estão nos dados.
-- Campo de texto vazio e obrigatório em todos os serviços. Sem texto sugerido.
+- Nos serviços com `requires_student_message`, como pedido de informações, revisão de nota e reclamação: campo de texto vazio e obrigatório, sem texto sugerido pelo agente (D52).
+- Nos demais, como segunda via de boleto e declaração: o card mostra o texto fixo da ação, só com o botão.
 - Campo da palavra, quando exigida. O botão só libera com os campos preenchidos, e o erro do servidor aparece no card.
 - O botão fica desabilitado enquanto o agente responde, para reduzir colisão de posição.
 
@@ -242,8 +246,10 @@ Dados só do resultado da tool e de `client_only`, nunca do texto do modelo.
 A skill também passa a trazer:
 - a tabela de ações gerada da §6.1;
 - o caminho do D38;
-- o fato de o aluno escrever a mensagem no card, e o agente não;
+- o fato de o card trazer o texto da ação e, nos serviços de texto livre, o aluno escrever a mensagem, e o agente não;
 - o evento de confirmação como fato: depois dele, o pedido está aberto.
+
+**Skill `overview`** (D54): perto do fim do período, a rematrícula do período seguinte que ainda não consta entra como pendência. O implementador confere no banco de onde vem a rematrícula e qual antecedência os dados sustentam.
 
 **Ontologias:**
 - `trancamento`: troca o sinônimo "trancar" por "trancar o curso", "trancar a matrícula do curso" e "parar o curso", e a definição diz que vale para o curso inteiro;
@@ -271,12 +277,12 @@ A skill também passa a trazer:
 
 Esta é a redação para a entrega, e os testes a sustentam:
 
-> Nenhum protocolo abre sem o aluno escrever o próprio pedido e, nas ações de alto impacto, digitar a palavra de confirmação, num card cujo texto vem do catálogo de ações, nunca do modelo. O agente é avaliado por itens críticos no eval, com tolerância zero, mas um modelo é probabilístico: é a barreira determinística que impede o protocolo errado.
+> Nenhum protocolo abre sem o aluno confirmar num card cujo texto vem do catálogo de ações, nunca do modelo. Nos pedidos de texto livre, o texto gravado é o que o aluno escreveu; nas ações de alto impacto, ele também digita a palavra de confirmação. O agente é avaliado por itens críticos no eval, com tolerância zero, mas um modelo é probabilístico: é a barreira determinística que impede o protocolo errado.
 
 ## 7. Consequências
 
 - **Melhora:** o protocolo errado exige dois atos conscientes do aluno; o modelo perde uma superfície de injeção (AT-10 pedia para gravar um texto na mensagem); ele passa a ler o efeito de cada serviço sem cruzar tools.
-- **Piora:** pedir uma declaração simples agora exige escrever o pedido no card. O dono escolheu isso (D35).
+- **Piora:** os pedidos de texto livre exigem que o aluno escreva no card. Os simples continuam com um clique, com o texto fixo da ação (D52).
 - **Riscos:**
   - **Mensagem de sistema no meio do histórico:** verificar em teste `live` (§6.4).
   - **Golden:** itens existentes podem citar `message`. Só muda o item que o novo contrato torna impossível, com registro, para manter o baseline comparável.
@@ -293,13 +299,13 @@ Esta é a redação para a entrega, e os testes a sustentam:
 
 | # | Tarefa | Depende de | Arquivos principais | Fronteira de teste | Pronto quando | Oráculo |
 |---|---|---|---|---|---|---|
-| F1 | Catálogo de ações e nomes | Baseline de T10 | `domain/protocol/`, DTOs de serviço e curso | Unitário | Os 18 códigos cobertos; código desconhecido falha fechada | `list_services` mostra título e efeito |
+| F1 | Catálogo de ações e nomes | Baseline de T10 | `domain/protocol/`, DTOs de serviço e curso, `application/shared/name_search.py` | Unitário | Os 18 códigos cobertos, cada um com texto fixo e `requires_student_message` (D52); código desconhecido falha fechada; a busca acha "revisão de nota" em ACA-020 (D53) | `list_services` mostra título e efeito; `list_protocols(service='revisão de nota')` acha o protocolo do PR-03 |
 | F2 | Contrato da tool e proposta | F1 | `tools/protocol.py`, `registry.py`, `tool_schema.py`, `proposer.py`, `domain/protocol/proposal.py`, `proposal_signer.py` | Unitário, com fakes | Recusas novas testadas; token sem mensagem; `test_pr08` corrigido; `client_only` traz `confirmation` | Chamada real devolve `subject_not_supported` |
-| F5 | Textos | F1 | `domain/ontology/`, `skills/`, `prompts/student_agent_v2.md`, `system_prompt.py` | Unitário | Prompt `v2` em uso; skill com a regra e a tabela gerada; entrada só explicativa, sem opção | Teste `live` da frase literal não gera proposta válida |
+| F5 | Textos | F1 | `domain/ontology/`, `skills/`, `prompts/student_agent_v2.md`, `system_prompt.py` | Unitário | Prompt `v2` em uso; skill com a regra e a tabela gerada; entrada só explicativa, sem opção; `overview` com a rematrícula (D54) | Teste `live` da frase literal não gera proposta válida |
 | F4 | Confirmação e evento | F2 | `confirmation.py`, `protocol_confirmation.py`, `domain/protocol/opening.py`, `opening_mapper.py`, `domain/conversation/`, `past_messages.py`, `agent_messages.py`, `04_agent_schema.sql` | Unitário nas regras; integração só na rota e na gravação | Tabela da §6.3 coberta; o texto digitado é o gravado; evento visível no turno seguinte; aluno não forja evento | Teste `live`: depois da confirmação, o modelo sabe que o pedido está aberto |
 | F6 | Card e limpeza do login | F4 | `src/app/src/` | Navegador | Card da §6.5; atalho removido | Chromium do WSL com `UniMontanhas:070114`: stream, erro da API, card sem mensagem do agente, botão só libera com os campos, protocolo aberto com o texto digitado |
 | F3 | Relógio | F4 | `infrastructure/clock.py`, `domain/ports/clock.py`, `bootstrap/settings.py`, `singletons.py`, `.env.example`, `opening.py`, testes, runner | Unitário | Produção com a data real; nenhum teste depende de `.env` para a data; `docs/architecture.md` A16 corrigido | Prompt mostra a data de hoje no Compose; eval roda com 31/10 |
-| F7 | Rodada final e comparação | F3, F5, F6 | Resultados em `src/evals/`, `docs/plans/agente/` | Execução real | `down -v` antes; `make check` verde; itens críticos sem falha; comparação com o baseline escrita | Relatório da rodada e tabela de antes e depois, para a T13 |
+| F7 | Rodada final e comparação | F3, F5, F6 | Resultados em `src/evals/`, `docs/plans/agente/`, `golden/protocol_actions.yaml` | Execução real | Segundo item âncora no golden (D55); `down -v` antes; `make check` verde; itens críticos sem falha; comparação com `baseline-trancamento-v2` escrita | Relatório da rodada e tabela de antes e depois, para a T13 |
 
 ### Ondas e paralelismo
 

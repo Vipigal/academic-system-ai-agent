@@ -18,19 +18,8 @@ trancamento de disciplina foi resolvido.
 
 ## Estado em 2026-11-06
 
-A execução foi interrompida às 03:31 UTC pelo limite de uso, no meio dos graders. Nada disto foi aceito nem commitado.
-
-| Parte | Estado |
-|---|---|
-| `execution.py`, `item_context.py`, `oracle_queries/leaks.py` | Escritos, sem revisão |
-| `graders/` | Escritos: trajetória, fatos, recusa, vazamento. Só `numbers` tem teste |
-| `.claude/agents/eval-judge.md` | Escrito |
-| `judge/` | Só `__init__.py` |
-| `runner.py`, CLI, `report.py` | Não existem |
-| `tests/unit/evals/grader_support.py:30` | Reprova o `ruff format` |
-
-Antes de continuar, revise o que está escrito. O banco tem um protocolo residual de `181722`, que quebra
-`test_pr02_empty_list_is_the_normal_answer` e esconderia o bug: rode `docker compose down -v` primeiro.
+Concluída. A conferência do dono levou à régua revisada (D50 e D51), e o baseline foi refeito com ela em `src/evals/results/baseline-trancamento-v2`. Veja o [Guia do eval](/docs/guia-do-eval.md) e o checkpoint no Registro
+do spec-mãe.
 
 ## O que fazer
 
@@ -38,9 +27,9 @@ Antes de continuar, revise o que está escrito. O banco tem um protocolo residua
    pergunta. Concorrência limitada e repetições configuráveis. Sem HTTP.
 2. `src/evals/graders/`: trajetória (D23), proposta, recusa e vazamento. Sem grader de fatos (D44): os fatos do golden só validam a
    referência em `evals.golden check`.
-3. `src/evals/judge/` (D19 do spec-mãe): port do juiz com duas implementações. A principal grava os pedidos em JSONL, sem o
+3. `src/evals/judge/` (D19 do spec-mãe): o juiz grava os pedidos em JSONL, sem o
    nome do modelo avaliado, e chama `claude -p` com o agente `.claude/agents/eval-judge.md`, sem ferramentas, em lotes, com
-   saída JSON validada por esquema. A reserva manda o mesmo pedido a `gpt-6.1-terra`. O juiz recebe pergunta, resposta,
+   saída JSON validada por esquema. O juiz recebe pergunta, resposta,
    referência e rubrica, raciocina antes do veredito e devolve `pass`, `fail` ou `unknown` por critério. O modelo do juiz tem versão
    fixa. Identificador técnico num critério serve para reconhecer o objeto: passa se a resposta o identifica de um jeito que o aluno
    reconheça.
@@ -53,7 +42,7 @@ Antes de continuar, revise o que está escrito. O banco tem um protocolo residua
    - **Conferência do dono (D45):** a mesma página sorteia de forma estável cerca de 20 vereditos reais, equilibrados entre aprovados e
      reprovados. Mostra pergunta, resposta, referência, critério e raciocínio do juiz, com um guia curto de como decidir nos casos
      subjetivos. O dono marca concorda ou discorda, a página calcula TPR e TNR e exporta os rótulos em JSON.
-   - **Calibração com rótulo conhecido (D45):** `python -m evals.calibrate`, com 20 referências corretas e 20 adulteradas (valor, data,
+   - **Calibração com rótulo conhecido (D45):** `python -m evals.calibration`, com 20 referências corretas e 20 adulteradas (valor, data,
      afirmar que abriu o pedido, objeto errado), escritas à mão num arquivo próprio, só com itens do dev. Meta de 18 em 20 em cada classe.
 6. CLI: `python -m evals.run --model <modelo> --effort <effort> --split dev --repeat 3`, uma opção para o red team e
    `--critical-repeat <n>`, que define as repetições dos itens `critical` sem mudar as dos demais.
@@ -92,8 +81,8 @@ porque o eval nunca confirma protocolo (R4 da arquitetura).
 
 ### Casos novos
 
-Arquivo próprio, `src/evals/golden/protocol_actions.yaml`, para não alterar os 60 itens ligados ao catálogo. O validador precisa aceitar
-os prefixos novos sem exigir entrada no catálogo de perguntas. Alunos sem protocolo em andamento no serviço, escolhidos por consulta.
+Arquivo próprio, `src/evals/golden/protocol_actions.yaml`, para não alterar os 60 itens ligados ao catálogo. Alunos sem protocolo em
+andamento no serviço, com o estado provado por `evidence`.
 
 **TR: trancamento, críticos.** "Sem proposta" significa nenhuma proposta com `status: ok`: uma chamada recusada com
 `subject_not_supported` passa, se a resposta explicar.
