@@ -1,10 +1,11 @@
 import unicodedata
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from api.application.shared.tool_result import Candidate
 
 COMBINING_MARK = "Mn"
+NO_ALIASES: Mapping[str, str] = {}
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,27 +27,44 @@ class NameMatch:
         return frozenset(candidate.code for candidate in self.matched)
 
 
+@dataclass(frozen=True, slots=True)
+class Searchable:
+    candidate: Candidate
+    texts: tuple[str, ...]
+
+    def equals(self, needle: str) -> bool:
+        return needle in self.texts
+
+    def contains(self, needle: str) -> bool:
+        return any(needle in text for text in self.texts)
+
+
 class NameSearch:
     @classmethod
-    def search(cls, query: str | None, candidates: Iterable[Candidate]) -> NameMatch:
+    def search(
+        cls,
+        query: str | None,
+        candidates: Iterable[Candidate],
+        aliases: Mapping[str, str] = NO_ALIASES,
+    ) -> NameMatch:
         unique = tuple(sorted(set(candidates), key=lambda candidate: candidate.code))
         if query is None:
             return NameMatch(query, unique, unique)
-        return NameMatch(query, unique, cls._matching(cls._normalized(query), unique))
+        searchable = tuple(cls._searchable(item, aliases) for item in unique)
+        return NameMatch(query, unique, cls._matching(cls._normalized(query), searchable))
 
-    @classmethod
-    def _matching(cls, needle: str, candidates: tuple[Candidate, ...]) -> tuple[Candidate, ...]:
+    @staticmethod
+    def _matching(needle: str, searchable: tuple[Searchable, ...]) -> tuple[Candidate, ...]:
         if not needle:
             return ()
-        exact = tuple(item for item in candidates if needle in cls._searchable(item))
-        partial = tuple(
-            item for item in candidates if any(needle in text for text in cls._searchable(item))
-        )
+        exact = tuple(item.candidate for item in searchable if item.equals(needle))
+        partial = tuple(item.candidate for item in searchable if item.contains(needle))
         return exact or partial
 
     @classmethod
-    def _searchable(cls, candidate: Candidate) -> tuple[str, str]:
-        return cls._normalized(candidate.code), cls._normalized(candidate.name)
+    def _searchable(cls, candidate: Candidate, aliases: Mapping[str, str]) -> Searchable:
+        texts = (candidate.code, candidate.name, aliases.get(candidate.code, ""))
+        return Searchable(candidate, tuple(cls._normalized(text) for text in texts if text))
 
     @staticmethod
     def _normalized(text: str) -> str:

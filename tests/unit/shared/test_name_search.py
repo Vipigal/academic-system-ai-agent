@@ -44,3 +44,28 @@ def test_no_match_reports_a_miss_with_every_candidate() -> None:
 
 def test_blank_query_matches_nothing() -> None:
     assert NameSearch.search("  ", CANDIDATES).missed
+
+
+GRADE_REVIEW = Candidate(code="ACA-020", name="Grade Review")
+COMPLAINT = Candidate(code="OUV-099", name="Complaint")
+TITLES = {"ACA-020": "Revisão de nota", "OUV-099": "Reclamação na ouvidoria"}
+
+
+def test_an_alias_of_the_code_matches_like_the_name() -> None:
+    match = NameSearch.search("revisao de nota", (GRADE_REVIEW, COMPLAINT), TITLES)
+
+    assert match.matched == (GRADE_REVIEW,)
+
+
+def test_the_name_still_matches_when_there_is_an_alias() -> None:
+    match = NameSearch.search("grade review", (GRADE_REVIEW, COMPLAINT), TITLES)
+
+    assert match.matched == (GRADE_REVIEW,)
+
+
+def test_a_partial_alias_matches() -> None:
+    assert NameSearch.search("ouvidoria", (GRADE_REVIEW, COMPLAINT), TITLES).codes == {"OUV-099"}
+
+
+def test_without_aliases_the_portuguese_name_misses() -> None:
+    assert NameSearch.search("revisão de nota", (GRADE_REVIEW, COMPLAINT)).missed

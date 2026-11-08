@@ -62,6 +62,19 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 - **Nunca fazer:** Garantir o que acontece com as cobranças futuras de quem trancou
 - **Relação:** não implica `quitacao`. Trancar não quita o que já se deve. Evidência: 5 matrículas trancadas têm contrato em cobrança.
 
+### Matrícula em disciplina
+
+- **Chave:** `matricula_em_disciplina`
+- **Sinônimos:** trancar a disciplina, trancar minha matrícula em uma disciplina
+- **Definição:** O aluno também chama de matrícula a inscrição numa disciplina. Nenhum serviço tranca ou cancela uma disciplina: trancamento e cancelamento valem para o curso inteiro.
+- **Sistema:** Secretaria
+- **Origem:** `POLICY`
+- **Evidência:** Nenhum dos 18 serviços da secretaria trata de uma disciplina, e nenhuma mensagem de pedido pede trancamento de disciplina.
+- **Tabelas:** `secretary.demand_type`, `secretary.protocol_interaction`
+- **Aviso:** nenhum
+- **Nunca fazer:** Oferecer o trancamento ou o cancelamento de uma disciplina como serviço
+- **Relação:** não é o mesmo que `trancamento`. Trancar uma disciplina não é trancar o curso, e não há pedido para isso.
+
 ### Matriz curricular
 
 - **Chave:** `matriz`

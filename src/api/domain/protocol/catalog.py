@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
+from api.domain.protocol.action_catalog import ServiceActions
 from api.domain.shared.money import Money
 
 
@@ -28,4 +29,5 @@ class Service:
 
     @property
     def agent_can_open(self) -> bool:
-        return self.active and not self.has_fee
+        proposable = ServiceActions.proposable(self.code) is not None
+        return proposable and self.active and not self.has_fee

@@ -65,7 +65,7 @@ QUESTIONS = (
     MappedQuestion(
         "PR-08",
         ("list_enrollments",),
-        ("trancamento", "servico", "prazo_de_atendimento"),
+        ("trancamento", "matricula_em_disciplina", "servico", "prazo_de_atendimento"),
     ),
     MappedQuestion("PR-09", ("get_protocol",), ("pedido_de_terceiro", "protocolo")),
     MappedQuestion("LM-01", ("list_online_exams",), ("prova_online",)),

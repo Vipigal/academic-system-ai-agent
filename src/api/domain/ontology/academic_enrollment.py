@@ -65,6 +65,28 @@ TRANCAMENTO = Ontology(
     ),
 )
 
+MATRICULA_EM_DISCIPLINA = Ontology(
+    key="matricula_em_disciplina",
+    name="Matrícula em disciplina",
+    area=Area.ACADEMIC_ENROLLMENT,
+    synonyms=("trancar a disciplina", "trancar minha matrícula em uma disciplina"),
+    definition="O aluno também chama de matrícula a inscrição numa disciplina. Nenhum serviço "
+    "tranca ou cancela uma disciplina: trancamento e cancelamento valem para o curso inteiro.",
+    source=System.SECRETARY,
+    origin=Origin.POLICY,
+    evidence="Nenhum dos 18 serviços da secretaria trata de uma disciplina, e nenhuma mensagem de "
+    "pedido pede trancamento de disciplina.",
+    data=(tables.SECRETARY_DEMAND_TYPE, tables.SECRETARY_PROTOCOL_INTERACTION),
+    never_say=("Oferecer o trancamento ou o cancelamento de uma disciplina como serviço",),
+    relations=(
+        Relation(
+            RelationKind.NOT_SAME_AS,
+            "trancamento",
+            note="Trancar uma disciplina não é trancar o curso, e não há pedido para isso.",
+        ),
+    ),
+)
+
 MATRIZ = Ontology(
     key="matriz",
     name="Matriz curricular",
@@ -223,6 +245,7 @@ ACADEMIC_ENROLLMENT_ONTOLOGIES = (
     MATRICULA,
     REMATRICULA,
     TRANCAMENTO,
+    MATRICULA_EM_DISCIPLINA,
     MATRIZ,
     PRE_REQUISITO,
     OFERTA,

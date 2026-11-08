@@ -5,6 +5,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict
 
 from api.application.shared.tool_result import StatedValue
+from api.domain.academic.course import CourseNames
 from api.domain.academic.enrollment import (
     Enrollment,
     EnrollmentStatus,
@@ -42,6 +43,7 @@ class EnrollmentDto(BaseModel):
     brand: Brand
     course_code: str
     course_name: str
+    course_name_pt: str | None
     curriculum: str
     unit_name: str
     modality: Modality
@@ -64,6 +66,7 @@ class EnrollmentDto(BaseModel):
             brand=enrollment.brand,
             course_code=enrollment.course_code,
             course_name=enrollment.course_name,
+            course_name_pt=CourseNames.portuguese(enrollment.course_code),
             curriculum=enrollment.curriculum_id,
             unit_name=enrollment.unit_name,
             modality=enrollment.modality,

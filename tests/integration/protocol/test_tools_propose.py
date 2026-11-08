@@ -21,6 +21,12 @@ async def test_the_four_tools_are_in_the_registry(tools: ProtocolTools) -> None:
     assert registered == {"list_services", "list_protocols", "get_protocol", "propose_protocol"}
 
 
+async def test_every_service_of_the_secretary_has_title_and_effect(tools: ProtocolTools) -> None:
+    services = support.rows(await tools.list_services())
+
+    assert [item.code for item in services if not (item.title and item.effect)] == []
+
+
 async def test_du06_eighteen_services_fourteen_without_fee(tools: ProtocolTools) -> None:
     oracle = SqlOracle()
 

@@ -11,6 +11,7 @@ KEYS_BY_AREA = {
         "matricula",
         "rematricula",
         "trancamento",
+        "matricula_em_disciplina",
         "matriz",
         "pre_requisito",
         "oferta",
@@ -80,6 +81,7 @@ KEYS_BY_ORIGIN = {
     },
     Origin.POLICY: {
         "data_de_referencia",
+        "matricula_em_disciplina",
         "registro_oficial",
         "pagador",
         "cobranca",
@@ -117,6 +119,7 @@ RELATIONS = {
     (RelationKind.NOT_SAME_AS, "nota_do_ava", "registro_oficial"),
     (RelationKind.NOT_SAME_AS, "parcela_de_acordo", "mensalidade"),
     (RelationKind.NOT_SAME_AS, "tcc_e_estagio", "projeto_integrador"),
+    (RelationKind.NOT_SAME_AS, "matricula_em_disciplina", "trancamento"),
     (RelationKind.NOT_SAME_AS, "estorno", "pagamento"),
     (RelationKind.NOT_SAME_AS, "prazo_de_atendimento", "regras_de_trancamento"),
 }
@@ -156,8 +159,8 @@ def test_each_origin_has_the_keys_of_the_spec(origin: Origin) -> None:
     assert keys == KEYS_BY_ORIGIN[origin]
 
 
-def test_catalog_has_54_concepts() -> None:
-    assert len(ONTOLOGIES) == 54
+def test_catalog_has_55_concepts() -> None:
+    assert len(ONTOLOGIES) == 55
 
 
 def test_catalog_declares_exactly_the_relations_of_the_spec() -> None:
