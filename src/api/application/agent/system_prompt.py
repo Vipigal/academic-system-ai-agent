@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Self
 
 PROMPTS_ROOT = Path(__file__).parent / "prompts"
-CURRENT_VERSION = "student_agent_v1"
+CURRENT_VERSION = "student_agent_v2"
 
 
 @dataclass(frozen=True, slots=True)

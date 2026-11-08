@@ -5,7 +5,7 @@ import pytest
 
 from api.application.agent.skill_library import SKILL_FILE, SKILLS_ROOT, Skill, SkillLibrary
 from api.application.agent.student_agent import StudentAgent
-from api.application.agent.system_prompt import CURRENT_VERSION, SystemPrompt
+from api.application.agent.system_prompt import CURRENT_VERSION, PROMPTS_ROOT, SystemPrompt
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.skill_tools import SkillTools
 from api.domain.ontology.catalog import ONTOLOGIES
@@ -121,3 +121,88 @@ def test_a_prompt_version_is_read_from_its_own_file(tmp_path: Path) -> None:
 
     assert prompt.version == "outra"
     assert prompt.render(date(2026, 1, 2), "lista") == "Data 02/01/2026. lista"
+
+
+SUBJECT_LOCK_RULE = (
+    '**Trancamento é sempre do curso inteiro.** O aluno pode dizer "matrícula" também para uma '
+    'disciplina: "trancar minha matrícula em Direito Empresarial" fala da disciplina, não do '
+    "curso. Não é possível abrir pedido para trancar uma disciplina. Nesse caso, não chame "
+    "`propose_protocol`: explique isso e pergunte se ele quer trancar o curso inteiro. A mesma "
+    "regra vale para cancelamento."
+)
+
+
+def body_of(area: Area) -> str:
+    text = (SKILLS_ROOT / area.value / SKILL_FILE).read_text(encoding="utf-8")
+    return Skill.parse(area, text).body
+
+
+def test_the_current_prompt_is_v2() -> None:
+    assert CURRENT_VERSION == "student_agent_v2"
+    assert (PROMPTS_ROOT / "student_agent_v1.md").exists()
+
+
+def test_the_prompt_says_today_is_the_given_date() -> None:
+    rendered = PROMPT.render(date(2026, 11, 7), LIBRARY.listing())
+
+    assert "Hoje é 07/11/2026." in rendered
+    assert "referência" not in rendered
+
+
+@pytest.mark.parametrize(
+    "expected",
+    [
+        "atende só assuntos acadêmicos, financeiros, de secretaria e do ambiente virtual",
+        "recuse em uma frase e diga o que pode fazer por ele",
+        "Dúvida sobre o próprio curso não é recusada.",
+        "tenha certeza do objeto do pedido",
+    ],
+)
+def test_the_prompt_carries_the_scope_and_the_certainty_rules(expected: str) -> None:
+    assert expected in PROMPT.template
+
+
+def test_the_protocols_skill_carries_the_subject_lock_rule_word_for_word() -> None:
+    assert SUBJECT_LOCK_RULE in body_of(Area.PROTOCOLS)
+
+
+@pytest.mark.parametrize(
+    "expected",
+    [
+        "não existe pedido para uma disciplina",
+        "procurar a secretaria",
+        "`informacoes_gerais`",
+        "sem prometer solução",
+        "`subject_not_supported`",
+    ],
+)
+def test_the_protocols_skill_routes_a_subject_request_to_the_secretary(expected: str) -> None:
+    assert expected in body_of(Area.PROTOCOLS)
+
+
+@pytest.mark.parametrize(
+    "expected",
+    [
+        "`action`",
+        "`enrollment`",
+        "`subject`",
+        "O card mostra o texto da ação.",
+        "você não escreve nem sugere esse texto",
+        "evento de confirmação",
+        "o pedido está aberto",
+    ],
+)
+def test_the_protocols_skill_describes_the_proposal_and_the_card(expected: str) -> None:
+    assert expected in body_of(Area.PROTOCOLS)
+
+
+def test_the_protocols_skill_no_longer_asks_the_model_for_a_message() -> None:
+    assert "`message`" not in body_of(Area.PROTOCOLS)
+
+
+def test_the_overview_skill_treats_the_next_registration_as_pending() -> None:
+    body = body_of(Area.OVERVIEW)
+
+    assert "rematrícula do semestre seguinte" in body
+    assert "últimos 30 dias do semestre" in body
+    assert "`get_academic_calendar`" in body

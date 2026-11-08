@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
+from api.application.agent.action_table import ActionTable
 from api.domain.ontology.model import Area
 from api.domain.ontology.renderer import OntologyRenderer
 
@@ -11,6 +12,7 @@ SKILLS_ROOT = Path(__file__).parent / "skills"
 SKILL_FILE = "SKILL.md"
 FRONTMATTER_FENCE = "---"
 BLOCK_SEPARATOR = "\n\n"
+GENERATED_TABLES = {Area.PROTOCOLS: (ActionTable.render(),)}
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +35,9 @@ class SkillLibrary:
     def __init__(self, skills: Mapping[Area, Skill]) -> None:
         self._skills = skills
         self._instructions = {
-            area: BLOCK_SEPARATOR.join((skill.body, OntologyRenderer.for_skill(area)))
+            area: BLOCK_SEPARATOR.join(
+                (skill.body, *GENERATED_TABLES.get(area, ()), OntologyRenderer.for_skill(area))
+            )
             for area, skill in skills.items()
         }
 

@@ -7,7 +7,8 @@ MATRICULA = Ontology(
     area=Area.ACADEMIC_ENROLLMENT,
     synonyms=("vínculo", "estou matriculado", "RA"),
     definition="Vínculo do aluno com um curso em uma instituição, identificado por marca e RA. "
-    "Uma pessoa pode ter mais de uma matrícula, e a resposta precisa cobrir todas.",
+    "Uma pessoa pode ter mais de uma matrícula, e a resposta precisa cobrir todas. O aluno também "
+    "chama de matrícula a inscrição numa disciplina: confira de qual das duas ele fala.",
     source=System.SAG,
     origin=Origin.CONFIRMED,
     evidence="37 CPFs têm mais de uma matrícula, em 1.037 matrículas.",
@@ -41,9 +42,15 @@ TRANCAMENTO = Ontology(
     key="trancamento",
     name="Trancamento",
     area=Area.ACADEMIC_ENROLLMENT,
-    synonyms=("trancar", "matrícula trancada", "parar o curso"),
-    definition="Interrupção do curso a pedido do aluno, que deixa a matrícula trancada. "
-    "É uma ação de alto impacto e pede confirmação explícita.",
+    synonyms=(
+        "trancar o curso",
+        "trancar a matrícula do curso",
+        "parar o curso",
+        "matrícula trancada",
+    ),
+    definition="Interrupção do curso inteiro a pedido do aluno, que deixa a matrícula trancada. "
+    "Vale sempre para o curso inteiro, nunca para uma disciplina. É uma ação de alto impacto e "
+    "pede confirmação explícita.",
     source=System.SAG,
     origin=Origin.CONFIRMED,
     evidence="Os 87 pedidos de trancamento foram atendidos; 29 matrículas estão trancadas, "
@@ -69,15 +76,23 @@ MATRICULA_EM_DISCIPLINA = Ontology(
     key="matricula_em_disciplina",
     name="Matrícula em disciplina",
     area=Area.ACADEMIC_ENROLLMENT,
-    synonyms=("trancar a disciplina", "trancar minha matrícula em uma disciplina"),
-    definition="O aluno também chama de matrícula a inscrição numa disciplina. Nenhum serviço "
-    "tranca ou cancela uma disciplina: trancamento e cancelamento valem para o curso inteiro.",
+    synonyms=(
+        "trancar a disciplina",
+        "trancar minha matrícula em uma disciplina",
+        "cancelar a disciplina",
+    ),
+    definition="Inscrição do aluno numa disciplina do semestre, que ele também chama de "
+    "matrícula. Não é um serviço: nenhum pedido tranca ou cancela uma disciplina, e trancamento e "
+    "cancelamento valem para o curso inteiro.",
     source=System.SECRETARY,
     origin=Origin.POLICY,
     evidence="Nenhum dos 18 serviços da secretaria trata de uma disciplina, e nenhuma mensagem de "
     "pedido pede trancamento de disciplina.",
     data=(tables.SECRETARY_DEMAND_TYPE, tables.SECRETARY_PROTOCOL_INTERACTION),
-    never_say=("Oferecer o trancamento ou o cancelamento de uma disciplina como serviço",),
+    never_say=(
+        "Oferecer o trancamento ou o cancelamento de uma disciplina como serviço",
+        "Propor trancar ou cancelar o curso sem o aluno dizer que quer o curso inteiro",
+    ),
     relations=(
         Relation(
             RelationKind.NOT_SAME_AS,
@@ -187,11 +202,12 @@ DATA_DE_REFERENCIA = Ontology(
     name="Data de referência",
     area=Area.ACADEMIC_ENROLLMENT,
     synonyms=("hoje", "agora", "neste semestre"),
-    definition="O que o aluno chama de hoje é a data de referência do sistema. Vencimentos, "
-    "atrasos e prazos são calculados a partir dela.",
+    definition="O que o aluno chama de hoje é a data de hoje, informada pelo sistema. "
+    "Vencimentos, atrasos e prazos são calculados a partir dela.",
     source=None,
     origin=Origin.POLICY,
-    evidence="Decisão do catálogo: hoje é 31/10/2026, a data da posição financeira mais recente.",
+    evidence="Decisão do dono (D39): produção usa a data de hoje; testes e eval usam 31/10/2026, "
+    "a data da foto dos dados.",
     data=(tables.FINANCE_INVOICE,),
     never_say=("Calcular atraso ou prazo a partir de outra data",),
 )
