@@ -29,6 +29,9 @@ Suba a API antes, na raiz do repo: `docker compose up -d --wait api`.
 
 ## Fluxo
 
-O login chama `POST /auth/dev-login` com `marca:RA` e guarda o token só na memória da página. Cada conversa nasce em
+O login é uma tela de teste: escolhe a unidade (marca) e a modalidade, depois o aluno, e chama `POST /auth/dev-login` com
+`marca:RA`, guardando o token só na memória da página. A lista de alunos ainda vem de uma amostra fixa
+(`src/devStudentsSample.ts`), no formato da rota dev-only `GET /auth/dev-students` que vai substituí-la. Em produção essa tela
+não existe: o aluno chega pelo login institucional. Cada conversa nasce em
 `POST /conversations`, e o `id` vai ao `useChat`, que fala com `POST /chat`. A proposta de protocolo aparece como card, e o
 botão "Confirmar" chama `POST /protocols/proposals/confirm`.

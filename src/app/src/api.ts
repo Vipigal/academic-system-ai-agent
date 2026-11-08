@@ -1,3 +1,7 @@
+import { DEV_STUDENTS_SAMPLE } from "./devStudentsSample";
+import { isRecord } from "./guards";
+import { parseStudents, type DevStudent } from "./students";
+
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
 
 export class ApiError extends Error {
@@ -10,10 +14,6 @@ export class ApiError extends Error {
 }
 
 export class Unauthorized extends Error {}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 async function post(path: string, token: string | null, body?: object): Promise<unknown> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -35,6 +35,10 @@ function stringField(payload: unknown, key: string): string {
 
 export async function devLogin(student: string): Promise<string> {
   return stringField(await post("/auth/dev-login", null, { student }), "access_token");
+}
+
+export async function listDevStudents(): Promise<DevStudent[]> {
+  return parseStudents(await Promise.resolve(DEV_STUDENTS_SAMPLE));
 }
 
 export async function createConversation(token: string): Promise<string> {
@@ -63,5 +67,3 @@ export function describeError(error: unknown): string {
   }
   return "Não consegui falar com a API. Verifique se ela está no ar.";
 }
-
-export { isRecord };

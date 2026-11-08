@@ -2,20 +2,16 @@ import { useState } from "react";
 
 import { Chat } from "./Chat";
 import { Login } from "./Login";
+import type { DevStudent } from "./students";
+
+interface Session {
+  token: string;
+  student: DevStudent;
+}
 
 export function App() {
-  const [token, setToken] = useState<string | null>(null);
-  const [student, setStudent] = useState("");
+  const [session, setSession] = useState<Session | null>(null);
 
-  if (token === null) {
-    return (
-      <Login
-        onLogin={(value, login) => {
-          setStudent(value);
-          setToken(login);
-        }}
-      />
-    );
-  }
-  return <Chat token={token} student={student} onExpired={() => setToken(null)} />;
+  if (session === null) return <Login onLogin={(student, token) => setSession({ student, token })} />;
+  return <Chat token={session.token} student={session.student} onExpired={() => setSession(null)} />;
 }

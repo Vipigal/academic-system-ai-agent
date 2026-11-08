@@ -1,13 +1,13 @@
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-import { API_URL, createConversation, describeError, Unauthorized } from "./api";
-import { MessageView } from "./MessageView";
+import { createConversation, describeError, Unauthorized } from "./api";
+import { Conversation } from "./Conversation";
+import { displayName, type DevStudent } from "./students";
+import { Topbar } from "./Topbar";
 
 interface Props {
   token: string;
-  student: string;
+  student: DevStudent;
   onExpired: () => void;
 }
 
@@ -31,85 +31,43 @@ export function Chat({ token, student, onExpired }: Props) {
   }, []);
 
   return (
-    <main className="page chat">
-      <header className="row between">
-        <strong>{student}</strong>
-        <div className="row">
-          <button type="button" className="secondary" onClick={() => void start()}>
-            Nova conversa
-          </button>
-          <button type="button" className="secondary" onClick={onExpired}>
+    <div className="screen">
+      <Topbar>
+        <div className="who">
+          <span className="who-name">{displayName(student.fullName)}</span>
+          <span className="chip on-navy">
+            {student.brand} · {student.studentId}
+          </span>
+          <button type="button" className="btn ghost-light" onClick={onExpired}>
             Sair
           </button>
         </div>
-      </header>
-      {startError && <p role="alert" className="error">{startError}</p>}
-      {conversationId === null && !startError && <p className="muted">Abrindo conversa...</p>}
-      {conversationId !== null && (
-        <Conversation key={conversationId} id={conversationId} token={token} onExpired={onExpired} />
-      )}
-    </main>
-  );
-}
-
-interface ConversationProps {
-  id: string;
-  token: string;
-  onExpired: () => void;
-}
-
-function Conversation({ id, token, onExpired }: ConversationProps) {
-  const transport = useMemo(
-    () => new DefaultChatTransport({ api: `${API_URL}/chat`, headers: { Authorization: `Bearer ${token}` } }),
-    [token],
-  );
-  const { messages, sendMessage, status, error } = useChat({ id, transport });
-  const [text, setText] = useState("");
-  const bottom = useRef<HTMLDivElement>(null);
-  const busy = status === "submitted" || status === "streaming";
-
-  useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
-  }, [messages, status]);
-
-  useEffect(() => {
-    if (error?.message.includes("401")) onExpired();
-  }, [error]);
-
-  return (
-    <>
-      <section className="messages" aria-live="polite">
-        {messages.length === 0 && <p className="muted">Pergunte algo, por exemplo: "Quanto estou devendo hoje?"</p>}
-        {messages.map((message) => (
-          <MessageView key={message.id} message={message} token={token} />
-        ))}
-        {status === "submitted" && <p className="muted">Pensando...</p>}
-        {error && (
-          <p role="alert" className="error">
-            Não consegui responder agora. Tente de novo em instantes.
-          </p>
-        )}
-        <div ref={bottom} />
-      </section>
-      <form
-        className="row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!text.trim() || busy) return;
-          void sendMessage({ text: text.trim() });
-          setText("");
-        }}
-      >
-        <input
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          placeholder="Escreva sua pergunta"
-          aria-label="Mensagem"
-        />
-        <button type="submit" disabled={busy || !text.trim()}>
-          Enviar
-        </button>
-      </form>
-    </>
+      </Topbar>
+      <main className="chat-wrap">
+        <section className="card chat">
+          <div className="chat-head">
+            <span className="title">Atendimento</span>
+            <button type="button" className="btn outline small" onClick={() => void start()}>
+              Nova conversa
+            </button>
+          </div>
+          {startError && (
+            <p role="alert" className="error notice">
+              {startError}
+            </p>
+          )}
+          {conversationId === null && !startError && <p className="muted notice">Abrindo conversa...</p>}
+          {conversationId !== null && (
+            <Conversation
+              key={conversationId}
+              id={conversationId}
+              token={token}
+              greeting={student.fullName}
+              onExpired={onExpired}
+            />
+          )}
+        </section>
+      </main>
+    </div>
   );
 }

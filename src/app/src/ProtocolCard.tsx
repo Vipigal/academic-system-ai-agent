@@ -1,6 +1,7 @@
 import { useState } from "react";
 
-import { confirmProposal, describeError, isRecord, type Confirmation } from "./api";
+import { confirmProposal, describeError, type Confirmation } from "./api";
+import { isRecord, text } from "./guards";
 
 const REFUSALS: Record<string, string> = {
   service_has_fee: "Este serviço tem taxa e não pode ser aberto pelo assistente.",
@@ -8,10 +9,6 @@ const REFUSALS: Record<string, string> = {
   empty_message: "É preciso descrever o pedido.",
   duplicate_in_progress: "Já existe um pedido em andamento para este serviço.",
 };
-
-function text(source: unknown, key: string): string {
-  return isRecord(source) && typeof source[key] === "string" ? source[key] : "";
-}
 
 interface Props {
   output: Record<string, unknown>;
@@ -28,8 +25,9 @@ export function ProtocolCard({ output, token }: Props) {
   if (output.status === "refused") {
     const existing = text(data, "existing_protocol");
     return (
-      <div className="card">
-        <strong>Não foi possível abrir o pedido</strong>
+      <div className="proposal refused">
+        <span className="kicker">Solicitação</span>
+        <strong className="proposal-title">Não foi possível abrir o pedido</strong>
         <p>{REFUSALS[text(data, "reason")] ?? "O pedido foi recusado."}</p>
         {existing && <p>Protocolo existente: {existing}</p>}
       </div>
@@ -49,20 +47,22 @@ export function ProtocolCard({ output, token }: Props) {
   }
 
   return (
-    <div className="card">
-      <strong>{text(isRecord(data) ? data.service : null, "name")}</strong>
+    <div className={`proposal ${done ? "confirmed" : ""}`}>
+      <span className="kicker">{done ? "Protocolo aberto" : "Solicitação"}</span>
+      <strong className="proposal-title">{text(isRecord(data) ? data.service : null, "name")}</strong>
       <p className="muted">
         Matrícula {text(data, "enrollment")} · {text(data, "course_name")}
       </p>
       <p>{text(data, "message")}</p>
-      {done && (
+      {done ? (
         <p role="status" className="success">
-          Protocolo aberto: {done.protocolNumber}
+          Nº {done.protocolNumber}
         </p>
+      ) : (
+        <button type="button" className="btn primary" disabled={running} onClick={() => void confirm()}>
+          {running ? "Confirmando..." : "Confirmar"}
+        </button>
       )}
-      <button type="button" disabled={running || done !== null} onClick={() => void confirm()}>
-        {done ? "Confirmado" : running ? "Confirmando..." : "Confirmar"}
-      </button>
       {error && <p role="alert" className="error">{error}</p>}
     </div>
   );
