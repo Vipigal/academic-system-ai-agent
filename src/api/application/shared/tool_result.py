@@ -11,6 +11,8 @@ from api.domain.ontology.model import Ontology
 
 MAX_CANDIDATES = 40
 
+type ClientOnly = Mapping[str, str | Mapping[str, str | None]]
+
 
 class ToolStatus(StrEnum):
     OK = "ok"
@@ -88,7 +90,7 @@ class ToolResult[T](BaseModel):
         default=None, exclude_if=lambda explanation: explanation is None
     )
     ui: str | None = Field(default=None, exclude_if=lambda ui: ui is None)
-    client_only: Mapping[str, str] | None = Field(default=None, exclude=True, repr=False)
+    client_only: ClientOnly | None = Field(default=None, exclude=True, repr=False)
 
     @classmethod
     def ok(
@@ -149,8 +151,14 @@ class ToolResult[T](BaseModel):
         return cls(status=ToolStatus.AMBIGUOUS, candidates=candidates[:MAX_CANDIDATES])
 
     @classmethod
-    def refused(cls, data: T | None = None, *, caveats: tuple[Caveat, ...] = ()) -> Self:
-        return cls(status=ToolStatus.REFUSED, data=data, caveats=caveats)
+    def refused(
+        cls,
+        data: T | None = None,
+        *,
+        caveats: tuple[Caveat, ...] = (),
+        explanation: str | None = None,
+    ) -> Self:
+        return cls(status=ToolStatus.REFUSED, data=data, caveats=caveats, explanation=explanation)
 
-    def with_client_only(self, payload: Mapping[str, str]) -> Self:
+    def with_client_only(self, payload: ClientOnly) -> Self:
         return self.model_copy(update={"client_only": payload})

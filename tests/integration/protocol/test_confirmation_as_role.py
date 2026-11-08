@@ -30,7 +30,7 @@ async def bank(role_engine: AsyncEngine) -> AsyncIterator[RolledBackBank]:
 async def test_the_role_login_alone_is_enough_to_confirm(bank: RolledBackBank) -> None:
     assert await bank.as_app("SELECT session_user") == "api"
     app = ConfirmationApp(bank.database)
-    token = await app.proposal_of(PERSON, "GEN-090")
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         response = await confirm(client, await login(client, STUDENT), token)
     assert response.status_code == HTTPStatus.CREATED

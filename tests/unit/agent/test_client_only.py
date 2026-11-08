@@ -7,7 +7,7 @@ from tests.unit.agent import agent_support as support
 from tests.unit.agent.student_stubs import stub_service
 
 SIGNED = "assinatura-da-proposta"
-PROPOSAL_ARGUMENTS = {"service": "DOC-001", "message": "Declaração"}
+PROPOSAL_ARGUMENTS = {"action": "declaracao_de_matricula", "enrollment": "UniSaoPaulo:181722"}
 
 
 def signed_protocol_tools() -> ProtocolTools:

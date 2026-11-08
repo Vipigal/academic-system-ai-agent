@@ -6,7 +6,8 @@ from api.application.protocol.dto.request import ProtocolDto
 from api.application.protocol.service import ProtocolService
 from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology import limits, protocols
+from api.domain.ontology import academic_enrollment, limits, protocols
+from api.domain.protocol.action import ProtocolAction
 from api.domain.protocol.catalog import ServiceArea
 from api.domain.protocol.status import ProtocolStage
 
@@ -58,13 +59,18 @@ class ProtocolTools:
         return await self._service.get_protocol(number)
 
     @ToolRegistry.declares(
-        protocols.SERVICO, protocols.TAXA_DE_SERVICO, protocols.PRAZO_DE_ATENDIMENTO
+        protocols.SERVICO,
+        protocols.TAXA_DE_SERVICO,
+        protocols.PRAZO_DE_ATENDIMENTO,
+        academic_enrollment.TRANCAMENTO,
+        academic_enrollment.MATRICULA_EM_DISCIPLINA,
+        academic_enrollment.REGRAS_DE_TRANCAMENTO,
     )
     async def propose_protocol(
-        self, service: str, message: str, enrollment: str | None = None
+        self, action: ProtocolAction, enrollment: str, subject: str | None = None
     ) -> ToolResult[Proposal]:
         """Prepara um pedido gratuito para o aluno confirmar, sem abrir nada.
 
-        Use para declaração, boleto, trancamento ou revisão. Recusa serviço com taxa ou duplicado.
+        Confira antes se o aluno fala do curso inteiro ou de uma disciplina. Recusa duplicado.
         """
-        return await self._service.propose_protocol(service, enrollment, message)
+        return await self._service.propose_protocol(action, enrollment, subject)

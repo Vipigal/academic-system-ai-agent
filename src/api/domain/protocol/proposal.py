@@ -1,11 +1,12 @@
 import re
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Self
 
 from api.domain.academic.enrollment import Enrollment
 from api.domain.identity.session import StudentSession
+from api.domain.protocol.action import ServiceAction
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.request import Protocol
 
@@ -17,6 +18,8 @@ class RefusalReason(Enum):
     SERVICE_INACTIVE = "service_inactive"
     EMPTY_MESSAGE = "empty_message"
     DUPLICATE_IN_PROGRESS = "duplicate_in_progress"
+    SUBJECT_NOT_SUPPORTED = "subject_not_supported"
+    ENROLLMENT_STATUS = "enrollment_status"
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,13 +27,10 @@ class SignedProposal:
     person_id: str
     enrollment: str
     service_code: str
-    message: str = field(repr=False)
 
     @classmethod
-    def of(
-        cls, session: StudentSession, service: Service, enrollment: Enrollment, message: str
-    ) -> Self:
-        return cls(min(session.person_ids), enrollment.reference, service.code, message)
+    def of(cls, session: StudentSession, service: Service, enrollment: Enrollment) -> Self:
+        return cls(min(session.person_ids), enrollment.reference, service.code)
 
 
 class ProtocolNumber:
@@ -41,11 +41,27 @@ class ProtocolNumber:
 
 class ProposalRules:
     @staticmethod
-    def refusal(service: Service, message: str) -> RefusalReason | None:
+    def refusal(service: Service) -> RefusalReason | None:
         if not service.active:
             return RefusalReason.SERVICE_INACTIVE
         if service.has_fee:
             return RefusalReason.SERVICE_HAS_FEE
+        return None
+
+    @staticmethod
+    def action_refusal(action: ServiceAction, subject: str | None) -> RefusalReason | None:
+        if subject is not None and not action.accepts_subject:
+            return RefusalReason.SUBJECT_NOT_SUPPORTED
+        return None
+
+    @staticmethod
+    def enrollment_refusal(action: ServiceAction, enrollment: Enrollment) -> RefusalReason | None:
+        if not action.accepts(enrollment.status):
+            return RefusalReason.ENROLLMENT_STATUS
+        return None
+
+    @staticmethod
+    def message_refusal(message: str) -> RefusalReason | None:
         if not message.strip():
             return RefusalReason.EMPTY_MESSAGE
         return None

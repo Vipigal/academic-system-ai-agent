@@ -18,12 +18,11 @@ from tests.integration.chat.chat_client import ChatClient
 from tests.integration.protocol.rolled_back import RolledBackBank
 from tests.unit.agent.agent_support import call
 
-SERVICE = "GEN-090"
 PROPOSAL_TEXT = "Quero abrir um pedido."
 LISTING_TEXT = "Quais são os meus protocolos?"
 PROPOSED = "Preparei o pedido para você confirmar."
 LISTED = "Aqui estão os seus protocolos."
-PROPOSAL_ARGUMENTS = {"service": SERVICE, "message": "Pedido do aluno"}
+PROPOSAL_ARGUMENTS = {"action": "informacoes_gerais", "enrollment": "UniSaoPaulo:180017"}
 
 
 def scripted() -> TurnModel:

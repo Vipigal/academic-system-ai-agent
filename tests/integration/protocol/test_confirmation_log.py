@@ -6,12 +6,8 @@ from collections.abc import AsyncIterator, Iterator
 import pytest
 
 from api.infrastructure.logging import JsonFormatter
-from tests.integration.protocol.confirmation_app import (
-    REQUEST_MESSAGE,
-    ConfirmationApp,
-    confirm,
-    login,
-)
+from tests.integration.protocol.confirmation_app import ConfirmationApp, confirm, login
+from tests.integration.protocol.information_request import REQUEST_TEXT
 from tests.integration.protocol.rolled_back import RolledBackBank, rolled_back
 from tests.integration.support.sql_oracle import admin_engine
 
@@ -43,7 +39,7 @@ def log_lines() -> Iterator[io.StringIO]:
 
 async def confirm_one(bank: RolledBackBank) -> None:
     app = ConfirmationApp(bank.database)
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         await confirm(client, await login(client, STUDENT), token)
 
@@ -57,5 +53,5 @@ async def test_the_log_carries_the_trace_and_no_personal_data(
     assert entry["trace_id"]
     assert FREE_SERVICE in entry["message"]
     person = (await bank.as_admin(PERSON_DATA, id=PERSON))[0]
-    for private in (*person, PERSON, STUDENT, REQUEST_MESSAGE):
+    for private in (*person, PERSON, STUDENT, REQUEST_TEXT):
         assert str(private) not in written

@@ -8,6 +8,7 @@ from api.application.protocol.dto.confirmation import ConfirmedProtocolDto
 from api.domain.identity.session import StudentSession
 from api.domain.ports.clock import Clock
 from api.domain.ports.tracing import TraceLog
+from api.domain.protocol.action_catalog import ServiceActions
 from api.domain.protocol.errors import ProposalNotFoundError
 from api.domain.protocol.opening import OpeningRequest, ProtocolOpening
 from api.domain.protocol.proposal import SignedProposal
@@ -38,7 +39,10 @@ class ProtocolConfirmation:
     async def _opening_of(self, proposal: SignedProposal) -> ProtocolOpening:
         parties = await self._parties_of(proposal)
         existing = await self._ports.protocols.list_protocols()
-        request = OpeningRequest(parties.requester_name, proposal.message, self._clock.today())
+        entry = ServiceActions.find(proposal.service_code)
+        if entry is None:
+            raise ProposalNotFoundError
+        request = OpeningRequest(parties.requester_name, entry.request_text, self._clock.today())
         return ProtocolOpening.open(parties.service, parties.enrollment, existing, request)
 
     async def _parties_of(self, proposal: SignedProposal) -> OpeningParties:

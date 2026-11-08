@@ -10,8 +10,7 @@ EXPIRATION = "exp"
 PERSON = "person_id"
 ENROLLMENT = "enrollment"
 SERVICE = "service_code"
-MESSAGE = "message"
-REQUIRED_CLAIMS = [PERSON, ENROLLMENT, SERVICE, MESSAGE, EXPIRATION]
+REQUIRED_CLAIMS = [PERSON, ENROLLMENT, SERVICE, EXPIRATION]
 
 
 class ProposalJwtSigner:
@@ -26,7 +25,6 @@ class ProposalJwtSigner:
             PERSON: proposal.person_id,
             ENROLLMENT: proposal.enrollment,
             SERVICE: proposal.service_code,
-            MESSAGE: proposal.message,
             EXPIRATION: int(time.time()) + self._ttl_seconds,
         }
         return jwt.encode(claims, self._secret, algorithm=ALGORITHM)
@@ -46,12 +44,7 @@ class ProposalJwtSigner:
     @staticmethod
     def _proposal_of(claims: dict[str, object]) -> SignedProposal | None:
         person, enrollment = claims[PERSON], claims[ENROLLMENT]
-        service, message = claims[SERVICE], claims[MESSAGE]
-        if (
-            isinstance(person, str)
-            and isinstance(enrollment, str)
-            and isinstance(service, str)
-            and isinstance(message, str)
-        ):
-            return SignedProposal(person, enrollment, service, message)
+        service = claims[SERVICE]
+        if isinstance(person, str) and isinstance(enrollment, str) and isinstance(service, str):
+            return SignedProposal(person, enrollment, service)
         return None

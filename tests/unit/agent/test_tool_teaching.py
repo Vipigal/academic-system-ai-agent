@@ -26,13 +26,13 @@ WRONG_VALUES: dict[str, tuple[object, ...]] = {
     "year": ("dois mil",),
     "service": (9,),
     "number": (20260024630,),
-    "message": (1,),
+    "action": ("trancar", 1),
     "query": (1,),
 }
 REQUIRED: dict[str, dict[str, object]] = {
     "list_subject_professors": {"subject": "ADM0104"},
     "get_protocol": {"number": "20260024630"},
-    "propose_protocol": {"service": "DOC-001", "message": "Preciso de uma declaração."},
+    "propose_protocol": {"action": "declaracao_de_matricula", "enrollment": "UniSaoPaulo:000000"},
     "list_material_views": {"subject": "ADM0104"},
     "load_skill": {"area": "finance"},
 }

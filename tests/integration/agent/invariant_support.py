@@ -21,7 +21,6 @@ FIXED_VALUES: Mapping[str, tuple[object, ...]] = {
     "year": (2026, 1999),
     "period": ("2026-10", "x"),
     "service": ("DOC-001", "ACA-021", "XYZ-999"),
-    "message": ("Preciso de uma declaração de matrícula.",),
     "query": ("Semana 2",),
     "page": (PageRequest(offset=1, limit=3),),
 }

@@ -6,7 +6,7 @@ from typing import get_type_hints
 
 from pydantic import BaseModel, ConfigDict, Field, create_model
 
-from api.application.agent.tool_arguments import BoundedPage, ParameterGuide
+from api.application.agent.tool_arguments import DESCRIPTIONS, BoundedPage, ParameterGuide
 from api.application.shared.page import PageRequest
 
 
@@ -39,7 +39,7 @@ class ToolSchema:
             hint = definitions[parameter.name]
             guides[parameter.name] = ParameterGuide.of_parameter(parameter.name, hint)
             definitions[parameter.name] = ToolSchema._definition_of(
-                parameter, hint, guides[parameter.name]
+                parameter, hint, guides[parameter.name], function.__name__
             )
         arguments = create_model(
             f"{function.__name__}_arguments", __config__=ConfigDict(extra="forbid"), **definitions
@@ -48,12 +48,18 @@ class ToolSchema:
 
     @staticmethod
     def _definition_of(
-        parameter: inspect.Parameter, hint: object, guide: ParameterGuide
+        parameter: inspect.Parameter,
+        hint: object,
+        guide: ParameterGuide,
+        tool: str,
     ) -> tuple[object, object]:
         kind = BoundedPage if hint is PageRequest else hint
+        description = DESCRIPTIONS.get(tool, {}).get(parameter.name)
         if parameter.default is inspect.Parameter.empty:
-            return kind, Field(pattern=guide.pattern)
-        return kind, Field(default=parameter.default, pattern=guide.pattern)
+            return kind, Field(pattern=guide.pattern, description=description)
+        return kind, Field(
+            default=parameter.default, pattern=guide.pattern, description=description
+        )
 
 
 SCHEMAS: dict[Callable[..., object], ToolSchema] = {}

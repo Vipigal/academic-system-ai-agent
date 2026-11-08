@@ -6,12 +6,8 @@ import pytest
 
 from api.application.shared.page import FIRST_PAGE
 from api.domain.protocol.proposal import SignedProposal
-from tests.integration.protocol.confirmation_app import (
-    REQUEST_MESSAGE,
-    ConfirmationApp,
-    confirm,
-    login,
-)
+from tests.integration.protocol.confirmation_app import ConfirmationApp, confirm, login
+from tests.integration.protocol.information_request import REQUEST_TEXT
 from tests.integration.protocol.rolled_back import RolledBackBank, rolled_back
 from tests.integration.support.sql_oracle import admin_engine
 
@@ -75,7 +71,7 @@ async def written_tables(bank: RolledBackBank) -> dict[str | None, tuple[str | N
 
 
 async def opened_number(app: ConfirmationApp, student: str, person: str) -> str:
-    token = await app.proposal_of(person, FREE_SERVICE)
+    token = await app.proposal_of(person, student)
     async with app.client() as client:
         response = await confirm(client, await login(client, student), token)
     assert response.status_code == HTTPStatus.CREATED
@@ -89,7 +85,7 @@ async def test_the_app_runs_as_the_restricted_role(bank: RolledBackBank) -> None
 async def test_confirmation_answers_with_the_number_status_and_deadline(
     app: ConfirmationApp,
 ) -> None:
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         response = await confirm(client, await login(client, STUDENT), token)
     assert response.status_code == HTTPStatus.CREATED
@@ -154,7 +150,7 @@ async def test_the_interaction_row_seen_by_the_admin_oracle(
     number = await opened_number(app, STUDENT, PERSON)
     full_name = (await bank.as_admin(PERSON_DATA, id=PERSON))[0][1]
     assert await bank.as_admin(INTERACTION, number=number) == [
-        ("Requester", full_name, REQUEST_MESSAGE, "False", OPENED_TEXT)
+        ("Requester", full_name, REQUEST_TEXT, "False", OPENED_TEXT)
     ]
 
 
@@ -197,7 +193,7 @@ async def test_another_student_does_not_see_the_new_protocol(app: ConfirmationAp
 async def test_the_token_of_another_student_is_not_found_and_writes_nothing(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         response = await confirm(client, await login(client, OTHER_STUDENT), token)
     assert (response.status_code, response.text) == (HTTPStatus.NOT_FOUND, NOT_FOUND_BODY)
@@ -205,15 +201,15 @@ async def test_the_token_of_another_student_is_not_found_and_writes_nothing(
 
 
 async def refused_tokens(app: ConfirmationApp, bank: RolledBackBank) -> tuple[str, ...]:
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     expired_settings = app.settings.model_copy(update={"proposal_ttl_minutes": -1})
     expired = ConfirmationApp(bank.database, expired_settings)
     return (
         token[:-2] + ("AA" if token[-2:] != "AA" else "BB"),
-        await expired.proposal_of(PERSON, FREE_SERVICE),
+        await expired.proposal_of(PERSON, STUDENT),
         "garbage",
-        app.signer.sign(SignedProposal(PERSON, ONLINE_STUDENT, FREE_SERVICE, "x")),
-        app.signer.sign(SignedProposal(PERSON, STUDENT, "XXX-000", "x")),
+        app.signer.sign(SignedProposal(PERSON, ONLINE_STUDENT, FREE_SERVICE)),
+        app.signer.sign(SignedProposal(PERSON, STUDENT, "XXX-000")),
     )
 
 
@@ -232,7 +228,7 @@ async def test_every_refused_token_gets_the_same_404(
 async def test_the_second_confirmation_is_a_conflict(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         headers = await login(client, STUDENT)
         first = await confirm(client, headers, token)
@@ -244,7 +240,7 @@ async def test_the_second_confirmation_is_a_conflict(
 async def test_a_service_with_a_fee_is_unprocessable(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
-    token = app.signer.sign(SignedProposal(PERSON, STUDENT, PAID_SERVICE, "x"))
+    token = app.signer.sign(SignedProposal(PERSON, STUDENT, PAID_SERVICE))
     async with app.client() as client:
         response = await confirm(client, await login(client, STUDENT), token)
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -252,7 +248,7 @@ async def test_a_service_with_a_fee_is_unprocessable(
 
 
 async def test_confirmation_without_identity_is_unauthorized(app: ConfirmationApp) -> None:
-    token = await app.proposal_of(PERSON, FREE_SERVICE)
+    token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
         response = await confirm(client, {}, token)
     assert response.status_code == HTTPStatus.UNAUTHORIZED

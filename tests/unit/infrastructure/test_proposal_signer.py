@@ -12,7 +12,6 @@ PROPOSAL = SignedProposal(
     person_id="3000003",
     enrollment="UniSaoPaulo:180017",
     service_code="DOC-001",
-    message="Preciso de uma declaração",
 )
 
 
@@ -52,19 +51,17 @@ def test_alg_none_is_refused() -> None:
         "person_id": PROPOSAL.person_id,
         "enrollment": PROPOSAL.enrollment,
         "service_code": PROPOSAL.service_code,
-        "message": PROPOSAL.message,
         "exp": 4102444800,
     }
     assert signer().verify(jwt.encode(claims, key="", algorithm="none")) is None
 
 
-@pytest.mark.parametrize("missing", ["person_id", "enrollment", "service_code", "message", "exp"])
+@pytest.mark.parametrize("missing", ["person_id", "enrollment", "service_code", "exp"])
 def test_a_token_without_a_claim_is_refused(missing: str) -> None:
     claims = {
         "person_id": "3000003",
         "enrollment": "UniSaoPaulo:180017",
         "service_code": "DOC-001",
-        "message": "x",
         "exp": 4102444800,
     }
     del claims[missing]
@@ -76,10 +73,15 @@ def test_a_claim_of_the_wrong_type_is_refused() -> None:
         "person_id": 3000003,
         "enrollment": "UniSaoPaulo:180017",
         "service_code": "DOC-001",
-        "message": "x",
         "exp": 4102444800,
     }
     assert signer().verify(jwt.encode(claims, SECRET, algorithm="HS256")) is None
+
+
+def test_the_token_carries_no_message_and_no_text_of_the_request() -> None:
+    claims = jwt.decode(signer().sign(PROPOSAL), SECRET, algorithms=["HS256"])
+
+    assert set(claims) == {"person_id", "enrollment", "service_code", "exp"}
 
 
 def test_session_and_proposal_tokens_do_not_cross_even_with_the_same_secret() -> None:

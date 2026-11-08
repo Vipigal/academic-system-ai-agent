@@ -19,7 +19,7 @@ RESULTS_OF = """
     JOIN agent.message ON message.id = tool_call.message_id
     WHERE message.conversation_id = cast(:id AS uuid)
 """
-PROPOSAL = call("propose_protocol", {"service": "GEN-090", "message": "Pedido"})
+PROPOSAL = call("propose_protocol", {"action": "informacoes_gerais", "enrollment": support.STUDENT})
 
 
 @pytest.fixture

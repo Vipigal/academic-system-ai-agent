@@ -69,6 +69,16 @@ GUIDES: Mapping[str, ParameterGuide] = {
     "year": ParameterGuide("o ano com quatro dígitos, inteiro", "2026"),
     "service": ParameterGuide("o código do serviço, em texto", "DOC-001"),
     "number": ParameterGuide("o número do protocolo, em texto", "20260024630"),
-    "message": ParameterGuide("o texto do pedido", "Preciso de uma declaração de matrícula."),
     "query": ParameterGuide("um trecho do título do material", "Semana 2"),
+}
+
+DESCRIPTIONS: Mapping[str, Mapping[str, str]] = {
+    "propose_protocol": {
+        "action": "O que o pedido faz, com o efeito no nome. Trancar, cancelar e transferir valem "
+        "para o curso inteiro, nunca para uma disciplina. O efeito de cada ação está na skill "
+        "protocols.",
+        "enrollment": "A matrícula do pedido, como vem em list_enrollments.",
+        "subject": "A disciplina que o aluno citou no pedido, mesmo de passagem. É null só se ele "
+        "não citou nenhuma.",
+    },
 }

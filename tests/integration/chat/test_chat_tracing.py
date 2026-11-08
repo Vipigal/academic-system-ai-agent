@@ -6,7 +6,7 @@ from tests.integration.chat.chat_settings import settings_with
 from tests.integration.chat.span_sink import SpanSink
 from tests.unit.agent.agent_support import RecordingModel, answer, call
 
-PROPOSAL = call("propose_protocol", {"service": "GEN-090", "message": "Pedido"})
+PROPOSAL = call("propose_protocol", {"action": "informacoes_gerais", "enrollment": support.STUDENT})
 
 
 async def test_what_leaves_for_langfuse_carries_the_turn_without_client_only(

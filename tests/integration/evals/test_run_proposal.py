@@ -15,7 +15,10 @@ from tests.unit.agent.agent_support import answer, call
 SELECTION = ItemSelection(frozenset({GoldenSource.PROTOCOL_ACTIONS}), only=frozenset({"TR-07"}))
 SCRIPTED_MODEL = ScriptedChatModel(
     responses=[
-        call("propose_protocol", {"service": "ACA-010", "message": "Quero trancar"}),
+        call(
+            "propose_protocol",
+            {"action": "trancar_curso_inteiro", "enrollment": "UniSaoPaulo:181722"},
+        ),
         answer("Preparei o pedido."),
     ]
 )
@@ -28,9 +31,10 @@ def failed_checks(record: ExecutionRecord) -> dict[GraderName, tuple[str, ...]]:
 def assert_without_client_only(content: str) -> None:
     assert "client_only" not in content
     assert "eyJ" not in content
+    assert "Tem certeza" not in content
 
 
-async def test_a_real_proposal_keeps_only_the_verdict_of_the_guardrail(
+async def test_a_real_proposal_passes_the_guardrail_and_keeps_client_only_out(
     tmp_path: Path, database: Database, tracing: Tracing
 ) -> None:
     driver = StudentDriver(
@@ -40,8 +44,6 @@ async def test_a_real_proposal_keeps_only_the_verdict_of_the_guardrail(
 
     data = await RunSession(driver, request).run()
 
-    assert failed_checks(data.records[0]) == {
-        GraderName.PROPOSAL: ("proposta sem o bloco de confirmação do servidor",)
-    }
+    assert failed_checks(data.records[0]) == {}
     for name in ("executions.jsonl", "judge_requests.jsonl", "report.md"):
         assert_without_client_only((tmp_path / name).read_text(encoding="utf-8"))

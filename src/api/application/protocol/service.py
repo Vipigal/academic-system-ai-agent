@@ -6,6 +6,7 @@ from api.application.protocol.proposer import ProtocolProposer
 from api.application.protocol.queries import ProtocolQueries
 from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import ToolResult
+from api.domain.protocol.action import ProtocolAction
 from api.domain.protocol.catalog import ServiceArea
 from api.domain.protocol.status import ProtocolStage
 
@@ -31,6 +32,6 @@ class ProtocolService:
         return await self._queries.get_protocol(number)
 
     async def propose_protocol(
-        self, service: str, enrollment: str | None, message: str
+        self, action: ProtocolAction, enrollment: str, subject: str | None
     ) -> ToolResult[Proposal]:
-        return await self._proposer.propose(service, enrollment, message)
+        return await self._proposer.propose(action, enrollment, subject)

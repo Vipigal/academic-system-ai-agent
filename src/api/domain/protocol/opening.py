@@ -40,7 +40,7 @@ class ProtocolOpening:
         existing: Iterable[Protocol],
         request: OpeningRequest,
     ) -> Self:
-        reason = ProposalRules.refusal(service, request.message)
+        reason = ProposalRules.refusal(service) or ProposalRules.message_refusal(request.message)
         if reason is not None:
             raise ServiceNotOpenableError(reason)
         if ProposalRules.duplicate_of(existing, service, enrollment) is not None:
