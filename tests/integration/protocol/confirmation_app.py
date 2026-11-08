@@ -7,6 +7,7 @@ from api.bootstrap.protocol_confirmation_providers import ProtocolConfirmationPr
 from api.bootstrap.protocol_providers import ProtocolProviders
 from api.bootstrap.settings import Settings
 from api.bootstrap.student_providers import StudentProviders
+from api.infrastructure.clock import FixedClock
 from api.persistence.core.database import Database
 from tests.integration.protocol.confirmation_settings import settings_with
 from tests.integration.protocol.information_request import (
@@ -14,7 +15,6 @@ from tests.integration.protocol.information_request import (
     conversation_for,
     information_token,
 )
-from tests.integration.support.tools import FixedClock
 
 
 class ConfirmationApp:

@@ -2,9 +2,10 @@ import pytest
 
 from api.bootstrap.agent_providers import AgentProviders
 from api.bootstrap.settings import Settings
+from api.infrastructure.clock import FixedClock
 from api.persistence.core.database import Database
 from tests.integration.support.sql_oracle import SqlOracle
-from tests.integration.support.tools import FixedClock, student_tools
+from tests.integration.support.tools import student_tools
 from tests.unit.agent.agent_support import tool_results
 
 PERSON_OF_ENROLLMENT = (

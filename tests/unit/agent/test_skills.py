@@ -115,7 +115,7 @@ def test_the_prompt_is_versioned_and_lists_descriptions_without_ontologies() -> 
 
 
 def test_a_prompt_version_is_read_from_its_own_file(tmp_path: Path) -> None:
-    (tmp_path / "outra.md").write_text("Data {reference_date}. {skills}", encoding="utf-8")
+    (tmp_path / "outra.md").write_text("Data {today}. {skills}", encoding="utf-8")
 
     prompt = SystemPrompt.load("outra", tmp_path)
 

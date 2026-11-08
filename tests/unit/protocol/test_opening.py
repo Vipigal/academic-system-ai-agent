@@ -1,11 +1,11 @@
 from dataclasses import replace
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import pytest
 
 from api.domain.protocol.catalog import Service, ServiceArea
 from api.domain.protocol.errors import DuplicateProtocolError, ServiceNotOpenableError
-from api.domain.protocol.opening import OpeningRequest, ProtocolOpening, StudentAnswer
+from api.domain.protocol.opening import BRASILIA, OpeningRequest, ProtocolOpening, StudentAnswer
 from api.domain.protocol.request import Protocol, Requester
 from api.domain.protocol.status import ProtocolStatus
 from api.domain.shared.brand import Brand, Modality
@@ -15,6 +15,7 @@ from tests.unit.protocol.catalog_actions import DECLARATION, INFORMATION
 
 OPENED_AT = datetime(2026, 10, 31, 3, 0, tzinfo=UTC)
 DUE_AT = datetime(2026, 11, 2, 3, 0, tzinfo=UTC)
+NOW = datetime(2026, 11, 8, 14, 25, 37, tzinfo=BRASILIA)
 SERVICE = Service(
     code="DOC-001",
     name="Enrollment Certificate",
@@ -47,22 +48,22 @@ REQUEST = OpeningRequest(
     requester_name="Maria Souza",
     action=DECLARATION,
     answer=StudentAnswer(message=TYPED, word=""),
-    today=date(2026, 10, 31),
+    opened_at=NOW,
 )
 
 
-def test_a_protocol_opens_at_the_start_of_the_day_in_brasilia_with_the_service_sla() -> None:
+def test_a_protocol_opens_at_the_real_instant_with_the_service_sla() -> None:
     opening = ProtocolOpening.open(SERVICE, ENROLLMENT, (), REQUEST)
     assert opening.status is ProtocolStatus.OPEN
-    assert opening.opened_at == OPENED_AT
-    assert opening.due_at == DUE_AT
+    assert opening.opened_at == NOW
+    assert opening.due_at == datetime(2026, 11, 10, 14, 25, 37, tzinfo=BRASILIA)
 
 
 def test_the_opening_carries_the_first_change_and_the_requester() -> None:
     opening = ProtocolOpening.open(SERVICE, ENROLLMENT, (), REQUEST)
     assert (opening.first_change.status, opening.first_change.changed_at) == (
         ProtocolStatus.OPEN,
-        OPENED_AT,
+        NOW,
     )
     assert opening.requester_name == REQUEST.requester_name
 

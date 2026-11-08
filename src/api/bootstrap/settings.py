@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Self
 
 from pydantic import Field, SecretStr
@@ -9,7 +8,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     database_url: SecretStr
-    reference_date: date = date(2026, 10, 31)
 
     agent_model: str = "gpt-6-luna"
     agent_effort: str = "low"

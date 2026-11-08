@@ -7,10 +7,10 @@ from api.application.shared.tool_result import DataState, ToolStatus
 from api.domain.academic.enrollment import EnrollmentStatus, Shift, TermStatus
 from api.domain.academic.record import SubjectResult
 from api.domain.shared.brand import Modality
+from api.infrastructure.clock import SNAPSHOT_DATE
 from api.persistence.core.database import Database
 from tests.integration.academic import support
 from tests.integration.support.sql_oracle import SqlOracle
-from tests.integration.support.tools import REFERENCE
 
 ALL_ROWS = PageRequest(limit=100)
 ADS_2024_SUBJECTS = (
@@ -49,7 +49,7 @@ async def test_du01_calendar_of_the_current_term(database: Database) -> None:
     assert await SqlOracle().values(
         "SELECT av2_start || ' ' || end_date FROM sag.term WHERE is_current = 'Y'"
     ) == {f"{term.av2_start} {term.end_date}"}
-    assert (result.data.reference_date, result.caveats) == (REFERENCE, ())
+    assert (result.data.reference_date, result.caveats) == (SNAPSHOT_DATE, ())
 
 
 async def test_sr04_term_after_the_last_one_is_not_recorded_with_the_caveat(

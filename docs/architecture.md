@@ -132,7 +132,7 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | A13 | O conjunto de cada pessoa é pequeno | No máximo 3 contratos, 2 contas no LMS e 18 protocolos por pessoa | Cada consulta devolve poucas linhas; resolver o dono na consulta é barato com índice |
 | A14 | Protocolo nasce com três linhas | 3.933/3.933 têm histórico `Open` (`changed_by = system`) e mensagem inicial do requerente; `SLA_Due_At` = abertura + `SLA_Hours` em 3.933/3.933 | Regra do domínio para abertura (5.6) |
 | A15 | Parte dos serviços tem taxa | 4 de 18 serviços têm taxa; 732 faturas `SERVICE_FEE` apontam para protocolos | B27 |
-| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; data de referência é 31/10/2026[^eda] | Regras no domínio e relógio injetado |
+| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; os dados são a foto de 31/10/2026[^eda] | Regras no domínio e relógio injetado: data real em produção, 31/10/2026 nos testes e no eval |
 | A17 | O catálogo está em inglês | "Administração" versus `BUSINESS ADMINISTRATION`; `Course_Label` tem 24 grafias para 8 cursos[^eda] | As tools precisam de um resolvedor de entidades |
 
 ## 5. Desenho
@@ -493,7 +493,7 @@ instante podem abrir dois protocolos: o `409` de duplicado é checado na aplica�
 - Paralelismo com `asyncio.gather` usa uma sessão do ORM por tarefa, porque ela não aceita uso concorrente.
 - Custo do ORM medido: 5,07 ms contra 4,35 ms em conexão direta, com 49 faturas e conversão para entidade.
 - A aplicação é stateless. A sessão morre com o pedido.
-- Relógio injetado, com a data de referência de 31/10/2026 em configuração.
+- Relógio injetado: `SystemClock` com a data real em produção, `FixedClock` com 31/10/2026 nos testes e no eval.
 
 Limites de concorrência, deadlines, retry e proteção do provedor de LLM entram junto com o agente.
 

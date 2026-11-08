@@ -4,7 +4,8 @@ from api.application.agent.scripted_model import ScriptedChatModel
 from api.bootstrap.agent_providers import AgentProviders
 from api.bootstrap.settings import Settings
 from api.bootstrap.singletons import Singletons
-from tests.unit.agent.agent_support import FixedClock, tool_results
+from api.infrastructure.clock import FixedClock, SystemClock
+from tests.unit.agent.agent_support import tool_results
 from tests.unit.agent.student_stubs import stub_student
 
 DATABASE_URL = "postgresql+asyncpg://api:api@127.0.0.1:5432/nada"
@@ -52,6 +53,16 @@ async def test_singletons_start_without_a_key_and_build_the_model_once() -> None
 
     assert singletons.agent.runtime is singletons.agent.runtime
     await singletons.dispose()
+
+
+async def test_singletons_use_the_system_clock_unless_another_is_given() -> None:
+    production = Singletons.create(settings_with(agent_model="fake"))
+    injected = Singletons.create(settings_with(agent_model="fake"), FixedClock())
+
+    assert isinstance(production.clock, SystemClock)
+    assert "Hoje é 31/10/2026." in injected.agent.runtime.system_message()
+    await production.dispose()
+    await injected.dispose()
 
 
 async def test_the_fake_model_runs_the_same_script_for_every_request() -> None:

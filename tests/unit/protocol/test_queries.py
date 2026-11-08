@@ -1,6 +1,11 @@
+from api.application.protocol.queries import ProtocolQueries
+from api.application.protocol.source import ProtocolSource
 from api.application.shared.page import FIRST_PAGE
 from api.application.shared.tool_result import ToolStatus
-from tests.unit.protocol.protocol_fakes import QUERIES
+from api.infrastructure.clock import FixedClock
+from tests.unit.protocol.protocol_fakes import InMemoryProtocols, NoFees
+
+QUERIES = ProtocolQueries(ProtocolSource(InMemoryProtocols(), NoFees(), FixedClock()))
 
 
 async def test_list_protocols_finds_the_review_by_its_portuguese_name() -> None:

@@ -1,9 +1,7 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import replace
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 
-from api.application.protocol.queries import ProtocolQueries
-from api.application.protocol.source import ProtocolSource
 from api.domain.finance.invoice import Invoice
 from api.domain.protocol.catalog import Service, ServiceArea
 from api.domain.protocol.request import Protocol, Requester
@@ -12,7 +10,6 @@ from api.domain.shared.brand import Brand, Modality
 from api.domain.shared.money import Money
 from api.persistence.core.brasilia import BRASILIA
 
-TODAY = date(2026, 10, 31)
 GRADE_REVIEW = Service(
     code="ACA-020",
     name="Grade Review",
@@ -58,11 +55,3 @@ class InMemoryProtocols:
 class NoFees:
     async def list_service_fees(self) -> Mapping[str, Invoice]:
         return {}
-
-
-class FixedClock:
-    def today(self) -> date:
-        return TODAY
-
-
-QUERIES = ProtocolQueries(ProtocolSource(InMemoryProtocols(), NoFees(), FixedClock()))

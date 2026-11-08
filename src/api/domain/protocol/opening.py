@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Self
 
 from api.domain.academic.enrollment import Enrollment
@@ -33,7 +33,7 @@ class OpeningRequest:
     requester_name: str = field(repr=False)
     action: ServiceAction
     answer: StudentAnswer
-    today: date
+    opened_at: datetime
 
     def refusal(self, service: Service, enrollment: Enrollment) -> RefusalReason | None:
         return (
@@ -68,7 +68,7 @@ class ProtocolOpening:
             raise ServiceNotOpenableError(reason)
         if ProposalRules.duplicate_of(existing, service, enrollment) is not None:
             raise DuplicateProtocolError
-        opened_at = datetime.combine(request.today, time.min, BRASILIA)
+        opened_at = request.opened_at
         return cls(
             service_code=service.code,
             enrollment_reference=enrollment.reference,

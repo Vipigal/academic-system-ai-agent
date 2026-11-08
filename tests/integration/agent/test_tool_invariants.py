@@ -16,7 +16,7 @@ from tests.integration.agent import (
     invariant_support,
 )
 from tests.integration.support.sql_oracle import PROTOCOL_OWNERS, SqlOracle
-from tests.integration.support.tools import production_providers
+from tests.integration.support.tools import tools_factory
 
 type Person = invariant_sample.SampledPerson
 type Leak = tuple[str, str, object, set[str]]
@@ -61,7 +61,7 @@ Exposure = invariant_json.Exposure
 
 async def build_sample(scope: str) -> list[Person]:
     connected = Database(Settings.from_environment().database_url.get_secret_value())
-    builder = invariant_sample.SampleBuilder(connected, production_providers(connected))
+    builder = invariant_sample.SampleBuilder(connected, tools_factory(connected))
     people = sorted(await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope=scope))
     sampled = list(await asyncio.gather(*(builder.person(person_id) for person_id in people)))
     await connected.dispose()
@@ -86,7 +86,7 @@ async def sample(request: pytest.FixtureRequest) -> list[Person]:
 
 @pytest.fixture
 async def registry(database: Database) -> ToolRegistry:
-    return await production_providers(database).for_person(UNKNOWN_PERSON)
+    return await tools_factory(database).for_person(UNKNOWN_PERSON)
 
 
 @pytest.fixture

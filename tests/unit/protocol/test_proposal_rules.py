@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import date
+from datetime import datetime
 
 import pytest
 
@@ -7,12 +7,18 @@ from api.domain.academic.enrollment import Enrollment, EnrollmentStatus
 from api.domain.protocol.action import ProtocolAction, ServiceAction
 from api.domain.protocol.action_catalog import ServiceActions
 from api.domain.protocol.errors import ServiceNotOpenableError
-from api.domain.protocol.opening import OpeningRequest, ProtocolOpening, StudentAnswer
+from api.domain.protocol.opening import (
+    BRASILIA,
+    OpeningRequest,
+    ProtocolOpening,
+    StudentAnswer,
+)
 from api.domain.protocol.proposal import ProposalRules, RefusalReason
 from tests.unit.protocol import proposal_fakes as fakes
 from tests.unit.protocol.catalog_actions import DECLARATION, INFORMATION, LOCK
 
 STATUS_REFUSED = RefusalReason.ENROLLMENT_STATUS
+NOW = datetime(2026, 10, 31, 9, tzinfo=BRASILIA)
 
 
 def test_a_subject_is_refused_only_by_the_actions_that_do_not_take_one() -> None:
@@ -117,7 +123,7 @@ def test_the_confirmation_word_is_required_only_where_the_action_has_one(
 def test_the_opening_checks_what_the_student_sent_against_the_action(
     action: ServiceAction, answer: StudentAnswer, enrollment: Enrollment, expected: RefusalReason
 ) -> None:
-    request = OpeningRequest("Maria Souza", action, answer, date(2026, 10, 31))
+    request = OpeningRequest("Maria Souza", action, answer, NOW)
 
     with pytest.raises(ServiceNotOpenableError) as refused:
         ProtocolOpening.open(fakes.LOCK, enrollment, (), request)

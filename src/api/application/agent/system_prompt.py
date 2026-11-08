@@ -16,7 +16,5 @@ class SystemPrompt:
     def load(cls, version: str = CURRENT_VERSION, root: Path = PROMPTS_ROOT) -> Self:
         return cls(version=version, template=(root / f"{version}.md").read_text(encoding="utf-8"))
 
-    def render(self, reference_date: date, skills: str) -> str:
-        return self.template.format(
-            reference_date=reference_date.strftime("%d/%m/%Y"), skills=skills
-        )
+    def render(self, today: date, skills: str) -> str:
+        return self.template.format(today=today.strftime("%d/%m/%Y"), skills=skills)

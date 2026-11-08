@@ -1,40 +1,24 @@
 import secrets
 from collections.abc import Awaitable, Callable
-from datetime import date
 
 import pytest
 
 from api.application.agent.student_tools import StudentTools
 from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import ToolResult
-from api.bootstrap.settings import Settings
 from api.bootstrap.student_providers import StudentProviders
-from api.infrastructure.clock import ReferenceClock
+from api.infrastructure.clock import FixedClock
 from api.infrastructure.proposal_signer import ProposalJwtSigner
 from api.persistence.core.database import Database
 
-REFERENCE = date(2026, 10, 31)
 PAGE_SIZE = 100
 SWEEP = pytest.mark.sweep
 SLOW = pytest.mark.slow
 SIGNER = ProposalJwtSigner(secrets.token_urlsafe(32), 15)
 
 
-class FixedClock:
-    def __init__(self, today: date = REFERENCE) -> None:
-        self._today = today
-
-    def today(self) -> date:
-        return self._today
-
-
 def tools_factory(database: Database) -> StudentProviders:
     return StudentProviders(database, FixedClock(), SIGNER)
-
-
-def production_providers(database: Database) -> StudentProviders:
-    clock = ReferenceClock(Settings.from_environment().reference_date)
-    return StudentProviders(database, clock, SIGNER)
 
 
 async def student_tools(database: Database, person_id: str) -> StudentTools:

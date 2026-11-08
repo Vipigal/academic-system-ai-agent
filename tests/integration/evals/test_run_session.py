@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from api.bootstrap.singletons import Singletons
 from api.infrastructure.tracing import Tracing
+from evals.driver_factory import DriverFactory
 from evals.run_session import RunSession
 from evals.selection import Repetitions, RunRequest
 from evals.student_driver import StudentDriver
@@ -23,7 +23,7 @@ def assert_files_of_the_round(directory: Path) -> None:
 async def test_the_fake_model_produces_a_report_against_the_real_database(
     tmp_path: Path, tracing: Tracing, sink: SpanSink
 ) -> None:
-    driver = StudentDriver(Singletons.create(fake_settings()), tracing, VERSIONS)
+    driver = StudentDriver(DriverFactory.singletons_for(fake_settings()), tracing, VERSIONS)
     request = RunRequest(SELECTION, Repetitions(default=1, critical=2), tmp_path)
 
     data = await RunSession(driver, request).run()
@@ -39,7 +39,7 @@ async def test_the_fake_model_produces_a_report_against_the_real_database(
 
 async def test_without_langfuse_keys_the_trace_id_is_null(tmp_path: Path) -> None:
     tracing = Tracing(None, None, None, None)
-    driver = StudentDriver(Singletons.create(fake_settings()), tracing, VERSIONS)
+    driver = StudentDriver(DriverFactory.singletons_for(fake_settings()), tracing, VERSIONS)
 
     data = await RunSession(driver, RunRequest(SELECTION, Repetitions(), tmp_path)).run()
     await driver.close()

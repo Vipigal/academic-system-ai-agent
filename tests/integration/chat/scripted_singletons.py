@@ -5,8 +5,8 @@ from langchain_core.language_models import BaseChatModel
 from api.bootstrap.agent_providers import AgentProviders
 from api.bootstrap.settings import Settings
 from api.bootstrap.singletons import Singletons
+from api.infrastructure.clock import FixedClock
 from api.persistence.core.database import Database
-from tests.integration.support.tools import FixedClock
 
 
 def singletons_with(database: Database, model: BaseChatModel, settings: Settings) -> Singletons:

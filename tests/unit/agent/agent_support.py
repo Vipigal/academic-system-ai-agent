@@ -1,5 +1,4 @@
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from datetime import date
 
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.messages.tool import tool_call
@@ -11,15 +10,11 @@ from api.application.agent.events import AgentEvent, ToolResultReceived
 from api.application.agent.scripted_model import ScriptedChatModel
 from api.application.agent.student_agent import StudentAgent
 from api.application.agent.tools.registry import RegisteredTool, ToolRegistry
+from api.infrastructure.clock import FixedClock
 from tests.unit.agent.student_stubs import stub_student
 
 FINAL_ANSWER = "Resposta final ao aluno."
 DEFAULT_LIMITS = AgentLimits(model_calls=8, tool_calls=12, timeout_seconds=5, max_concurrency=8)
-
-
-class FixedClock:
-    def today(self) -> date:
-        return date(2026, 10, 31)
 
 
 class RecordingModel(ScriptedChatModel):

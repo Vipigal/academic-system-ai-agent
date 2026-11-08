@@ -44,7 +44,5 @@ class ProtocolConfirmation:
 
     async def _opening_of(self, parties: OpeningParties, answer: StudentAnswer) -> ProtocolOpening:
         existing = await self._ports.protocols.list_protocols()
-        request = OpeningRequest(
-            parties.requester_name, parties.action, answer, self._clock.today()
-        )
+        request = OpeningRequest(parties.requester_name, parties.action, answer, self._clock.now())
         return ProtocolOpening.open(parties.service, parties.enrollment, existing, request)

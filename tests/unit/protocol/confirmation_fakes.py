@@ -8,8 +8,8 @@ from api.domain.conversation.errors import ConversationConflictError, Conversati
 from api.domain.conversation.message import Message
 from api.domain.protocol.opening import ProtocolOpening
 from api.domain.protocol.proposal import SignedProposal
+from api.infrastructure.clock import FixedClock
 from tests.unit.protocol import proposal_fakes as fakes
-from tests.unit.protocol.protocol_fakes import FixedClock
 
 NUMBER = "20260025165"
 REQUESTER = "Maria Souza"

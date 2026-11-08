@@ -5,6 +5,7 @@ from pydantic import SecretStr
 from api.bootstrap.observability import Observability
 from api.bootstrap.settings import Settings
 from api.bootstrap.singletons import Singletons
+from api.infrastructure.clock import FixedClock
 from evals.golden.tool_names import ToolNames
 from evals.records import RunVersions
 from evals.student_driver import StudentDriver
@@ -22,8 +23,12 @@ class DriverFactory:
         )
 
     @staticmethod
+    def singletons_for(settings: Settings) -> Singletons:
+        return Singletons.create(settings, FixedClock())
+
+    @staticmethod
     def create(settings: Settings) -> StudentDriver:
-        singletons = Singletons.create(settings)
+        singletons = DriverFactory.singletons_for(settings)
         runtime = singletons.agent.runtime
         versions = RunVersions(
             model=settings.agent_model,
