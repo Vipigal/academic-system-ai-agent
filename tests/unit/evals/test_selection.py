@@ -78,14 +78,14 @@ def test_without_critical_repeat_every_item_follows_the_repeat(golden: GoldenSet
     assert set(Counter(planned.item.id for planned in plan).values()) == {3}
 
 
-def test_the_baseline_composition_has_151_executions(golden: GoldenSet) -> None:
+def test_the_final_round_composition_has_156_executions(golden: GoldenSet) -> None:
     items = ItemSelection(BASELINE_FILES, holdout_from=ACTIONS).pick(golden)
     plan = RunPlan.of(items, Repetitions(default=1, critical=5))
     by_area = Counter(planned.item.area for planned in plan)
     critical = Counter(planned.item.id for planned in plan if planned.item.critical)
 
-    assert len(plan) == 151
+    assert len(plan) == 156
     assert set(critical.values()) == {5}
-    assert len(critical) == 14
+    assert len(critical) == 15
     assert "PR-08" in critical
-    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (65, 18, 2, 21)
+    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 18, 2, 21)

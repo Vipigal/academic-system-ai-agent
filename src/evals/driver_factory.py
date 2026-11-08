@@ -1,4 +1,5 @@
 import secrets
+from pathlib import Path
 
 from pydantic import SecretStr
 
@@ -8,13 +9,15 @@ from api.bootstrap.singletons import Singletons
 from api.infrastructure.clock import FixedClock
 from evals.golden.tool_names import ToolNames
 from evals.records import RunVersions
+from evals.settings_sources import SettingsSources
 from evals.student_driver import StudentDriver
 
 
 class DriverFactory:
     @staticmethod
-    def settings_for(model: str, effort: str) -> Settings:
-        return Settings.from_environment().model_copy(
+    def settings_for(model: str, effort: str, env_file: Path | None = None) -> Settings:
+        environment = Settings.model_validate(SettingsSources.values(Settings, env_file))
+        return environment.model_copy(
             update={
                 "agent_model": model,
                 "agent_effort": effort,

@@ -503,6 +503,47 @@
   reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
     o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
     para tratar da disciplina.'
+- id: TR-14
+  kind: answerable
+  split: dev
+  critical: true
+  question: Solicite trancamento de matricula de Gestão Estratégica II
+  student: UniMontanhas:070467
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: STRATEGIC MANAGEMENT II
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Gestão Estratégica II: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
 - id: SV-01
   kind: answerable
   split: dev

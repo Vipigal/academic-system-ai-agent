@@ -109,18 +109,19 @@ Para revisar em fatias, com a vista de PR, use a skill `stack-review`.
 
 ## Comandos
 
-Primeiro, em shell novo. Depois de usar esse shell, o `make check` falha, porque ele herda as chaves do Langfuse:
+Primeiro, as URLs do banco local e o caminho do código. Nenhuma chave entra no shell:
 
 ```bash
-set -a; . ./.env; set +a
 export APP_DATABASE_URL=postgresql+asyncpg://api:api@127.0.0.1:5432/cruzeiro
 export APP_ORACLE_DATABASE_URL=postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/cruzeiro PYTHONPATH=src
 ```
 
-Rodada e juiz, como comandos separados, porque a rodada sai com 1 quando reprova e com 2 quando fica incompleta. Repetir o comando retoma:
+Rodada e juiz, como comandos separados, porque a rodada sai com 1 quando reprova e com 2 quando fica incompleta. Repetir o comando retoma.
+Com `--env-file .env`, o próprio processo da rodada lê o arquivo: a chave do modelo, as do Langfuse e as URLs. O ambiente vence o arquivo, e
+chaves que a configuração não conhece, como uma `APP_REFERENCE_DATE` antiga, são ignoradas. O juiz roda pelo `claude -p` e não precisa do arquivo:
 
 ```bash
-.venv/bin/python -m evals.run --model gpt-6-luna --effort low --golden questions redteam protocol_actions \
+.venv/bin/python -m evals.run --env-file .env --model gpt-6-luna --effort low --golden questions redteam protocol_actions \
   --include-holdout protocol_actions --repeat 1 --critical-repeat 5 --output <pasta>
 .venv/bin/python -m evals.judge --run-dir <pasta> --batch-size 10
 ```

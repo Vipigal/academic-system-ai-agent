@@ -1,17 +1,17 @@
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from types import TracebackType
 from typing import Self
 
-from pydantic import SecretStr
-from pydantic_settings import BaseSettings, EnvSettingsSource, SettingsConfigDict
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from evals.golden.oracle_queries import ORACLE_QUERIES
 from evals.golden.oracle_queries.scope import STUDENT_SCOPE
+from evals.golden.oracle_settings import OracleSettings
 
 NAMED_PARAMETER = re.compile(r"(?<![:\w]):([a-z_]+)\b")
 STUDENT_PARAMETER = "student"
@@ -19,16 +19,6 @@ STUDENT_PARAMETER = "student"
 
 class OracleQueryError(RuntimeError):
     pass
-
-
-class OracleSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_")
-
-    oracle_database_url: SecretStr
-
-    @classmethod
-    def from_environment(cls) -> Self:
-        return cls.model_validate(EnvSettingsSource(cls)())
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,8 +51,8 @@ class Oracle:
         self._connection: AsyncConnection | None = None
 
     @classmethod
-    def from_environment(cls) -> Self:
-        settings = OracleSettings.from_environment()
+    def from_environment(cls, env_file: Path | None = None) -> Self:
+        settings = OracleSettings.from_environment(env_file)
         return cls(settings.oracle_database_url.get_secret_value())
 
     async def __aenter__(self) -> Self:

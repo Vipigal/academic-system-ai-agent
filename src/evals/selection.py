@@ -91,3 +91,4 @@ class RunRequest:
     repetitions: Repetitions
     output: Path
     concurrency: int | None = None
+    env_file: Path | None = None

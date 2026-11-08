@@ -25,7 +25,9 @@ class RunSession:
             self._driver.versions, planned, golden.items, self._driver.trace_url_prefix()
         )
         await RunManifests.open(self._files, round_plan)
-        contexts = await ItemContextLoader.contextualized(self._pending(planned))
+        contexts = await ItemContextLoader.contextualized(
+            self._pending(planned), self._request.env_file
+        )
         await self._runner().run(contexts)
         return RunReport.write(self._files)
 

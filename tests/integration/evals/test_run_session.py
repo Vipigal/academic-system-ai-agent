@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from api.infrastructure.tracing import Tracing
 from evals.driver_factory import DriverFactory
+from evals.golden.oracle_settings import OracleSettings
 from evals.run_session import RunSession
 from evals.selection import Repetitions, RunRequest
 from evals.student_driver import StudentDriver
@@ -45,3 +48,21 @@ async def test_without_langfuse_keys_the_trace_id_is_null(tmp_path: Path) -> Non
     await driver.close()
 
     assert {record.trace_id for record in data.records} == {None}
+
+
+async def test_the_round_reads_the_oracle_url_from_the_env_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    env_file = tmp_path / "falso.env"
+    oracle_url = OracleSettings.from_environment().oracle_database_url.get_secret_value()
+    env_file.write_text(f"APP_ORACLE_DATABASE_URL={oracle_url}\n", encoding="utf-8")
+    monkeypatch.delenv("APP_ORACLE_DATABASE_URL")
+    driver = StudentDriver(
+        DriverFactory.singletons_for(fake_settings()), Tracing(None, None, None, None), VERSIONS
+    )
+    request = RunRequest(SELECTION, Repetitions(), tmp_path / "rodada", env_file=env_file)
+
+    data = await RunSession(driver, request).run()
+    await driver.close()
+
+    assert {record.key for record in data.records} == {"FI-01#1", "TR-01#1"}

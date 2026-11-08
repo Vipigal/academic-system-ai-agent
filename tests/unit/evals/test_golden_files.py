@@ -6,6 +6,7 @@ from evals.golden.tool_names import ToolNames
 from tests.agent_map import QUESTIONS
 
 FEE = "service_fee"
+BROWSER_STUDENT = "UniMontanhas:070114"
 
 
 def test_the_golden_files_pass_every_check_that_needs_no_database() -> None:
@@ -27,7 +28,7 @@ def test_the_protocol_actions_cover_every_service_and_mark_the_critical_items() 
         for item in golden.actions
         if item.area == "SV"
     }
-    assert areas == {"TR": 13, "SV": 18, "ES": 2}
+    assert areas == {"TR": 14, "SV": 18, "ES": 2}
     assert len(set(services.values())) == 18
     anchors = {item.id for item in golden.actions if item.area == "TR"}
     assert {item.id for item in golden.items if item.critical} == {"PR-08", *anchors}
@@ -54,3 +55,13 @@ def test_the_bug_anchor_runs_the_grades_question_before_the_literal_phrase() -> 
     assert anchor.critical
     assert anchor.question == items["TR-01"].question
     assert items["TR-01"].history == ()
+
+
+def test_the_second_anchor_asks_the_literal_phrase_first_with_another_business_student() -> None:
+    items = {item.id: item for item in GoldenLoader.load().items}
+    second = items["TR-14"]
+    assert second.question == "Solicite trancamento de matricula de Gestão Estratégica II"
+    assert second.history == ()
+    assert second.critical
+    assert second.split == items["TR-13"].split
+    assert second.student not in {BROWSER_STUDENT, items["TR-13"].student}

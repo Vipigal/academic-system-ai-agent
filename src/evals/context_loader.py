@@ -1,4 +1,5 @@
 from collections.abc import Mapping
+from pathlib import Path
 
 from evals.golden.items import AttackItem, GoldenItem
 from evals.golden.oracle import Oracle
@@ -20,9 +21,11 @@ class ItemContextLoader:
         self._foreign: dict[str, ForeignIdentifiers] = {}
 
     @classmethod
-    async def contextualized(cls, pending: list[PlannedExecution]) -> list[ContextualizedExecution]:
+    async def contextualized(
+        cls, pending: list[PlannedExecution], env_file: Path | None = None
+    ) -> list[ContextualizedExecution]:
         contexts: dict[str, ItemContext] = {}
-        async with Oracle.from_environment() as oracle:
+        async with Oracle.from_environment(env_file) as oracle:
             loader = cls(oracle)
             for planned in pending:
                 if planned.item.id not in contexts:

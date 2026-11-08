@@ -27,6 +27,7 @@ class RunCli:
         parser.add_argument("--critical-repeat", type=int)
         parser.add_argument("--concurrency", type=int)
         parser.add_argument("--output", type=Path)
+        parser.add_argument("--env-file", type=Path)
         cls._selection_options(parser)
         return parser
 
@@ -43,6 +44,7 @@ class RunCli:
             repetitions=Repetitions(arguments.repeat, arguments.critical_repeat),
             output=output,
             concurrency=arguments.concurrency,
+            env_file=arguments.env_file,
         )
 
     @classmethod
@@ -69,7 +71,7 @@ class RunCli:
 
     @classmethod
     async def _execute(cls, arguments: argparse.Namespace) -> RunData:
-        settings = DriverFactory.settings_for(arguments.model, arguments.effort)
+        settings = DriverFactory.settings_for(arguments.model, arguments.effort, arguments.env_file)
         driver = DriverFactory.create(settings)
         try:
             return await RunSession(driver, cls.request_of(arguments)).run()
