@@ -1,9 +1,9 @@
 from collections.abc import Iterable
 from pathlib import Path
 
-from evals.calibration import CalibrationResult, CalibrationScoring
-from evals.calibration_cases import CalibrationCase, CalibrationCases
-from evals.calibration_report import CalibrationReport
+from evals.calibration.cases import CalibrationCase, CalibrationCases
+from evals.calibration.report import CalibrationReport
+from evals.calibration.scoring import CalibrationResult, CalibrationScoring
 from evals.golden.loader import GoldenLoader
 from evals.judge.port import Judge
 from evals.judge.session import JudgingSession

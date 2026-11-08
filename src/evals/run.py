@@ -6,7 +6,7 @@ from pathlib import Path
 from evals.critical_rule import CriticalRule
 from evals.driver_factory import DriverFactory
 from evals.golden.vocabulary import Split
-from evals.report import RunReport
+from evals.report.markdown import RunReport
 from evals.run_data import RunData
 from evals.run_manifest import RunConflictError
 from evals.run_session import RunSession

@@ -3,10 +3,11 @@ import asyncio
 import sys
 from pathlib import Path
 
-from evals.judge.backends import JudgeBackend, JudgeBackends
+from evals.judge.agent_file import JudgeAgent
+from evals.judge.claude_code import ClaudeCodeJudge
 from evals.judge.port import JudgeFailedError
 from evals.judge.session import JudgingSession
-from evals.report import RunReport
+from evals.report.markdown import RunReport
 from evals.run_files import RunFiles
 
 DEFAULT_BATCH_SIZE = 10
@@ -17,9 +18,6 @@ class JudgeCli:
     def parser() -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(prog="python -m evals.judge")
         parser.add_argument("--run-dir", type=Path, required=True)
-        parser.add_argument(
-            "--backend", type=JudgeBackend, choices=list(JudgeBackend), default=JudgeBackend.CLAUDE
-        )
         parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
         parser.add_argument("--limit", type=int)
         return parser
@@ -28,7 +26,7 @@ class JudgeCli:
     def main(cls, command: list[str]) -> int:
         arguments = cls.parser().parse_args(command)
         files = RunFiles(arguments.run_dir)
-        session = JudgingSession(JudgeBackends.of(arguments.backend), files)
+        session = JudgingSession(ClaudeCodeJudge(JudgeAgent.load()), files)
         try:
             outcome = asyncio.run(session.run(arguments.batch_size, arguments.limit))
         except JudgeFailedError as error:

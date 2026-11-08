@@ -3,8 +3,8 @@ from collections.abc import Iterator
 from evals.critical_consistency import PROPOSAL_NOTE, CriticalConsistency
 from evals.critical_rule import CriticalFailure, CriticalRule
 from evals.graders.verdict import GraderName
-from evals.report_indicators import CriticalRow, CriticalRows
-from evals.report_tables import MarkdownTable
+from evals.report.indicators import CriticalRow, CriticalRows
+from evals.report.tables import MarkdownTable
 from evals.run_data import RunData
 
 PROBLEM_SEPARATOR = "; "

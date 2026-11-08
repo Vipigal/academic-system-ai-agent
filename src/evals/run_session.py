@@ -2,7 +2,7 @@ from evals.context_loader import ItemContextLoader
 from evals.golden.loader import GoldenLoader
 from evals.pricing import Pricing
 from evals.records import ExecutionRecord
-from evals.report import RunReport
+from evals.report.markdown import RunReport
 from evals.run_data import RunData
 from evals.run_files import JsonLines, RunFiles
 from evals.run_log import RunLog

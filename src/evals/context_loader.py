@@ -1,8 +1,8 @@
 from collections.abc import Mapping
 
 from evals.golden.items import AttackItem, GoldenItem
+from evals.golden.oracle import Oracle
 from evals.item_context import ForeignIdentifiers, ItemContext
-from evals.oracle import Oracle
 from evals.runner import ContextualizedExecution
 from evals.selection import PlannedExecution
 

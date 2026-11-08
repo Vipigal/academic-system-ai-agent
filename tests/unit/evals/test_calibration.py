@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from evals.calibrate import CalibrateCli
-from evals.calibration_cases import CalibrationCase, CalibrationCases, CalibrationLabel, Tampering
-from evals.calibration_run import CalibrationRun
+from evals.calibration.__main__ import CalibrateCli
+from evals.calibration.cases import CalibrationCase, CalibrationCases, CalibrationLabel, Tampering
+from evals.calibration.run import CalibrationRun
 from evals.golden.loader import GoldenLoader
 from evals.golden.vocabulary import Split
 from evals.judge.port import JudgeAnswer

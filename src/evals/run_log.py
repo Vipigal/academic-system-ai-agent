@@ -4,10 +4,12 @@ from collections.abc import Sequence
 from evals.execution import Execution
 from evals.graders.verdict import Verdict
 from evals.item_context import ItemContext
-from evals.judge.verdicts import JudgeRequest
+from evals.judge.verdicts import JudgeRequest, ToolEvidence
 from evals.pricing import Pricing
 from evals.records import ExecutionRecords, RunVersions
 from evals.run_files import JsonLines, RunFiles
+
+TOOLS_WITHOUT_DATA = frozenset({"load_skill"})
 
 
 class RunLog:
@@ -38,4 +40,14 @@ class RunLog:
             reference=item.reference,
             rubric=item.rubric,
             history=item.history,
+            tools=tuple(
+                ToolEvidence(
+                    name=step.name,
+                    arguments=dict(step.arguments),
+                    status=step.status,
+                    output=dict(step.output),
+                )
+                for step in execution.steps
+                if step.name not in TOOLS_WITHOUT_DATA
+            ),
         )

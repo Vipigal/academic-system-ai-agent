@@ -1,8 +1,8 @@
 import pytest
 
-from evals.oracle import QueryPreparer
-from evals.oracle_queries import ORACLE_QUERIES
-from evals.oracle_queries.scope import STUDENT_SCOPE
+from evals.golden.oracle import QueryPreparer
+from evals.golden.oracle_queries import ORACLE_QUERIES
+from evals.golden.oracle_queries.scope import STUDENT_SCOPE
 
 
 def test_named_parameters_become_positional_and_repeat_the_same_position() -> None:

@@ -2,13 +2,12 @@ import argparse
 import asyncio
 import sys
 
-from evals.golden.catalog import QuestionCatalog
 from evals.golden.loader import GoldenLoader
+from evals.golden.oracle import Oracle
 from evals.golden.query_checks import QueryChecks
 from evals.golden.report import CheckReport
 from evals.golden.static_checks import StaticChecks
 from evals.golden.tool_names import ToolNames
-from evals.oracle import Oracle
 
 CHECK = "check"
 
@@ -17,7 +16,7 @@ class GoldenCli:
     @staticmethod
     async def check() -> CheckReport:
         golden = GoldenLoader.load()
-        problems = StaticChecks(QuestionCatalog.load(), ToolNames.registered()).run(golden)
+        problems = StaticChecks(ToolNames.registered()).run(golden)
         async with Oracle.from_environment() as oracle:
             outcome = await QueryChecks(oracle).run(golden.items)
         return CheckReport(golden, outcome.facts, [*problems, *outcome.problems])

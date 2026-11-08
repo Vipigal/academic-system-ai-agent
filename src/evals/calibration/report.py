@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 
-from evals.calibration import CalibrationMiss, CalibrationResult, ClassScore
-from evals.report_tables import MarkdownTable
+from evals.calibration.scoring import CalibrationMiss, CalibrationResult, ClassScore
+from evals.report.tables import MarkdownTable
 
 SMALL_SAMPLE = "Meta: 18 em 20 em cada classe. Com 40 respostas, o intervalo de confiança é largo."
 CLASS_HEADER = ("Classe", "Certas", "Julgadas", "Total")

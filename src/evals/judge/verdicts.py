@@ -11,6 +11,13 @@ class CriterionOutcome(StrEnum):
     UNKNOWN = "unknown"
 
 
+class ToolEvidence(FrozenModel):
+    name: str
+    arguments: dict[str, object]
+    status: str
+    output: dict[str, object]
+
+
 class JudgeRequest(FrozenModel):
     id: str
     question: str
@@ -18,6 +25,7 @@ class JudgeRequest(FrozenModel):
     reference: str
     rubric: tuple[str, ...]
     history: tuple[str, ...] = ()
+    tools: tuple[ToolEvidence, ...] = ()
 
 
 class CriterionVerdict(FrozenModel):

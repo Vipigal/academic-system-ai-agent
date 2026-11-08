@@ -1,7 +1,7 @@
 import pytest
 
 from evals.golden.__main__ import GoldenCli
-from evals.oracle import Oracle
+from evals.golden.oracle import Oracle
 from tests.integration.support.sql_oracle import PROTOCOL_OWNERS, SqlOracle
 
 CPF_OF = r"""

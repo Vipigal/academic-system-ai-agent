@@ -1,9 +1,10 @@
 import ast
 from pathlib import Path
 
-import evals.oracle_queries
+import evals.golden.oracle_queries
 
-QUERIES_PACKAGE = Path(evals.oracle_queries.__file__).parent
+QUERIES_PACKAGE = Path(evals.golden.oracle_queries.__file__).parent
+OWN_MODULES = "evals.golden.oracle_queries"
 
 
 def imported_modules(path: Path) -> set[str]:
@@ -18,4 +19,4 @@ def imported_modules(path: Path) -> set[str]:
 
 def test_named_queries_do_not_import_tools_services_or_the_api() -> None:
     imports = {module for path in QUERIES_PACKAGE.glob("*.py") for module in imported_modules(path)}
-    assert {module for module in imports if not module.startswith("evals.oracle_queries")} == set()
+    assert {module for module in imports if not module.startswith(OWN_MODULES)} == set()

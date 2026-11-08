@@ -3,13 +3,11 @@ from collections.abc import Sequence
 
 import pytest
 
-from api.bootstrap import settings as bootstrap_settings
 from evals.judge.agent_file import AGENT_FILE, JudgeAgent
 from evals.judge.claude_code import ClaudeCodeJudge, ProcessResult
 from evals.judge.port import JudgeAnswer, JudgeFailedError
-from evals.judge.reserve import RESERVE_MODEL, ChatModelCompletion, ReserveJudge
 from evals.judge.verdicts import CriterionOutcome, CriterionVerdict, ItemVerdict, JudgeRequest
-from tests.unit.evals.judge_support import AGENT, JUDGE_MODEL, REQUEST, SECRET_URL, verdict_for
+from tests.unit.evals.judge_support import AGENT, JUDGE_MODEL, REQUEST, verdict_for
 
 
 def answer_text(*requests: JudgeRequest) -> str:
@@ -81,7 +79,15 @@ async def test_the_request_carries_only_the_fields_of_the_judge() -> None:
 
     sent = json.loads(process.text)
     assert sent == {"items": [REQUEST.model_dump(mode="json")]}
-    assert set(sent["items"][0]) == {"id", "question", "answer", "reference", "rubric", "history"}
+    assert set(sent["items"][0]) == {
+        "id",
+        "question",
+        "answer",
+        "reference",
+        "rubric",
+        "history",
+        "tools",
+    }
 
 
 async def test_the_answer_is_validated_against_the_schema() -> None:
@@ -146,41 +152,6 @@ def test_the_agent_file_declares_no_tools_and_loads_the_prompt() -> None:
     assert agent.name == "eval-judge"
     assert agent.model == JUDGE_MODEL
     assert "reasoning" in agent.prompt
-
-
-class FakeCompletion:
-    def __init__(self, text: str) -> None:
-        self._text = text
-        self.system = ""
-
-    async def complete(self, system: str, prompt: str) -> str:
-        self.system = system
-        assert json.loads(prompt)["items"][0]["id"] == REQUEST.id
-        return self._text
-
-
-async def test_the_reserve_sends_the_same_request_and_accepts_fenced_json() -> None:
-    completion = FakeCompletion(f"```json\n{answer_text(REQUEST)}\n```")
-    answer = await ReserveJudge(AGENT, completion).judge(ONE_REQUEST)
-    assert answer.verdicts[0].passed
-    assert AGENT.prompt in completion.system
-
-
-async def test_the_reserve_rejects_an_answer_out_of_the_schema() -> None:
-    with pytest.raises(JudgeFailedError):
-        await ReserveJudge(AGENT, FakeCompletion("Não sei.")).judge(ONE_REQUEST)
-
-
-def test_the_reserve_uses_its_own_model_over_the_settings() -> None:
-    settings = bootstrap_settings.Settings(database_url=SECRET_URL, agent_model="fake")
-    assert ChatModelCompletion.settings_of(settings).agent_model == RESERVE_MODEL
-
-
-async def test_the_chat_model_completion_goes_through_the_bootstrap_model() -> None:
-    settings = bootstrap_settings.Settings(database_url=SECRET_URL, agent_model="fake")
-    judge = ReserveJudge(AGENT, ChatModelCompletion(settings))
-    with pytest.raises(JudgeFailedError):
-        await judge.judge(ONE_REQUEST)
 
 
 async def test_the_judge_receives_the_earlier_questions_as_context() -> None:

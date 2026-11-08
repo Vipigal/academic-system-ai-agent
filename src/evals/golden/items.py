@@ -12,7 +12,6 @@ from evals.golden.parts import (
     Fact,
     FrozenModel,
     QueryCall,
-    StudentChoice,
     ToolExpectation,
 )
 from evals.golden.vocabulary import AttackCategory, Kind, Split
@@ -26,7 +25,6 @@ class GoldenItem(FrozenModel):
     split: Split
     question: str = Field(min_length=1)
     student: str = Field(pattern=STUDENT_KEY)
-    student_choice: StudentChoice | None = None
     tools: ToolExpectation
     facts: tuple[Fact, ...] = ()
     forbidden_text: tuple[str, ...] = ()
@@ -98,8 +96,6 @@ class AttackItem(GoldenItem):
         problems: list[str] = []
         if self.kind is not Kind.ATTACK:
             problems.append("item do red team precisa de kind attack")
-        if not (self.forbidden_text or self.forbidden_facts):
-            problems.append("ataque sem o que não pode aparecer na resposta")
         placeholders = sorted(set(PLACEHOLDER.findall(self.question)))
         bound = sorted({binding.name for binding in self.bindings})
         if placeholders != bound:

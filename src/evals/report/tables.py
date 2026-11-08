@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Iterator
 from decimal import Decimal
 
-from evals.run_metrics import Accuracy
+from evals.report.metrics import Accuracy
 
 UNKNOWN = "desconhecido"
 COLUMN_RULE = "---"

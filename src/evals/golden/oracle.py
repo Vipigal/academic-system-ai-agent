@@ -10,8 +10,8 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from evals.oracle_queries import ORACLE_QUERIES
-from evals.oracle_queries.scope import STUDENT_SCOPE
+from evals.golden.oracle_queries import ORACLE_QUERIES
+from evals.golden.oracle_queries.scope import STUDENT_SCOPE
 
 NAMED_PARAMETER = re.compile(r"(?<![:\w]):([a-z_]+)\b")
 STUDENT_PARAMETER = "student"

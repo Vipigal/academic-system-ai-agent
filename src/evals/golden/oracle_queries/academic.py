@@ -20,6 +20,10 @@ ACADEMIC_QUERIES = {
         SELECT status_date FROM own_enrollments WHERE enrollment_status = :status
     """,
     "enrollments_of_person": "SELECT count(*) FROM own_enrollments",
+    "own_enrollment_statuses": """
+        SELECT string_agg(enrollment_status, ', ' ORDER BY enrollment_status) FROM own_enrollments
+    """,
+    "student_enrollment_date": "SELECT date_of_enrollment FROM student_enrollment",
     "active_enrollments_of_person": """
         SELECT count(*) FROM own_enrollments WHERE enrollment_status = 'ACTIVE'
     """,

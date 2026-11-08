@@ -3,12 +3,9 @@ from collections.abc import Iterator
 from evals.golden.vocabulary import Split
 from evals.page.results_page import ResultsPage
 from evals.records import ExecutionRecord
-from evals.report_critical import CriticalSection, FailureLine
-from evals.report_indicators import MEDIAN, TAIL
-from evals.report_tables import MarkdownTable, Shown
-from evals.run_data import RunData
-from evals.run_files import RunFiles
-from evals.run_metrics import (
+from evals.report.critical import CriticalSection, FailureLine
+from evals.report.indicators import MEDIAN, TAIL
+from evals.report.metrics import (
     GroupedAccuracy,
     JudgedResult,
     Percentile,
@@ -16,6 +13,9 @@ from evals.run_metrics import (
     ResultsByName,
     RunCost,
 )
+from evals.report.tables import MarkdownTable, Shown
+from evals.run_data import RunData
+from evals.run_files import RunFiles
 
 MEASURE_HEADER = ("Medida", "Valor")
 

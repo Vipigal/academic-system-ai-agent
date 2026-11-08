@@ -231,3 +231,15 @@ async def test_the_judge_requests_never_name_the_evaluated_model(tmp_path: Path)
     assert '"id":"SV-01#1"' in content
     assert support.VERSIONS.model not in content
     assert "fingerprint" not in content
+
+
+async def test_the_judge_sees_what_the_tools_returned_but_never_the_client_only_part(
+    tmp_path: Path,
+) -> None:
+    driver = agent_script.ScriptedDriver(lambda _: agent_script.proposal_events("ACA-010"))
+    await support.run_items(tmp_path, driver, [(SV_ITEM, 1)])
+
+    content = (tmp_path / "judge_requests.jsonl").read_text(encoding="utf-8")
+    assert '"name":"propose_protocol"' in content
+    assert '"data":{"service":{"code":"ACA-010"}' in content
+    assert agent_script.SIGNED_VALUE not in content

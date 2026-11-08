@@ -25,12 +25,6 @@ class Evidence(QueryCall):
     student: str | None = Field(default=None, pattern=STUDENT_KEY)
 
 
-class StudentChoice(FrozenModel):
-    query: str
-    params: dict[str, str] = Field(default_factory=dict)
-    reason: str = Field(min_length=1)
-
-
 class ToolExpectation(FrozenModel):
     expected: tuple[str, ...]
     forbidden: tuple[str, ...]

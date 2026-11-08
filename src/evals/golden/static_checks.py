@@ -2,8 +2,7 @@ import math
 from collections import defaultdict
 from collections.abc import Iterator
 
-from evals.golden.catalog import CatalogEntry
-from evals.golden.items import GoldenItem, ProtocolActionItem, QuestionItem
+from evals.golden.items import GoldenItem, ProtocolActionItem
 from evals.golden.loader import GoldenSet
 from evals.golden.oracle_names import QueryNames
 from evals.golden.problems import Problem
@@ -36,16 +35,13 @@ class ActionChecks:
 
 
 class StaticChecks:
-    def __init__(self, catalog: dict[str, CatalogEntry], tools: frozenset[str]) -> None:
-        self._catalog = catalog
+    def __init__(self, tools: frozenset[str]) -> None:
         self._tools = tools
 
     def run(self, golden: GoldenSet) -> list[Problem]:
         problems = [*self._codes(golden), *self._split(golden.catalog_items)]
         if len(golden.attacks) < MINIMUM_ATTACKS:
             problems.append(Problem(SET_LEVEL, f"{len(golden.attacks)} ataques, mínimo 25"))
-        for question in golden.questions:
-            problems.extend(self._against_catalog(question))
         for action in golden.actions:
             problems.extend(ActionChecks.problems_of(action))
         for item in golden.items:
@@ -56,24 +52,6 @@ class StaticChecks:
         ids = [item.id for item in golden.items]
         if len(ids) != len(set(ids)):
             yield Problem(SET_LEVEL, "ids repetidos")
-        codes = {question.id for question in golden.questions}
-        if codes != set(self._catalog):
-            missing = sorted(set(self._catalog) - codes)
-            extra = sorted(codes - set(self._catalog))
-            yield Problem(SET_LEVEL, f"códigos fora do catálogo: faltam {missing}, sobram {extra}")
-
-    def _against_catalog(self, question: QuestionItem) -> Iterator[Problem]:
-        entry = self._catalog.get(question.id)
-        if entry is None:
-            return
-        if question.question != entry.question:
-            yield Problem(question.id, "pergunta diferente do catálogo")
-        if question.reference != entry.reference:
-            yield Problem(question.id, "reference diferente da resposta ideal do catálogo")
-        if entry.case is not None and question.student != entry.case:
-            yield Problem(question.id, f"aluno {question.student}, o catálogo usa {entry.case}")
-        if entry.case is None and question.student_choice is None:
-            yield Problem(question.id, "sem caso no catálogo e sem a consulta que escolhe o aluno")
 
     def _item(self, item: GoldenItem) -> Iterator[Problem]:
         expected_kind = KIND_BY_AREA.get(item.area, Kind.ANSWERABLE)

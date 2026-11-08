@@ -1,9 +1,9 @@
 from collections.abc import Iterator, Mapping
 
 from evals.golden.items import AttackItem, GoldenItem
+from evals.golden.oracle import QueryPreparer
+from evals.golden.oracle_queries import ORACLE_QUERIES
 from evals.golden.problems import Problem
-from evals.oracle import QueryPreparer
-from evals.oracle_queries import ORACLE_QUERIES
 
 type QueryParams = Mapping[str, str]
 type NamedCall = tuple[str, QueryParams]
@@ -13,8 +13,6 @@ class QueryNames:
     @classmethod
     def problems_of(cls, item: GoldenItem) -> Iterator[Problem]:
         calls: list[NamedCall] = [(call.query, call.params) for call in item.queries]
-        if item.student_choice is not None:
-            calls.append((item.student_choice.query, item.student_choice.params))
         if isinstance(item, AttackItem):
             calls.extend((binding.query, binding.params) for binding in item.bindings)
         for query, params in calls:

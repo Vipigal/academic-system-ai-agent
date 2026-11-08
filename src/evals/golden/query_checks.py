@@ -3,9 +3,9 @@ from dataclasses import dataclass, field
 
 from evals.golden.formats import FactRenderer, FactValueError, ReferenceMatcher
 from evals.golden.items import AttackItem, GoldenItem
+from evals.golden.oracle import Oracle, OracleQueryError
 from evals.golden.parts import Evidence, Fact, QueryCall
 from evals.golden.problems import Problem
-from evals.oracle import Oracle, OracleQueryError
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +67,6 @@ class QueryChecks:
         return self._recorder.outcome
 
     async def _check_item(self, item: GoldenItem) -> None:
-        await self._check_choice(item)
         for fact in item.facts:
             await self._check_fact(item, fact)
         for forbidden in item.forbidden_facts:
@@ -88,14 +87,6 @@ class QueryChecks:
         value = await self._recorder.single(item, evidence.query, student, evidence.params)
         if value is not None and value != evidence.expect:
             self._recorder.problem(item, f"{evidence.name} = {value}, esperado {evidence.expect}")
-
-    async def _check_choice(self, item: GoldenItem) -> None:
-        choice = item.student_choice
-        if choice is None:
-            return
-        chosen = await self._recorder.single(item, choice.query, item.student, choice.params)
-        if chosen is not None and chosen != item.student:
-            self._recorder.problem(item, f"{choice.query} escolhe {chosen}, não {item.student}")
 
     async def _check_fact(self, item: GoldenItem, fact: Fact) -> None:
         value = await self._recorder.single(item, fact.query, item.student, fact.params)

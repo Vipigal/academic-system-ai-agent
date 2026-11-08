@@ -1,6 +1,5 @@
 from collections import Counter
 
-from evals.golden.catalog import QuestionCatalog
 from evals.golden.loader import GoldenLoader
 from evals.golden.static_checks import StaticChecks
 from evals.golden.tool_names import ToolNames
@@ -11,7 +10,7 @@ FEE = "service_fee"
 
 def test_the_golden_files_pass_every_check_that_needs_no_database() -> None:
     golden = GoldenLoader.load()
-    problems = StaticChecks(QuestionCatalog.load(), ToolNames.registered()).run(golden)
+    problems = StaticChecks(ToolNames.registered()).run(golden)
     assert [problem.render() for problem in problems] == []
 
 

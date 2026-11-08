@@ -3,11 +3,12 @@ import asyncio
 import sys
 from pathlib import Path
 
-from evals.calibration import CalibrationResult
-from evals.calibration_cases import CalibrationCase, CalibrationCases
-from evals.calibration_report import CalibrationReport
-from evals.calibration_run import CalibrationRun
-from evals.judge.backends import JudgeBackend, JudgeBackends
+from evals.calibration.cases import CalibrationCase, CalibrationCases
+from evals.calibration.report import CalibrationReport
+from evals.calibration.run import CalibrationRun
+from evals.calibration.scoring import CalibrationResult
+from evals.judge.agent_file import JudgeAgent
+from evals.judge.claude_code import ClaudeCodeJudge
 from evals.judge.port import Judge, JudgeFailedError
 
 DEFAULT_BATCH_SIZE = 10
@@ -18,11 +19,8 @@ EXIT_INCOMPLETE = 2
 class CalibrateCli:
     @staticmethod
     def parser() -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(prog="python -m evals.calibrate")
+        parser = argparse.ArgumentParser(prog="python -m evals.calibration")
         parser.add_argument("--output", type=Path, required=True)
-        parser.add_argument(
-            "--backend", type=JudgeBackend, choices=list(JudgeBackend), default=JudgeBackend.CLAUDE
-        )
         parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
         parser.add_argument("--items", nargs="+", default=[])
         return parser
@@ -55,7 +53,7 @@ class CalibrateCli:
     def main(cls, command: list[str]) -> int:
         arguments = cls.parser().parse_args(command)
         run = CalibrationRun(cls._cases_of(arguments.items), arguments.output)
-        return cls.execute(run, JudgeBackends.of(arguments.backend), arguments.batch_size)
+        return cls.execute(run, ClaudeCodeJudge(JudgeAgent.load()), arguments.batch_size)
 
 
 if __name__ == "__main__":

@@ -50,7 +50,6 @@ def test_question_schema_refuses_invalid_items(changes: dict[str, object]) -> No
     "changes",
     [
         pytest.param({"kind": "refusal"}, id="not-an-attack"),
-        pytest.param({"forbidden_facts": [], "forbidden_text": []}, id="nothing-forbidden"),
         pytest.param({"bindings": []}, id="unbound-placeholder"),
         pytest.param({"question": "Sem marcador"}, id="unused-binding"),
         pytest.param({"category": "phishing"}, id="unknown-category"),

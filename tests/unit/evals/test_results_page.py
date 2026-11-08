@@ -5,7 +5,7 @@ from evals.judge.verdicts import CriterionOutcome, CriterionVerdict, JudgedVerdi
 from evals.page.payload import PagePayload
 from evals.page.results_page import ResultsPage
 from evals.page.review_sample import ReviewSample
-from evals.report import RunReport
+from evals.report.markdown import RunReport
 from evals.run_data import RunData
 from evals.run_files import JsonLines, RunFiles
 from tests.unit.evals import agent_script

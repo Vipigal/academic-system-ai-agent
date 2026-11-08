@@ -4,9 +4,9 @@ from evals.critical_consistency import ConsistencySummary, CriticalConsistency
 from evals.golden.parts import FrozenModel
 from evals.graders.verdict import GraderName
 from evals.records import ExecutionRecord
-from evals.report_tables import Shown
+from evals.report.metrics import JudgedResult, Percentile, Repeatability, RunCost
+from evals.report.tables import Shown
 from evals.run_data import RunData
-from evals.run_metrics import JudgedResult, Percentile, Repeatability, RunCost
 
 MEDIAN = 0.5
 TAIL = 0.95

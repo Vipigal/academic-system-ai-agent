@@ -5,7 +5,7 @@ from evals.golden.items import GoldenItem
 from evals.item_context import ItemContext
 from evals.pricing import Pricing
 from evals.records import ExecutionRecord, RunManifest, RunVersions
-from evals.report import RunReport
+from evals.report.markdown import RunReport
 from evals.run_data import RunData
 from evals.run_files import RunFiles
 from evals.run_log import RunLog

@@ -322,11 +322,6 @@
   critical: true
   question: Quero trancar minha matrícula
   student: UniAraucaria:091243
-  student_choice:
-    query: choose_student_with_active_and_graduated_enrollments
-    params: {}
-    reason: A base não tem pessoa com duas matrículas ativas; o par ativa e formada é o caso de duas matrículas
-      com serviço possível
   proposal:
   - none
   - ACA-010
@@ -334,10 +329,10 @@
     expected: []
     forbidden: []
   evidence:
-  - name: two_enrollments
-    query: enrollments_of_person
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
     params: {}
-    expect: '2'
+    expect: ACTIVE, GRADUATED
   - name: no_open_lock
     query: open_protocols_of_service
     params:
@@ -513,19 +508,16 @@
   split: dev
   question: Quero trancar o meu curso inteiro.
   student: UniSaoPaulo:180084
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniSaoPaulo
-      status: ACTIVE
-      service: ACA-010
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-010
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -545,19 +537,16 @@
   split: dev
   question: Quero reativar a minha matrícula, que está trancada.
   student: UniSaoPaulo:180114
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniSaoPaulo
-      status: LOCKED
-      service: ACA-011
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-011
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: LOCKED
   - name: service_fee
     query: service_fee
     params:
@@ -577,19 +566,16 @@
   split: dev
   question: Quero cancelar o meu curso, não vou mais estudar aqui.
   student: UniMontanhas:070017
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniMontanhas
-      status: ACTIVE
-      service: ACA-012
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-012
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -609,19 +595,16 @@
   split: dev
   question: Quero me transferir para outro curso aqui da faculdade.
   student: UniLitoral:120111
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniLitoral
-      status: ACTIVE
-      service: ACA-013
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-013
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -641,19 +624,16 @@
   split: dev
   question: Quero migrar para a matriz curricular nova do meu curso.
   student: UniAtlantico:030074
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAtlantico
-      status: ACTIVE
-      service: ACA-014
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-014
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -673,19 +653,16 @@
   split: dev
   question: Quero pedir revisão da minha nota final de Redação Acadêmica.
   student: UniAraucaria:090131
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAraucaria
-      status: ACTIVE
-      service: ACA-020
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: ACA-020
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -710,18 +687,15 @@
   split: dev
   question: Perdi a prova e preciso fazer a segunda chamada.
   student: UniSaoPaulo_EAD:012246
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniSaoPaulo_EAD
-      status: ACTIVE
-      service: ACA-021
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: none
   tools:
     expected: []
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -742,19 +716,16 @@
   split: dev
   question: Preciso de uma declaração de matrícula para o meu estágio.
   student: UniMontanhas_EAD:012394
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniMontanhas_EAD
-      status: ACTIVE
-      service: DOC-001
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: DOC-001
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -774,18 +745,15 @@
   split: dev
   question: Quero o meu histórico escolar impresso.
   student: UniLitoral_EAD:011924
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniLitoral_EAD
-      status: ACTIVE
-      service: DOC-002
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: none
   tools:
     expected: []
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -806,18 +774,15 @@
   split: dev
   question: Preciso do pacote com as ementas das disciplinas que cursei.
   student: UniAtlantico_EAD:011789
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAtlantico_EAD
-      status: ACTIVE
-      service: DOC-003
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: none
   tools:
     expected: []
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -838,18 +803,16 @@
   split: dev
   question: Já me formei e quero pedir a emissão do meu diploma.
   student: UniAraucaria:090042
-  student_choice:
-    query: choose_graduated_student_with_cancelled_service
-    params:
-      service: DOC-040
-    reason: Todo formado da base tem pedido de diploma; este teve o pedido cancelado, então nenhum está
-      em andamento nem emitido
   proposal: DOC-040
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: GRADUATED
   - name: service_fee
     query: service_fee
     params:
@@ -869,18 +832,15 @@
   split: dev
   question: Perdi o meu diploma e preciso de uma segunda via.
   student: UniAtlantico:030023
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAtlantico
-      status: GRADUATED
-      service: DOC-041
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: none
   tools:
     expected: []
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: GRADUATED
   - name: service_fee
     query: service_fee
     params:
@@ -901,17 +861,20 @@
   split: dev
   question: Preciso da segunda via do boleto da minha mensalidade atrasada.
   student: UniLitoral:120227
-  student_choice:
-    query: choose_indebted_student_free_of_service
-    params:
-      service: FIN-030
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: FIN-030
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: overdue_invoices
+    query: debt_invoices
+    params: {}
+    expect: '1'
   - name: service_fee
     query: service_fee
     params:
@@ -931,17 +894,20 @@
   split: dev
   question: Quero renegociar a minha dívida com a faculdade.
   student: UniLitoral:120227
-  student_choice:
-    query: choose_indebted_student_free_of_service
-    params:
-      service: FIN-031
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: FIN-031
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: overdue_invoices
+    query: debt_invoices
+    params: {}
+    expect: '1'
   - name: service_fee
     query: service_fee
     params:
@@ -961,19 +927,16 @@
   split: dev
   question: Quero pedir um desconto nas minhas mensalidades.
   student: UniAraucaria_EAD:011789
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAraucaria_EAD
-      status: ACTIVE
-      service: FIN-032
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: FIN-032
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -993,19 +956,16 @@
   split: dev
   question: Quero abrir um pedido para a secretaria me informar como funciona a colação de grau.
   student: UniAtlantico:030074
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniAtlantico
-      status: ACTIVE
-      service: GEN-090
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: GEN-090
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -1025,19 +985,16 @@
   split: dev
   question: Quero registrar uma reclamação na ouvidoria sobre o atendimento da secretaria.
   student: UniLitoral:120111
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniLitoral
-      status: ACTIVE
-      service: OUV-099
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: OUV-099
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:
@@ -1057,19 +1014,16 @@
   split: dev
   question: Não consigo entrar no AVA, quero abrir um chamado para resolver o acesso.
   student: UniMontanhas:070017
-  student_choice:
-    query: choose_student_free_of_service
-    params:
-      brand: UniMontanhas
-      status: ACTIVE
-      service: TEC-060
-    reason: Primeiro aluno da situação pedida sem nenhum protocolo desse serviço
   proposal: TEC-060
   tools:
     expected:
     - propose_protocol
     forbidden: []
   evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
   - name: service_fee
     query: service_fee
     params:

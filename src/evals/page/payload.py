@@ -6,7 +6,7 @@ from evals.golden.parts import FrozenModel
 from evals.judge.verdicts import CriterionOutcome
 from evals.page.review_sample import ReviewCard, ReviewSample
 from evals.records import ExecutionRecord, StepRecord, VerdictRecord
-from evals.report_indicators import CriticalRow, CriticalRows, RunIndicators
+from evals.report.indicators import CriticalRow, CriticalRows, RunIndicators
 from evals.run_data import RunData
 
 
