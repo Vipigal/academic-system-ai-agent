@@ -12,7 +12,7 @@ from api.application.academic.dto.enrollment import EnrollmentDto
 from api.application.academic.dto.record import SubjectRecordDto
 from api.application.academic.service import AcademicService
 from api.application.agent.tools.registry import ToolRegistry
-from api.application.agent.tools.ui import shown
+from api.application.agent.tools.ui import ToolUi
 from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology import academic_enrollment, academic_performance, limits, overview
@@ -94,7 +94,7 @@ class AcademicTools:
             pending_only=filters.pending_only,
             page=page,
         )
-        return shown(curriculum, PROGRESS_UI) if show_ui else curriculum
+        return ToolUi.shown(curriculum, PROGRESS_UI) if show_ui else curriculum
 
     @ToolRegistry.declares(
         academic_performance.RESULTADO,

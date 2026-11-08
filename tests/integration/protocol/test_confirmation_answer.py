@@ -71,10 +71,18 @@ async def test_a_conversation_out_of_reach_gets_the_same_404_and_writes_nothing(
     assert await bank.writes() == CREATED_CONVERSATION
 
 
+async def test_a_paid_service_without_an_action_gets_the_same_404_and_writes_nothing(
+    app: ConfirmationApp, bank: RolledBackBank
+) -> None:
+    token = app.signer.sign(SignedProposal(PERSON, STUDENT, PAID_SERVICE))
+    response, _ = await app.confirmed_by(STUDENT, PERSON, token, {})
+    assert (response.status_code, response.text) == (HTTPStatus.NOT_FOUND, NOT_FOUND_BODY)
+    assert await bank.writes() == CREATED_CONVERSATION
+
+
 @pytest.mark.parametrize(
     ("service", "answer", "reason"),
     [
-        pytest.param(PAID_SERVICE, {}, "service_has_fee", id="fee"),
         pytest.param(FREE_SERVICE, {"message": " "}, "empty_message", id="blank-free-text"),
         pytest.param(FREE_SERVICE, {"message": "x" * 4001}, "message_too_long", id="too-long"),
         pytest.param(

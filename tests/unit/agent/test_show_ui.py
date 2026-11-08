@@ -2,7 +2,7 @@ import pytest
 
 from api.application.academic.service import AcademicService
 from api.application.agent.tools import academic, finance, lms
-from api.application.agent.tools.ui import shown
+from api.application.agent.tools.ui import ToolUi
 from api.application.finance.service import FinancialService
 from api.application.lms.service import LmsService
 from api.application.shared.page import FIRST_PAGE
@@ -35,15 +35,15 @@ async def test_show_ui_adds_the_tool_phrase_and_keeps_the_data(
 
 
 def test_shown_fills_ui_and_keeps_the_data() -> None:
-    result = shown(ToolResult.ok("resumo"), "Painel exibido ao aluno.")
+    result = ToolUi.shown(ToolResult.ok("resumo"), "Painel exibido ao aluno.")
 
     assert result.ui == "Painel exibido ao aluno."
     assert result.data == "resumo"
 
 
 def test_shown_leaves_a_result_that_is_not_ok_without_ui() -> None:
-    empty = shown(ToolResult.items(list[str]()), "Painel exibido ao aluno.")
-    missed = shown(ToolResult[str].not_found(()), "Painel exibido ao aluno.")
+    empty = ToolUi.shown(ToolResult.items(list[str]()), "Painel exibido ao aluno.")
+    missed = ToolUi.shown(ToolResult[str].not_found(()), "Painel exibido ao aluno.")
 
     assert "ui" not in empty.model_dump(mode="json")
     assert "ui" not in missed.model_dump(mode="json")

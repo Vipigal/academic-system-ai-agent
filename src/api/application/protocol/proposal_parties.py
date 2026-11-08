@@ -27,7 +27,7 @@ class ProposalParties:
 
     @staticmethod
     def _action_of(proposal: SignedProposal) -> ServiceAction:
-        action = ServiceActions.find(proposal.service_code)
+        action = ServiceActions.proposable(proposal.service_code)
         if action is None:
             raise ProposalNotFoundError
         return action

@@ -8,6 +8,7 @@ from api.domain.conversation.errors import ConversationConflictError, Conversati
 from api.domain.conversation.message import Message
 from api.domain.protocol.opening import ProtocolOpening
 from api.domain.protocol.proposal import SignedProposal
+from api.domain.shared.money import Money
 from api.infrastructure.clock import FixedClock
 from tests.unit.protocol import proposal_fakes as fakes
 
@@ -16,7 +17,9 @@ REQUESTER = "Maria Souza"
 CONVERSATION = uuid4()
 DECLARATION = replace(fakes.LOCK, code="DOC-001", name="Enrollment Certificate", sla_hours=48)
 REACTIVATION = replace(fakes.LOCK, code="ACA-011", name="Enrollment Reactivation")
-SERVICES = (*fakes.FakeProtocols().services, DECLARATION, REACTIVATION)
+TRANSCRIPT = replace(fakes.LOCK, code="DOC-002", name="Printed Transcript")
+PAID_SLIP = replace(fakes.LOCK, code="FIN-030", name="Payment Slip", fee=Money(10))
+SERVICES = (*fakes.FakeProtocols().services, DECLARATION, REACTIVATION, TRANSCRIPT, PAID_SLIP)
 
 
 @dataclass
@@ -49,6 +52,7 @@ class RecordingWriter:
 @dataclass
 class FakeConversations:
     conflicts: int = 0
+    broken: bool = False
     appended: list[Message] = field(default_factory=list)
 
     async def create(self, person_id: str) -> UUID:
@@ -60,6 +64,8 @@ class FakeConversations:
 
     async def append(self, conversation_id: UUID, messages: Sequence[Message]) -> None:
         await self.require(conversation_id)
+        if self.broken:
+            raise ConnectionError
         if self.conflicts:
             self.conflicts -= 1
             raise ConversationConflictError

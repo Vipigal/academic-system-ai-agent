@@ -1,5 +1,5 @@
 from api.application.agent.tools.registry import ToolRegistry
-from api.application.agent.tools.ui import shown
+from api.application.agent.tools.ui import ToolUi
 from api.application.finance.dto.agreement import AgreementDto
 from api.application.finance.dto.invoice import InvoiceDto
 from api.application.finance.dto.payment import PaymentDto
@@ -34,7 +34,7 @@ class FinanceTools:
         Pode mostrar UI ao aluno com show_ui.
         """
         summary = await self._service.get_financial_summary()
-        return shown(summary, SUMMARY_UI) if show_ui else summary
+        return ToolUi.shown(summary, SUMMARY_UI) if show_ui else summary
 
     @ToolRegistry.declares(
         finance_charges.MENSALIDADE,

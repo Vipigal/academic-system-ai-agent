@@ -114,6 +114,13 @@ async def test_a_token_of_another_person_is_not_found() -> None:
             RefusalReason.ENROLLMENT_STATUS,
             id="enrollment-status",
         ),
+        pytest.param(
+            bench.PAID_SLIP.code,
+            fakes.ACTIVE.reference,
+            StudentAnswer("", ""),
+            RefusalReason.SERVICE_HAS_FEE,
+            id="fee",
+        ),
     ],
 )
 async def test_a_refused_answer_writes_neither_protocol_nor_event(
@@ -164,3 +171,31 @@ async def test_a_second_collision_keeps_the_protocol_and_logs_an_error(
     assert confirmed.conversations.appended == []
     assert logging.ERROR in {record.levelno for record in caplog.records}
     assert TYPED not in caplog.text
+
+
+async def test_a_failed_event_write_keeps_the_protocol_and_logs_an_error(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    confirmed = bench.ConfirmationBench(conversations=bench.FakeConversations(broken=True))
+
+    with caplog.at_level(logging.INFO, logger="api.application.protocol"):
+        result = await confirmed.confirmation().confirm(
+            confirmed.token_for(INFORMATION.code), CONVERSATION, WRITTEN
+        )
+
+    assert result.protocol_number == bench.NUMBER
+    assert len(confirmed.writer.saved) == 1
+    assert confirmed.conversations.appended == []
+    assert logging.ERROR in {record.levelno for record in caplog.records}
+    assert TYPED not in caplog.text
+
+
+async def test_a_code_without_an_action_in_the_catalog_is_not_found() -> None:
+    confirmed = bench.ConfirmationBench()
+
+    with pytest.raises(ProposalNotFoundError):
+        await confirmed.confirmation().confirm(
+            confirmed.token_for(bench.TRANSCRIPT.code), CONVERSATION, WRITTEN
+        )
+
+    assert (confirmed.writer.saved, confirmed.conversations.appended) == ([], [])

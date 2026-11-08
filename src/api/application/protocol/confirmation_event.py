@@ -10,6 +10,7 @@ from api.domain.protocol.opening import BRASILIA, ProtocolOpening
 
 EVENT_ATTEMPTS = 2
 ATTACH_FAILED = "Evento de confirmação não gravado na conversa depois de %s tentativas"
+WRITE_FAILED = "Evento de confirmação não gravado na conversa por falha na gravação"
 DEADLINE_FORMAT = "%d/%m/%Y às %H:%M"
 EVENT_TEXT = (
     "Evento do sistema: o aluno confirmou o pedido no card, e o protocolo foi aberto. "
@@ -46,6 +47,12 @@ class ConversationEvents:
         return conversation
 
     async def attach(self, conversation: UUID, event: Message) -> None:
+        try:
+            await self._attach_with_retry(conversation, event)
+        except Exception:
+            logger.exception(WRITE_FAILED)
+
+    async def _attach_with_retry(self, conversation: UUID, event: Message) -> None:
         for _attempt in range(EVENT_ATTEMPTS):
             if await self._appended(conversation, event):
                 return

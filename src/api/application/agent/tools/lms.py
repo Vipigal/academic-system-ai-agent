@@ -1,5 +1,5 @@
 from api.application.agent.tools.registry import ToolRegistry
-from api.application.agent.tools.ui import shown
+from api.application.agent.tools.ui import ToolUi
 from api.application.lms.dto.account import LmsAccountDto
 from api.application.lms.dto.exam import OnlineExamDto
 from api.application.lms.dto.material import MaterialViewDto
@@ -36,7 +36,7 @@ class LmsTools:
         Pode mostrar UI ao aluno com show_ui.
         """
         exams = await self._service.list_online_exams(subject, term, page)
-        return shown(exams, EXAMS_UI) if show_ui else exams
+        return ToolUi.shown(exams, EXAMS_UI) if show_ui else exams
 
     @ToolRegistry.declares(lms.ULTIMO_ACESSO, lms.SUSPENSAO_DO_AVA)
     async def get_lms_account(self) -> ToolResult[list[LmsAccountDto]]:
