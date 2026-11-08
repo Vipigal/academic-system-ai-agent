@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from tests.e2e.e2e_settings import e2e_settings
 from tests.e2e.running_api import running_api
@@ -35,8 +35,10 @@ def scripted() -> TurnModel:
     )
 
 
-async def whole_flow(bank: RolledBackBank) -> tuple[FlowResult, str]:
-    with running_api(bank, e2e_settings(), scripted()) as api:
+async def whole_flow(
+    bank: RolledBackBank, model: TurnModel | None = None
+) -> tuple[FlowResult, str]:
+    with running_api(bank, e2e_settings(), model or scripted()) as api:
         result = await StudentFlow(api.client, PROPOSAL_TEXT, LISTING_TEXT).run()
         return result, api.log.getvalue()
 
@@ -57,6 +59,20 @@ async def test_the_proposal_token_comes_in_the_stream_for_the_client(
 
     assert "client_only" in outputs_text(result.proposal)
     assert result.confirmation.json()["status"]
+
+
+async def test_the_next_turn_sees_the_confirmation_event_before_the_new_question(
+    bank: RolledBackBank,
+) -> None:
+    model = scripted()
+    result, _ = await whole_flow(bank, model)
+
+    next_turn = model.seen[-2]
+    event, question = next_turn[-2:]
+    assert (type(event), type(question)) == (SystemMessage, HumanMessage)
+    assert result.number in event.text
+    assert question.text == LISTING_TEXT
+    assert [type(message) for message in model.seen[0]] == [SystemMessage, HumanMessage]
 
 
 async def chat_log_entries(bank: RolledBackBank) -> list[dict[str, str]]:

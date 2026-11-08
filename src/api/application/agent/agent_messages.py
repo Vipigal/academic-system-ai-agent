@@ -1,9 +1,14 @@
 from collections.abc import Iterator, Sequence
 
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.messages.tool import tool_call
 
-from api.application.agent.history import PastAssistantMessage, PastMessage, PastUserMessage
+from api.application.agent.history import (
+    PastAssistantMessage,
+    PastMessage,
+    PastSystemEvent,
+    PastUserMessage,
+)
 
 
 class AgentMessages:
@@ -16,6 +21,9 @@ class AgentMessages:
     def _from_past(cls, entry: PastMessage) -> Iterator[AnyMessage]:
         if isinstance(entry, PastUserMessage):
             yield HumanMessage(content=entry.text)
+            return
+        if isinstance(entry, PastSystemEvent):
+            yield SystemMessage(content=entry.text)
             return
         yield cls._assistant(entry)
         for call in entry.tool_calls:

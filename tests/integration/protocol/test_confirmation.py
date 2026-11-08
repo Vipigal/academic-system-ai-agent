@@ -1,13 +1,19 @@
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
+from uuid import uuid4
 
 import pytest
 
 from api.application.shared.page import FIRST_PAGE
 from api.domain.protocol.proposal import SignedProposal
-from tests.integration.protocol.confirmation_app import ConfirmationApp, confirm, login
-from tests.integration.protocol.information_request import REQUEST_TEXT
+from tests.integration.protocol.confirmation_app import (
+    ConfirmationApp,
+    confirm,
+    confirmed_on,
+    login,
+)
+from tests.integration.protocol.information_request import TYPED, WRITTEN
 from tests.integration.protocol.rolled_back import RolledBackBank, rolled_back
 from tests.integration.support.sql_oracle import admin_engine
 
@@ -18,17 +24,12 @@ ONLINE_STUDENT = "UniMontanhas_EAD:012378"
 ONLINE_PERSON = "3001224"
 FREE_SERVICE = "GEN-090"
 SLA_HOURS = 72
-PAID_SERVICE = "DOC-002"
 OPENED = datetime(2026, 10, 31, 3, 0, tzinfo=UTC)
 OPENED_TEXT = "2026-10-31T03:00:00Z"
 DUE_TEXT = "2026-11-03T03:00:00Z"
 ONE_INSERT = ("1", "0", "0")
+CREATED_CONVERSATION = {"agent.conversation": ONE_INSERT}
 NOT_FOUND_BODY = '{"detail":"Not Found"}'
-WRITES = """
-    SELECT schemaname || '.' || relname, n_tup_ins::text, n_tup_upd::text, n_tup_del::text
-    FROM pg_stat_xact_user_tables
-    WHERE n_tup_ins + n_tup_upd + n_tup_del > 0
-"""
 PROTOCOL_COLUMNS = """
     SELECT stu_id, requester_type, unit_code, demand, demand_status, channel, priority,
            sla_breached, opened_at, sla_due_at, first_response_at, closed_at, resolution,
@@ -66,14 +67,9 @@ def app(bank: RolledBackBank) -> ConfirmationApp:
     return ConfirmationApp(bank.database)
 
 
-async def written_tables(bank: RolledBackBank) -> dict[str | None, tuple[str | None, ...]]:
-    return {row[0]: row[1:] for row in await bank.as_admin(WRITES)}
-
-
 async def opened_number(app: ConfirmationApp, student: str, person: str) -> str:
     token = await app.proposal_of(person, student)
-    async with app.client() as client:
-        response = await confirm(client, await login(client, student), token)
+    response, _ = await app.confirmed_by(student, person, token, WRITTEN)
     assert response.status_code == HTTPStatus.CREATED
     return str(response.json()["protocol_number"])
 
@@ -85,9 +81,9 @@ async def test_the_app_runs_as_the_restricted_role(bank: RolledBackBank) -> None
 async def test_confirmation_answers_with_the_number_status_and_deadline(
     app: ConfirmationApp,
 ) -> None:
-    token = await app.proposal_of(PERSON, STUDENT)
-    async with app.client() as client:
-        response = await confirm(client, await login(client, STUDENT), token)
+    response, _ = await app.confirmed_by(
+        STUDENT, PERSON, await app.proposal_of(PERSON, STUDENT), WRITTEN
+    )
     assert response.status_code == HTTPStatus.CREATED
     assert set(response.json()) == {"protocol_number", "status", "sla_due_at"}
     assert response.json()["status"] == "open"
@@ -144,24 +140,26 @@ async def test_the_history_row_seen_by_the_admin_oracle(
     ]
 
 
-async def test_the_interaction_row_seen_by_the_admin_oracle(
+async def test_the_interaction_row_carries_what_the_student_typed(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
     number = await opened_number(app, STUDENT, PERSON)
     full_name = (await bank.as_admin(PERSON_DATA, id=PERSON))[0][1]
     assert await bank.as_admin(INTERACTION, number=number) == [
-        ("Requester", full_name, REQUEST_TEXT, "False", OPENED_TEXT)
+        ("Requester", full_name, TYPED, "False", OPENED_TEXT)
     ]
 
 
-async def test_only_the_three_tables_receive_writes(
+async def test_only_the_three_tables_and_the_conversation_receive_writes(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
     await opened_number(app, STUDENT, PERSON)
-    assert await written_tables(bank) == {
+    assert await bank.writes() == {
         "secretary.protocol": ONE_INSERT,
         "secretary.protocol_status_history": ONE_INSERT,
         "secretary.protocol_interaction": ONE_INSERT,
+        "agent.conversation": ("1", "1", "0"),
+        "agent.message": ONE_INSERT,
     }
 
 
@@ -195,9 +193,9 @@ async def test_the_token_of_another_student_is_not_found_and_writes_nothing(
 ) -> None:
     token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
-        response = await confirm(client, await login(client, OTHER_STUDENT), token)
+        response = await confirm(client, await login(client, OTHER_STUDENT), token, str(uuid4()))
     assert (response.status_code, response.text) == (HTTPStatus.NOT_FOUND, NOT_FOUND_BODY)
-    assert await written_tables(bank) == {}
+    assert await bank.writes() == {}
 
 
 async def refused_tokens(app: ConfirmationApp, bank: RolledBackBank) -> tuple[str, ...]:
@@ -217,38 +215,27 @@ async def test_every_refused_token_gets_the_same_404(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
     tokens = await refused_tokens(app, bank)
+    conversation = await app.conversation_of(PERSON)
     async with app.client() as client:
         owner = await login(client, STUDENT)
-        refused = [await confirm(client, owner, item) for item in tokens]
+        refused = [await confirm(client, owner, item, conversation, WRITTEN) for item in tokens]
     assert {response.status_code for response in refused} == {HTTPStatus.NOT_FOUND}
     assert {response.text for response in refused} == {NOT_FOUND_BODY}
-    assert await written_tables(bank) == {}
+    assert await bank.writes() == CREATED_CONVERSATION
 
 
 async def test_the_second_confirmation_is_a_conflict(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
     token = await app.proposal_of(PERSON, STUDENT)
-    async with app.client() as client:
-        headers = await login(client, STUDENT)
-        first = await confirm(client, headers, token)
-        second = await confirm(client, headers, token)
+    conversation = await app.conversation_of(PERSON)
+    first, second = await confirmed_on(app, STUDENT, token, (conversation, conversation))
     assert (first.status_code, second.status_code) == (HTTPStatus.CREATED, HTTPStatus.CONFLICT)
-    assert (await written_tables(bank))["secretary.protocol"] == ONE_INSERT
-
-
-async def test_a_service_with_a_fee_is_unprocessable(
-    app: ConfirmationApp, bank: RolledBackBank
-) -> None:
-    token = app.signer.sign(SignedProposal(PERSON, STUDENT, PAID_SERVICE))
-    async with app.client() as client:
-        response = await confirm(client, await login(client, STUDENT), token)
-    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
-    assert await written_tables(bank) == {}
+    assert (await bank.writes())["secretary.protocol"] == ONE_INSERT
 
 
 async def test_confirmation_without_identity_is_unauthorized(app: ConfirmationApp) -> None:
     token = await app.proposal_of(PERSON, STUDENT)
     async with app.client() as client:
-        response = await confirm(client, {}, token)
+        response = await confirm(client, {}, token, str(uuid4()), WRITTEN)
     assert response.status_code == HTTPStatus.UNAUTHORIZED

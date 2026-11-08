@@ -13,7 +13,7 @@ CREATE TABLE agent.message (
     id uuid PRIMARY KEY,
     conversation_id uuid NOT NULL REFERENCES agent.conversation (id),
     position integer NOT NULL,
-    role text NOT NULL CHECK (role IN ('user', 'assistant')),
+    role text NOT NULL CHECK (role IN ('user', 'assistant', 'system_event')),
     content text NOT NULL DEFAULT '',
     model text,
     tokens_in integer,

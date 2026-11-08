@@ -9,6 +9,11 @@ from tests.integration.support.sql_oracle import admin_url
 
 ROLE_API = text("SET LOCAL ROLE api")
 ADMIN = text("RESET ROLE")
+WRITES = """
+    SELECT schemaname || '.' || relname, n_tup_ins::text, n_tup_upd::text, n_tup_del::text
+    FROM pg_stat_xact_user_tables
+    WHERE n_tup_ins + n_tup_upd + n_tup_del > 0
+"""
 
 type AdminRow = tuple[str | None, ...]
 
@@ -27,6 +32,9 @@ class RolledBackBank:
         rows = [tuple(row) for row in result.all()]
         await self._connection.execute(ROLE_API)
         return rows
+
+    async def writes(self) -> dict[str | None, tuple[str | None, ...]]:
+        return {row[0]: row[1:] for row in await self.as_admin(WRITES)}
 
     async def as_app(self, sql: str) -> str:
         return str(await self._connection.scalar(text(sql)))

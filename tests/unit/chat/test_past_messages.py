@@ -1,4 +1,9 @@
-from api.application.agent.history import PastAssistantMessage, PastToolCall, PastUserMessage
+from api.application.agent.history import (
+    PastAssistantMessage,
+    PastSystemEvent,
+    PastToolCall,
+    PastUserMessage,
+)
 from api.application.chat.past_messages import PastMessages, SeenByModel
 from api.domain.conversation.message import Message, MessageRole, ToolCall
 
@@ -42,3 +47,17 @@ def test_json_that_is_not_an_object_is_kept_as_text() -> None:
 
 def test_a_call_without_result_reads_as_empty_text() -> None:
     assert not SeenByModel.to_text(None)
+
+
+def test_a_system_event_stays_a_system_event_in_its_place() -> None:
+    window = [
+        Message(MessageRole.USER, "quero a declaração"),
+        Message(MessageRole.SYSTEM_EVENT, "Pedido aberto: protocolo 1"),
+        Message(MessageRole.ASSISTANT, "ok"),
+    ]
+
+    assert PastMessages.of(window) == [
+        PastUserMessage("quero a declaração"),
+        PastSystemEvent("Pedido aberto: protocolo 1"),
+        PastAssistantMessage("ok"),
+    ]

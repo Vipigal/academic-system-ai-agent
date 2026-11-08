@@ -3,7 +3,12 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.messages.ai import UsageMetadata
 
 from api.application.agent import events
-from api.application.agent.history import PastAssistantMessage, PastToolCall, PastUserMessage
+from api.application.agent.history import (
+    PastAssistantMessage,
+    PastSystemEvent,
+    PastToolCall,
+    PastUserMessage,
+)
 from api.application.agent.student_agent import StudentAgent
 from api.application.agent.tools.finance import FinanceTools
 from api.application.finance.service import FinancialService
@@ -116,6 +121,23 @@ async def test_the_system_prompt_goes_first_and_history_comes_before_the_message
     ]
     assert seen[3].content == '{"status": "ok"}'
     assert seen[-1].content == "E agora?"
+
+
+async def test_a_system_event_reaches_the_model_as_a_system_message_in_its_place() -> None:
+    model = support.RecordingModel(responses=[support.answer()])
+    event = "Pedido aberto: protocolo 20260025165"
+    history = (PastUserMessage("Quero a declaração"), PastSystemEvent(event))
+
+    await support.agent_with(model).run("Foi aberto?", history)
+
+    seen = model.seen[0]
+    assert [type(message) for message in seen] == [
+        SystemMessage,
+        HumanMessage,
+        SystemMessage,
+        HumanMessage,
+    ]
+    assert seen[2].content == event
 
 
 async def test_callbacks_of_the_request_see_the_model_call() -> None:

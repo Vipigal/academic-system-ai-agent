@@ -27,8 +27,15 @@ class SqlConversationRepository:
         await self._adapter.write([conversation])
         return conversation.id
 
+    async def require(self, conversation_id: UUID) -> None:
+        found = await self._adapter.fetch(
+            select(ConversationRow.id).where(ConversationRow.id == conversation_id)
+        )
+        if not found:
+            raise ConversationNotFoundError
+
     async def append(self, conversation_id: UUID, messages: Sequence[Message]) -> None:
-        await self._require(conversation_id)
+        await self.require(conversation_id)
         first = await self._next_position(conversation_id)
         rows = MessageMapper.message_rows(conversation_id, first, messages)
         calls = MessageMapper.call_rows(rows, messages)
@@ -38,7 +45,7 @@ class SqlConversationRepository:
             raise ConversationConflictError from error
 
     async def window(self, conversation_id: UUID, limit: int) -> Sequence[Message]:
-        await self._require(conversation_id)
+        await self.require(conversation_id)
         messages = await self._adapter.fetch(
             select(MessageRow)
             .join(ConversationRow, OF_CONVERSATION)
@@ -66,10 +73,3 @@ class SqlConversationRepository:
     def _touch(conversation_id: UUID) -> Update:
         of_conversation = ConversationRow.id == conversation_id
         return Update(ConversationRow, of_conversation, {"updated_at": func.now()})
-
-    async def _require(self, conversation_id: UUID) -> None:
-        found = await self._adapter.fetch(
-            select(ConversationRow.id).where(ConversationRow.id == conversation_id)
-        )
-        if not found:
-            raise ConversationNotFoundError

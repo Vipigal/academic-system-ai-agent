@@ -7,6 +7,7 @@ from sqlalchemy.pool import NullPool
 
 from api.bootstrap.settings import Settings
 from tests.integration.protocol.confirmation_app import ConfirmationApp, confirm, login
+from tests.integration.protocol.information_request import WRITTEN
 from tests.integration.protocol.rolled_back import RolledBackBank, rolled_back
 
 STUDENT = "UniSaoPaulo:180017"
@@ -31,6 +32,7 @@ async def test_the_role_login_alone_is_enough_to_confirm(bank: RolledBackBank) -
     assert await bank.as_app("SELECT session_user") == "api"
     app = ConfirmationApp(bank.database)
     token = await app.proposal_of(PERSON, STUDENT)
+    conversation = await app.conversation_of(PERSON)
     async with app.client() as client:
-        response = await confirm(client, await login(client, STUDENT), token)
+        response = await confirm(client, await login(client, STUDENT), token, conversation, WRITTEN)
     assert response.status_code == HTTPStatus.CREATED

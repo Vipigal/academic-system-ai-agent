@@ -7,15 +7,24 @@ from pydantic import BaseModel
 
 from api.application.protocol.confirmation import ProtocolConfirmation
 from api.application.protocol.dto.confirmation import ConfirmedProtocolDto
+from api.domain.conversation.errors import ConversationNotFoundError
 from api.domain.protocol.errors import (
     DuplicateProtocolError,
     ProposalNotFoundError,
     ServiceNotOpenableError,
 )
+from api.domain.protocol.opening import StudentAnswer
 
 
 class ConfirmProposalRequest(BaseModel):
     token: str
+    conversation_id: str
+    message: str = ""
+    confirmation_word: str = ""
+
+    @property
+    def answer(self) -> StudentAnswer:
+        return StudentAnswer(self.message, self.confirmation_word)
 
 
 class ProtocolConfirmationRouter:
@@ -29,13 +38,14 @@ class ProtocolConfirmationRouter:
             service: Annotated[ProtocolConfirmation, Depends(confirmation)],
         ) -> ConfirmedProtocolDto:
             try:
-                return await service.confirm(request.token)
-            except ProposalNotFoundError:
+                return await service.confirm(request.token, request.conversation_id, request.answer)
+            except ProposalNotFoundError, ConversationNotFoundError:
                 raise ProtocolConfirmationRouter._error(HTTPStatus.NOT_FOUND) from None
             except DuplicateProtocolError:
                 raise ProtocolConfirmationRouter._error(HTTPStatus.CONFLICT) from None
-            except ServiceNotOpenableError:
-                raise ProtocolConfirmationRouter._error(HTTPStatus.UNPROCESSABLE_ENTITY) from None
+            except ServiceNotOpenableError as refused:
+                unprocessable = HTTPStatus.UNPROCESSABLE_ENTITY
+                raise HTTPException(unprocessable, refused.reason.value) from None
 
         return router
 

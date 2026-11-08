@@ -4,6 +4,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from api.application.agent.history import (
     PastAssistantMessage,
     PastMessage,
+    PastSystemEvent,
     PastToolCall,
     PastUserMessage,
 )
@@ -39,6 +40,9 @@ class PastMessages:
     def _from_message(cls, message: Message) -> Iterator[PastMessage]:
         if message.role is MessageRole.USER:
             yield PastUserMessage(message.content)
+            return
+        if message.role is MessageRole.SYSTEM_EVENT:
+            yield PastSystemEvent(message.content)
             return
         if message.tool_calls:
             calls = tuple(cls._past_call(call) for call in message.tool_calls)

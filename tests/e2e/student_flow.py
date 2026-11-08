@@ -15,6 +15,7 @@ from tests.integration.chat.chat_client import (
 CONFIRM_ROUTE = "/protocols/proposals/confirm"
 PROPOSE_TOOL = "propose_protocol"
 LIST_TOOL = "list_protocols"
+CARD_MESSAGE = "Quero saber quando sai a nota da AV2."
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +49,7 @@ class StudentFlow:
         asked = await chat.send(conversation, self._proposal_text)
         assert asked.status_code == HTTPStatus.OK
         proposal = chunks_of(asked.text)
-        confirmation = await self._confirm(chat, proposal)
+        confirmation = await self._confirm(chat, conversation, proposal)
         return FlowResult(proposal, await self._list(chat, conversation), confirmation)
 
     async def _list(self, chat: ChatClient, conversation: str) -> list[Chunk]:
@@ -56,9 +57,15 @@ class StudentFlow:
         assert listed.status_code == HTTPStatus.OK
         return chunks_of(listed.text)
 
-    async def _confirm(self, chat: ChatClient, proposal: list[Chunk]) -> httpx.Response:
-        token = _token_of(proposal)
-        return await self._client.post(CONFIRM_ROUTE, json={"token": token}, headers=chat.headers)
+    async def _confirm(
+        self, chat: ChatClient, conversation: str, proposal: list[Chunk]
+    ) -> httpx.Response:
+        body = {
+            "token": _token_of(proposal),
+            "conversation_id": conversation,
+            "message": CARD_MESSAGE,
+        }
+        return await self._client.post(CONFIRM_ROUTE, json=body, headers=chat.headers)
 
 
 def _token_of(chunks: list[Chunk]) -> str:

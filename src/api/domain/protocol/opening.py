@@ -4,9 +4,10 @@ from datetime import date, datetime, time, timedelta, timezone
 from typing import Self
 
 from api.domain.academic.enrollment import Enrollment
+from api.domain.protocol.action import ServiceAction
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.errors import DuplicateProtocolError, ServiceNotOpenableError
-from api.domain.protocol.proposal import ProposalRules
+from api.domain.protocol.proposal import ProposalRules, RefusalReason
 from api.domain.protocol.request import Protocol
 from api.domain.protocol.status import ProtocolStatus, ProtocolStatusChange
 
@@ -14,10 +15,32 @@ BRASILIA = timezone(timedelta(hours=-3), "America/Sao_Paulo")
 
 
 @dataclass(frozen=True, slots=True)
+class StudentAnswer:
+    message: str = field(repr=False)
+    word: str = field(repr=False)
+
+    def refusal(self, action: ServiceAction) -> RefusalReason | None:
+        return ProposalRules.message_refusal(action, self.message) or ProposalRules.word_refusal(
+            action, self.word
+        )
+
+    def recorded_text(self, action: ServiceAction) -> str:
+        return self.message if action.requires_student_message else action.request_text
+
+
+@dataclass(frozen=True, slots=True)
 class OpeningRequest:
     requester_name: str = field(repr=False)
-    message: str = field(repr=False)
+    action: ServiceAction
+    answer: StudentAnswer
     today: date
+
+    def refusal(self, service: Service, enrollment: Enrollment) -> RefusalReason | None:
+        return (
+            ProposalRules.refusal(service)
+            or ProposalRules.enrollment_refusal(self.action, enrollment)
+            or self.answer.refusal(self.action)
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,7 +63,7 @@ class ProtocolOpening:
         existing: Iterable[Protocol],
         request: OpeningRequest,
     ) -> Self:
-        reason = ProposalRules.refusal(service) or ProposalRules.message_refusal(request.message)
+        reason = request.refusal(service, enrollment)
         if reason is not None:
             raise ServiceNotOpenableError(reason)
         if ProposalRules.duplicate_of(existing, service, enrollment) is not None:
@@ -52,7 +75,7 @@ class ProtocolOpening:
             unit_name=enrollment.unit_name,
             course_name=enrollment.course_name,
             requester_name=request.requester_name,
-            message=request.message,
+            message=request.answer.recorded_text(request.action),
             status=ProtocolStatus.OPEN,
             opened_at=opened_at,
             due_at=opened_at + timedelta(hours=service.sla_hours),

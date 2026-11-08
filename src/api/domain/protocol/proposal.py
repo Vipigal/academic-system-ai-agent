@@ -11,6 +11,7 @@ from api.domain.protocol.catalog import Service
 from api.domain.protocol.request import Protocol
 
 NOT_A_DIGIT = re.compile(r"\D")
+MAX_MESSAGE_LENGTH = 4000
 
 
 class RefusalReason(Enum):
@@ -20,6 +21,8 @@ class RefusalReason(Enum):
     DUPLICATE_IN_PROGRESS = "duplicate_in_progress"
     SUBJECT_NOT_SUPPORTED = "subject_not_supported"
     ENROLLMENT_STATUS = "enrollment_status"
+    MESSAGE_TOO_LONG = "message_too_long"
+    CONFIRMATION_WORD = "confirmation_word"
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,10 +64,19 @@ class ProposalRules:
         return None
 
     @staticmethod
-    def message_refusal(message: str) -> RefusalReason | None:
-        if not message.strip():
+    def message_refusal(action: ServiceAction, message: str) -> RefusalReason | None:
+        if len(message) > MAX_MESSAGE_LENGTH:
+            return RefusalReason.MESSAGE_TOO_LONG
+        if action.requires_student_message and not message.strip():
             return RefusalReason.EMPTY_MESSAGE
         return None
+
+    @staticmethod
+    def word_refusal(action: ServiceAction, word: str) -> RefusalReason | None:
+        expected = action.confirmation_word
+        if expected is None or word.strip().casefold() == expected.casefold():
+            return None
+        return RefusalReason.CONFIRMATION_WORD
 
     @staticmethod
     def duplicate_of(

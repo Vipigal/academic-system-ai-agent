@@ -5,6 +5,7 @@ from enum import StrEnum
 class MessageRole(StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
+    SYSTEM_EVENT = "system_event"
 
 
 @dataclass(frozen=True, slots=True)

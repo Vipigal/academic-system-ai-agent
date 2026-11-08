@@ -88,8 +88,6 @@ def test_refusal_reasons() -> None:
     assert ProposalRules.refusal(SERVICE) is None
     assert ProposalRules.refusal(with_fee) is RefusalReason.SERVICE_HAS_FEE
     assert ProposalRules.refusal(replace(SERVICE, active=False)) is RefusalReason.SERVICE_INACTIVE
-    assert ProposalRules.message_refusal("texto") is None
-    assert ProposalRules.message_refusal(" ") is RefusalReason.EMPTY_MESSAGE
 
 
 def enrollment(reference: str, brand: Brand, modality: Modality) -> Enrollment:

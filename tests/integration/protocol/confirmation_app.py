@@ -9,7 +9,11 @@ from api.bootstrap.settings import Settings
 from api.bootstrap.student_providers import StudentProviders
 from api.persistence.core.database import Database
 from tests.integration.protocol.confirmation_settings import settings_with
-from tests.integration.protocol.information_request import information_token
+from tests.integration.protocol.information_request import (
+    WRITTEN,
+    conversation_for,
+    information_token,
+)
 from tests.integration.support.tools import FixedClock
 
 
@@ -39,6 +43,17 @@ class ConfirmationApp:
     async def proposal_of(self, person_id: str, enrollment: str) -> str:
         return await information_token(self.students(), person_id, enrollment)
 
+    async def conversation_of(self, person_id: str) -> str:
+        return await conversation_for(self._database, person_id)
+
+    async def confirmed_by(
+        self, student: str, person_id: str, token: str, answer: dict[str, str] | None = None
+    ) -> tuple[httpx.Response, str]:
+        conversation = await self.conversation_of(person_id)
+        async with self.client() as client:
+            headers = await login(client, student)
+            return await confirm(client, headers, token, conversation, answer), conversation
+
 
 async def login(client: httpx.AsyncClient, student: str) -> dict[str, str]:
     response = await client.post("/auth/dev-login", json={"student": student})
@@ -46,5 +61,23 @@ async def login(client: httpx.AsyncClient, student: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {access_token}"}
 
 
-async def confirm(client: httpx.AsyncClient, headers: dict[str, str], token: str) -> httpx.Response:
-    return await client.post("/protocols/proposals/confirm", json={"token": token}, headers=headers)
+async def confirm(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    token: str,
+    conversation: str,
+    answer: dict[str, str] | None = None,
+) -> httpx.Response:
+    body = {"token": token, "conversation_id": conversation, **(answer or {})}
+    return await client.post("/protocols/proposals/confirm", json=body, headers=headers)
+
+
+async def confirmed_on(
+    app: ConfirmationApp, student: str, token: str, conversations: tuple[str, ...]
+) -> list[httpx.Response]:
+    async with app.client() as client:
+        headers = await login(client, student)
+        return [
+            await confirm(client, headers, token, conversation, WRITTEN)
+            for conversation in conversations
+        ]

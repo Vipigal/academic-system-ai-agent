@@ -34,6 +34,9 @@ class EmptyConversations:
         self.calls.append(person_id)
         return uuid4()
 
+    async def require(self, conversation_id: UUID) -> None:
+        self.calls.append(conversation_id)
+
     async def append(self, conversation_id: UUID, messages: Sequence[Message]) -> None:
         self.calls.append((conversation_id, messages))
 

@@ -21,4 +21,9 @@ class PastAssistantMessage:
     tool_calls: Sequence[PastToolCall] = ()
 
 
-type PastMessage = PastUserMessage | PastAssistantMessage
+@dataclass(frozen=True, slots=True)
+class PastSystemEvent:
+    text: str
+
+
+type PastMessage = PastUserMessage | PastAssistantMessage | PastSystemEvent
