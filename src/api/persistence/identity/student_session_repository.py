@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from api.domain.identity.dev_student import DevStudent
 from api.domain.identity.session import StudentSession
 from api.persistence.identity.queries import IdentityQueries
 from api.persistence.sag.dialect import SagDialect
@@ -25,6 +26,11 @@ class StudentSessionRepository:
         async with self._db_session_factory() as db:
             result = await db.scalars(IdentityQueries.person_of(brand, student_id))
             return result.one_or_none()
+
+    async def dev_students(self) -> Sequence[DevStudent]:
+        async with self._db_session_factory() as db:
+            result = await db.execute(IdentityQueries.dev_students())
+            return [DevStudent(*row) for row in result.all()]
 
     @staticmethod
     def _empty_session() -> StudentSession:

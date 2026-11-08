@@ -148,3 +148,23 @@ async def test_login_route_does_not_exist_with_dev_login_off(database: Database)
 def test_a_missing_secret_fails_closed(database: Database) -> None:
     with pytest.raises(ValueError, match="secret"):
         IdentityProviders(settings_with(jwt_secret=None), database)
+
+
+async def test_dev_students_lists_one_row_per_enrollment_ordered_by_name(
+    client: httpx.AsyncClient,
+) -> None:
+    async with client:
+        response = await client.get("/auth/dev-students")
+    rows = response.json()
+    assert response.status_code == HTTPStatus.OK
+    assert {"brand", "student_id", "full_name", "status"} == set(rows[0])
+    compact_names = [row["full_name"].replace(" ", "") for row in rows]
+    assert compact_names == sorted(compact_names)
+    assert len({(row["brand"], row["student_id"]) for row in rows}) == len(rows)
+    assert FIRST_STUDENT in {f"{row['brand']}:{row['student_id']}" for row in rows}
+
+
+async def test_dev_students_route_does_not_exist_with_dev_login_off(database: Database) -> None:
+    async with client_of(build_app(database, settings_with(dev_login=False))) as client:
+        response = await client.get("/auth/dev-students")
+    assert response.status_code == HTTPStatus.NOT_FOUND

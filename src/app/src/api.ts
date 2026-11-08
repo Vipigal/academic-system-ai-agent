@@ -1,4 +1,3 @@
-import { DEV_STUDENTS_SAMPLE } from "./devStudentsSample";
 import { isRecord } from "./guards";
 import { parseStudents, type DevStudent } from "./students";
 
@@ -38,7 +37,9 @@ export async function devLogin(student: string): Promise<string> {
 }
 
 export async function listDevStudents(): Promise<DevStudent[]> {
-  return parseStudents(await Promise.resolve(DEV_STUDENTS_SAMPLE));
+  const response = await fetch(`${API_URL}/auth/dev-students`);
+  if (!response.ok) throw new ApiError(response.status);
+  return parseStudents(await response.json());
 }
 
 export async function createConversation(token: string): Promise<string> {

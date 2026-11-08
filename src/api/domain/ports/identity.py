@@ -1,5 +1,7 @@
+from collections.abc import Sequence
 from typing import Protocol
 
+from api.domain.identity.dev_student import DevStudent
 from api.domain.identity.session import StudentSession
 
 
@@ -9,6 +11,8 @@ class StudentSessionLoader(Protocol):
 
 class PersonDirectory(Protocol):
     async def person_of(self, brand: str, student_id: str) -> str | None: ...
+
+    async def dev_students(self) -> Sequence[DevStudent]: ...
 
 
 class RequesterDirectory(Protocol):
