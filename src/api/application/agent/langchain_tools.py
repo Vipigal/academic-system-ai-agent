@@ -5,9 +5,9 @@ from time import perf_counter
 
 from langchain.agents.middleware import ToolCallRequest
 from langchain_core.tools import StructuredTool
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
-from api.application.agent.tool_schema import ToolSchema
+from api.application.agent.tool_arguments import ToolArguments
 from api.application.agent.tool_teaching import ToolTeaching
 from api.application.agent.tools.registry import RegisteredTool
 from api.application.shared.tool_input_error import ToolInputError
@@ -36,11 +36,12 @@ class LangchainTools:
         self._trace_id = trace_id
 
     def convert(self, tool: RegisteredTool) -> StructuredTool:
-        schema = ToolSchema.of(tool.handler)
+        arguments_model = ToolArguments.model_of(tool.handler)
+        teaching = ToolTeaching(tool.definition.name, arguments_model)
 
         async def call(**arguments: object) -> tuple[str, ToolExecution]:
             started = perf_counter()
-            result = await self._result_of(tool, schema, arguments)
+            result = await self._result_of(tool, arguments_model, teaching, arguments)
             elapsed = (perf_counter() - started) * MILLISECONDS
             return result.model_dump_json(), ToolExecution(result, round(elapsed))
 
@@ -48,7 +49,7 @@ class LangchainTools:
             coroutine=call,
             name=tool.definition.name,
             description=tool.definition.description,
-            args_schema=dict(schema.json_schema),
+            args_schema=dict(ToolArguments.json_schema_of(arguments_model)),
             response_format="content_and_artifact",
         )
 
@@ -58,12 +59,17 @@ class LangchainTools:
         return CRASH_CONTENT
 
     async def _result_of(
-        self, tool: RegisteredTool, schema: ToolSchema, arguments: Mapping[str, object]
+        self,
+        tool: RegisteredTool,
+        arguments_model: type[BaseModel],
+        teaching: ToolTeaching,
+        arguments: Mapping[str, object],
     ) -> ToolResult[object]:
         try:
-            validated = schema.validated(arguments)
+            parsed = arguments_model.model_validate(arguments)
         except ValidationError as error:
-            return self._envelope(ToolStatus.INVALID, ToolTeaching(schema).paragraph(error))
+            return self._envelope(ToolStatus.INVALID, teaching.paragraph(error))
+        validated = {name: getattr(parsed, name) for name in parsed.model_fields_set}
         return await self._invoke(tool, validated)
 
     async def _invoke(

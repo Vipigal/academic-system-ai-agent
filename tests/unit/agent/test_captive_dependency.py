@@ -3,7 +3,6 @@ from collections.abc import Iterable
 from types import FunctionType, ModuleType
 
 from api.application.agent.student_agent import StudentAgent
-from api.application.agent.tool_schema import SCHEMAS
 from api.application.agent.tools import academic, finance, lms, overview, protocol
 from api.application.finance.service import FinancialService
 from tests.unit.agent import agent_support as support
@@ -66,5 +65,5 @@ async def test_nothing_that_lives_the_whole_process_reaches_a_student() -> None:
     await StudentAgent(runtime, student.registry().tools, "trace").run("Quanto devo?")
     model.seen.clear()
 
-    assert not tool_groups_in(reachable_from((runtime, SCHEMAS)))
+    assert not tool_groups_in(reachable_from((runtime,)))
     assert tool_groups_in(reachable_from((student,)))

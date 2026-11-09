@@ -1,16 +1,16 @@
-from types import FunctionType
+import inspect
 
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from api.application.agent.langchain_tools import LangchainTools
-from api.application.agent.tool_arguments import DESCRIPTIONS
-from api.application.agent.tool_schema import SCHEMAS, ToolSchema
 from api.application.agent.tools.finance import FinanceTools
 from api.application.agent.tools.registry import RegisteredTool
 from api.application.finance.service import FinancialService
 from api.domain.protocol.action import ProtocolAction
 from tests.unit.agent.agent_support import registered_of
 from tests.unit.agent.student_stubs import stub_service, stub_student
+
+DESCRIBED_ARGUMENTS = {"propose_protocol": {"action", "enrollment", "subject"}}
 
 
 def test_name_and_description_come_from_the_definition() -> None:
@@ -26,7 +26,7 @@ def test_the_visible_schema_has_the_signature_parameters_and_no_identity() -> No
     for tool in stub_student().registry().tools:
         function = convert_to_openai_tool(LangchainTools("trace").convert(tool))["function"]
         properties = set(function["parameters"].get("properties", {}))
-        assert properties == set(ToolSchema.of(tool.handler).guides)
+        assert properties == set(inspect.signature(tool.handler).parameters)
         assert not {"person_id", "cpf", "student_id"} & properties
 
 
@@ -78,24 +78,13 @@ def described_arguments(tool: RegisteredTool) -> set[str]:
 
 def test_only_the_tools_with_a_described_argument_get_a_description() -> None:
     for tool in stub_student().registry().tools:
-        assert described_arguments(tool) == set(DESCRIPTIONS.get(tool.definition.name, {}))
+        assert described_arguments(tool) == set(DESCRIBED_ARGUMENTS.get(tool.definition.name, {}))
 
 
-def test_converting_twice_does_not_change_the_cached_schema() -> None:
+def test_converting_twice_gives_the_same_schema() -> None:
     tool = stub_student().registry().tools[0]
 
     first = convert_to_openai_tool(LangchainTools("a").convert(tool))
     second = convert_to_openai_tool(LangchainTools("b").convert(tool))
 
     assert first == second
-
-
-def test_the_schema_is_cached_by_function_never_by_bound_method() -> None:
-    first = stub_student().registry().tools
-    second = stub_student().registry().tools
-
-    for left, right in zip(first, second, strict=True):
-        assert left.handler != right.handler
-        assert ToolSchema.of(left.handler) is ToolSchema.of(right.handler)
-    assert SCHEMAS
-    assert all(isinstance(key, FunctionType) for key in SCHEMAS)

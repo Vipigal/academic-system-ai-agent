@@ -1,19 +1,23 @@
-from api.application.academic.dto.catalog import (
-    AcademicCalendarDto,
-    CourseOfferDto,
-    SubjectProfessorDto,
-)
+from typing import Annotated
+
+from api.application.academic.dto import catalog, record
 from api.application.academic.dto.curriculum import (
     NO_FILTER,
     CurriculumFilter,
     CurriculumSubjectDto,
 )
 from api.application.academic.dto.enrollment import EnrollmentDto
-from api.application.academic.dto.record import SubjectRecordDto
 from api.application.academic.service import AcademicService
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
 from api.application.shared.page import FIRST_PAGE, PageRequest
+from api.application.shared.tool_parameters import (
+    EnrollmentArgument,
+    FlagArgument,
+    SubjectArgument,
+    Teaching,
+    TermArgument,
+)
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology import academic_enrollment, academic_performance, limits, overview
 from api.domain.shared.brand import Modality
@@ -31,8 +35,8 @@ class AcademicTools:
         overview.PERIODO_COBERTO,
     )
     async def get_academic_calendar(
-        self, term: str | None = None
-    ) -> ToolResult[AcademicCalendarDto]:
+        self, term: TermArgument | None = None
+    ) -> ToolResult[catalog.AcademicCalendarDto]:
         """Mostra as datas de um semestre e o último cadastrado.
 
         Use para saber o semestre atual, quando começam as AVs ou quando o semestre termina.
@@ -42,11 +46,13 @@ class AcademicTools:
     @ToolRegistry.declares(academic_enrollment.OFERTA)
     async def list_course_offers(
         self,
-        course: str | None = None,
+        course: Annotated[str | None, Teaching("o nome do curso, em texto", "Enfermagem")] = None,
         modality: Modality | None = None,
-        unit: str | None = None,
+        unit: Annotated[
+            str | None, Teaching("o nome da unidade, em texto", "Campus Paulista")
+        ] = None,
         page: PageRequest = FIRST_PAGE,
-    ) -> ToolResult[list[CourseOfferDto]]:
+    ) -> ToolResult[list[catalog.CourseOfferDto]]:
         """Lista os cursos oferecidos na instituição do aluno, por unidade e turno.
 
         Use para saber se existe um curso, modalidade ou turno.
@@ -76,11 +82,17 @@ class AcademicTools:
     )
     async def get_curriculum(
         self,
-        enrollment: str | None = None,
-        filters: CurriculumFilter = NO_FILTER,
+        enrollment: EnrollmentArgument | None = None,
+        filters: Annotated[
+            CurriculumFilter,
+            Teaching(
+                "um objeto com semester, subject e pending_only, todos opcionais",
+                '{"semester": 3, "pending_only": true}',
+            ),
+        ] = NO_FILTER,
         *,
         page: PageRequest = FIRST_PAGE,
-        show_ui: bool = False,
+        show_ui: FlagArgument = False,
     ) -> ToolResult[list[CurriculumSubjectDto]]:
         """Mostra a matriz do aluno com a situação em cada disciplina.
 
@@ -106,11 +118,11 @@ class AcademicTools:
     )
     async def list_subject_records(
         self,
-        enrollment: str | None = None,
-        term: str | None = None,
-        subject: str | None = None,
+        enrollment: EnrollmentArgument | None = None,
+        term: TermArgument | None = None,
+        subject: SubjectArgument | None = None,
         page: PageRequest = FIRST_PAGE,
-    ) -> ToolResult[list[SubjectRecordDto]]:
+    ) -> ToolResult[list[record.SubjectRecordDto]]:
         """Lista as disciplinas cursadas com notas, frequência e resultado.
 
         Use para ver o semestre atual, uma nota, uma reprovação ou a nota necessária na AV2.
@@ -119,8 +131,8 @@ class AcademicTools:
 
     @ToolRegistry.declares(limits.DADOS_INTERNOS)
     async def list_subject_professors(
-        self, subject: str, term: str | None = None
-    ) -> ToolResult[list[SubjectProfessorDto]]:
+        self, subject: SubjectArgument, term: TermArgument | None = None
+    ) -> ToolResult[list[catalog.SubjectProfessorDto]]:
         """Lista quem leciona uma disciplina em um semestre, na instituição do aluno.
 
         Use para saber quem é o professor e como contatá-lo.
