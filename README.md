@@ -3,7 +3,6 @@
 [![check](https://github.com/Vipigal/academic-system-ai-agent/actions/workflows/check.yml/badge.svg)](https://github.com/Vipigal/academic-system-ai-agent/actions/workflows/check.yml)
 [![Coverage badge](https://raw.githubusercontent.com/Vipigal/academic-system-ai-agent/python-coverage-comment-action-data/badge.svg)](https://github.com/Vipigal/academic-system-ai-agent/tree/python-coverage-comment-action-data)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![wemake-python-styleguide](https://img.shields.io/badge/style-wemake-000000.svg)](https://github.com/wemake-services/wemake-python-styleguide)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![Checked with Pyright](https://img.shields.io/badge/types-Pyright-blue)](https://github.com/microsoft/pyright)
 
@@ -11,7 +10,6 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.162.0-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![LangChain](https://img.shields.io/badge/LangChain-1.4.9-1C3C3C?logo=langchain&logoColor=white)](https://python.langchain.com/)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.1.8-D71F00?logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
-[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 ## Propósito
 
