@@ -15,14 +15,16 @@ from api.presentation.http.health import HealthRouter
 
 CORS_METHODS = ["GET", "POST", "OPTIONS"]
 CORS_HEADERS = ["Authorization", "Content-Type"]
+CORS_EXPOSED_HEADERS = ["Retry-After", "RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"]
 
 
 class ApiFactory:
     @staticmethod
     def create(settings: Settings | None = None) -> FastAPI:
         OwnershipRegistry.assert_complete()
-        singletons = Singletons.create(settings or Settings.from_environment())
-        tracing = Observability.start(singletons.settings)
+        chosen = settings or Settings.from_environment()
+        tracing = Observability.start(chosen)
+        singletons = Singletons.create(chosen)
 
         @asynccontextmanager
         async def lifespan(_: FastAPI) -> AsyncGenerator[None]:
@@ -36,6 +38,7 @@ class ApiFactory:
             allow_origins=singletons.settings.cors_origins,
             allow_methods=CORS_METHODS,
             allow_headers=CORS_HEADERS,
+            expose_headers=CORS_EXPOSED_HEADERS,
         )
         application.add_middleware(RequestLog)
         application.include_router(HealthRouter.build(HealthService(singletons.database)))

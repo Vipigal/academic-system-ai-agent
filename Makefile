@@ -6,9 +6,7 @@ export APP_ORACLE_DATABASE_URL ?= postgresql+asyncpg://postgres:postgres@127.0.0
 .PHONY: setup check check-fast lint types test test-fast fix
 
 setup:
-	python3.14 -m venv $(VENV)
-	$(BIN)/pip install --quiet --upgrade pip
-	$(BIN)/pip install --quiet --group dev --editable .
+	uv sync --python 3.14 --group dev
 
 check: lint types test
 
@@ -26,7 +24,7 @@ types:
 	$(BIN)/pyright
 
 test:
-	$(BIN)/pytest -n 4 --dist loadfile
+	$(BIN)/pytest -n 4 --dist loadfile --cov --cov-report=term-missing:skip-covered
 
 test-fast:
 	$(BIN)/pytest -n 4 --dist loadfile -m "not sweep and not slow" --ignore=tests/lint

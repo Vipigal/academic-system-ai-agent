@@ -1,6 +1,6 @@
 services:
   db:
-    image: pgvector/pgvector:0.8.7-pg18-trixie
+    image: postgres:18.6-trixie
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -18,14 +18,27 @@ services:
       timeout: 3s
       retries: 60
 
+  redis:
+    image: redis:8.10.3-trixie
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
   api:
-    build: .
-    command: uvicorn --factory api.bootstrap.app:ApiFactory.create --app-dir src --host 0.0.0.0 --port 8000 --no-access-log --reload --reload-dir src/api
+    build:
+      context: .
+      dockerfile: local.dockerfile
     env_file:
       - path: .env
         required: false
     environment:
       APP_DATABASE_URL: postgresql+asyncpg://api:${API_DB_PASSWORD:-api}@db:5432/${POSTGRES_DB:-cruzeiro}
+      APP_REDIS_URL: redis://redis:6379/0
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:
@@ -33,12 +46,25 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 5s
+
+  web:
+    build:
+      context: ./src/app
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-8000}
+    ports:
+      - "127.0.0.1:5173:8080"
+    depends_on:
+      api:
+        condition: service_healthy
 
   pgweb:
     image: sosedoff/pgweb:0.17.0

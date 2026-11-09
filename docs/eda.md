@@ -7,7 +7,7 @@ status: stable
 generated: { by: claude_code/claude-opus-5-5, at: 2026-11-05T05:00:00Z }
 sources:
   - id: readme
-    resource: /README.md
+    resource: /docs/diretrizes.md
     title: Enunciado do case
   - id: banco
     resource: /db/init/01_load.sh
@@ -30,8 +30,8 @@ Este documento só descreve os dados. O que fazer com eles está na [Arquitetura
 
 ## 2. Integridade
 
-- **PKs do README:** 47/47 sem duplicata e sem nulo.
-- **FKs do README:** 69/74 sem violação. As 5 restantes:
+- **PKs do enunciado:** 47/47 sem duplicata e sem nulo.
+- **FKs do enunciado:** 69/74 sem violação. As 5 restantes:
 
 | FK | Violações |
 |---|---|

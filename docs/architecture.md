@@ -8,7 +8,7 @@ generated: { by: claude_code/claude-opus-5-5, at: 2026-11-05T23:30:00Z }
 verified: { by: human:vinicius, at: 2026-11-05T02:53:00Z }
 sources:
   - id: readme
-    resource: /README.md
+    resource: /docs/diretrizes.md
     title: Enunciado do case
   - id: eda
     resource: /docs/eda.md
@@ -81,7 +81,7 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | B8 | Financeiro sempre filtra por contrato, nunca por pagador | 17 pagadores cobrem 44 matrículas de pessoas diferentes |
 | B9 | Segurança em código, sem RLS. Em um sistema real as tabelas já existem e talvez nem estejam em Postgres | Não depender de recurso de um banco específico; o repositório central e bem testado é a garantia |
 | B10 | Menor privilégio: o agente só tem as ferramentas de que precisa, sem ações destrutivas e sem parâmetro que amplie acesso | Segurança por arquitetura |
-| B11 | Não se alteram dados nem colunas recebidas. São permitidos índices e as PKs e FKs do README | Mudam a física e a integridade, não o conteúdo |
+| B11 | Não se alteram dados nem colunas recebidas. São permitidos índices e as PKs e FKs do enunciado | Mudam a física e a integridade, não o conteúdo |
 | B12 | Schemas `sag`, `lms`, `secretary`, `finance`, sem prefixo `raw_` | Aplicado na carga |
 | B13 | Role restrita para a API, nunca superuser | Menor privilégio também no banco |
 | B14 | Schema novo `agent` para conversas, logs e auditoria | Separar dados do agente dos dados de origem |
@@ -148,7 +148,7 @@ Presentation    → rotas HTTP, identidade pelo JWT e stream da resposta
 Application     → services por caso de uso, composição entre sistemas, DTOs, o agente e as tools (B39)
 Domain          → entidades, enums, regras, sessão, ontologia, interfaces (ports)
 Persistence     → adapter de repositório, carga da sessão e um pacote por sistema
-Infrastructure  → adaptadores técnicos que não são banco: relógio, cliente do Langfuse, log (B38)
+Infrastructure  → adaptadores técnicos que não são banco: relógio, cliente do Langfuse, log, rate limit em Redis (B38)
 Banco           → sag · lms · secretary · finance · agent
 ```
 
@@ -166,7 +166,7 @@ src/api/
 ├── presentation/   http/: health, chat, confirmação de protocolo, identidade
 ├── application/    services por área, dto/, chat/, agent/ (agente, tools, skills)
 ├── domain/         brand.py  session.py  invoice.py  ontology/  ports/
-├── infrastructure/ relógio, Langfuse, log
+├── infrastructure/ relógio, Langfuse, log, rate limit
 └── persistence/
     ├── repository_adapter.py     acrescenta o ownership em toda consulta
     ├── query_guard.py            recusa o que não está na lista de permitidos
@@ -480,7 +480,7 @@ instante podem abrir dois protocolos: o `409` de duplicado é checado na aplica�
 | Script | Conteúdo | Estado |
 |---|---|---|
 | `01_load.sh` | Carga dos CSVs nos schemas sem prefixo, sem `\r` | Aplicado |
-| `02_constraints.sql` | 47 PKs do README; 74 FKs, com `NOT VALID` nas 5 de A11 | Aplicado |
+| `02_constraints.sql` | 47 PKs do enunciado; 74 FKs, com `NOT VALID` nas 5 de A11 | Aplicado |
 | `03_indexes.sql` | 22 índices nas colunas e expressões de ownership e navegação, derivados das varreduras medidas na suíte de testes | Aplicado |
 | `04_agent_schema.sql` | `conversation`, `message`, `tool_call` e as sequências de protocolo e mensagem | Aplicado |
 | `05_roles.sh` | Role `api`: `SELECT` só nas 34 tabelas mapeadas; `INSERT` só em `protocol`, `protocol_status_history` e `protocol_interaction`; leitura e escrita em `agent`, sem `DELETE`; sem `UPDATE` ou `DELETE` em dados de origem; sem `analyst`; sem tabela temporária. A API e o código dela nos testes conectam com essa role; só o oráculo SQL usa o administrador | Aplicado |
@@ -495,7 +495,9 @@ instante podem abrir dois protocolos: o `409` de duplicado é checado na aplica�
 - A aplicação é stateless. A sessão morre com o pedido.
 - Relógio injetado: `SystemClock` com a data real em produção, `FixedClock` com 31/10/2026 nos testes e no eval.
 
-Limites de concorrência, deadlines, retry e proteção do provedor de LLM entram junto com o agente.
+Cada turno tem prazo (`APP_AGENT_TIMEOUT_SECONDS`), retry da chamada ao modelo e limite de chamadas ao modelo e às tools. Não há
+limite de concorrência por processo: o custo é contido por um rate limit por aluno em Redis, de mensagens do chat por hora
+(`APP_CHAT_RATE_LIMIT_PER_HOUR`), que responde 429 com `Retry-After` e deixa passar quando o Redis está fora do ar.
 
 ### 5.9 Agente, tools e skills
 
@@ -571,8 +573,8 @@ A lista de pendências fica em [Pendências](/docs/pendencias.md).
 |---|---|
 | Crosswalk persistido e schemas intermediários de dados normalizados | O custo de resolver identidade exigir; hoje contradiz B11 |
 | RLS | B9 for revista |
-| Cache ou Redis | Teste de carga mostrar que montar a sessão a cada pedido pesa |
-| RAG e pgvector | A base ganhar texto de conhecimento para indexar |
+| Cache da sessão em Redis | Teste de carga mostrar que montar a sessão a cada pedido pesa |
+| RAG e busca vetorial | A base ganhar texto de conhecimento para indexar |
 | Atender responsável ou pagador | O enunciado fala em aluno autenticado |
 | Escritas além de abrir protocolo | O case exigir ou o primeiro fluxo estiver estável |
 

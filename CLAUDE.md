@@ -7,9 +7,10 @@ API em FastAPI que dá ao agente acesso seguro e normalizado aos quatro sistemas
 
 | Comando | O que faz |
 |---|---|
-| `make setup` | Cria `.venv` com Python 3.14 e instala as dependências |
+| `make setup` | `uv sync` com o grupo dev: cria `.venv` com Python 3.14 e instala as versões travadas no `uv.lock` |
+| `uv lock` | Regera o `uv.lock` depois de mudar dependências no `pyproject.toml`; o CI barra lock desatualizado com `uv lock --check` |
 | `docker compose up -d --wait api` | Sobe a API em `127.0.0.1:8000`, com o banco |
-| `make check` | Formatação, lint, contratos de camada, tipos (mypy e Pyright) e testes. Exige o banco de pé |
+| `make check` | Formatação, lint, contratos de camada, tipos (mypy e Pyright) e testes com coverage no terminal. Exige o banco de pé |
 | `make check-fast` | O mesmo, sem as varreduras marcadas `sweep` e `slow` e sem `tests/lint`, para o loop de desenvolvimento |
 | `make fix` | Aplica correções automáticas e formata |
 

@@ -7,7 +7,7 @@ from evals.run_data import RunData
 from evals.run_files import JsonLines, RunFiles
 from evals.run_log import RunLog
 from evals.run_manifest import RunManifests
-from evals.runner import EvalRunner
+from evals.runner import DEFAULT_CONCURRENCY, EvalRunner
 from evals.selection import PlannedExecution, RunPlan, RunRequest
 from evals.student_driver import StudentDriver
 
@@ -38,5 +38,5 @@ class RunSession:
 
     def _runner(self) -> EvalRunner:
         log = RunLog(self._files, self._driver.versions, Pricing.load())
-        concurrency = self._request.concurrency or self._driver.max_concurrency
+        concurrency = self._request.concurrency or DEFAULT_CONCURRENCY
         return EvalRunner(self._driver, log, concurrency)

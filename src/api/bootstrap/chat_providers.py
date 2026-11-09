@@ -31,7 +31,8 @@ class ChatProviders:
         ) -> ChatService:
             return self.service_for(session, person_id)
 
-        return ChatRouter.build(chat_service)
+        rate_limit = self._singletons.rate_limit.chat_dependency(session_dependency)
+        return ChatRouter.build(chat_service, rate_limit)
 
     def service_for(self, session: StudentSession, person_id: str) -> ChatService:
         settings = self._singletons.settings

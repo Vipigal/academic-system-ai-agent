@@ -8,6 +8,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     database_url: SecretStr
+    db_pool_size: int = 20
+    db_max_overflow: int = 10
+    db_pool_timeout_seconds: float = 5
+
+    redis_url: SecretStr | None = None
+    chat_rate_limit_per_hour: int = Field(default=60, gt=0)
 
     agent_model: str = "gpt-6-luna"
     agent_effort: str = "low"
@@ -15,7 +21,6 @@ class Settings(BaseSettings):
     agent_model_call_limit: int = 8
     agent_tool_call_limit: int = 12
     agent_timeout_seconds: float = 60
-    agent_max_concurrency: int = 8
     history_window: int = 20
 
     jwt_secret: SecretStr | None = None

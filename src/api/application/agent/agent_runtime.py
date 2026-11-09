@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from typing import Self
 
@@ -14,7 +13,6 @@ class AgentLimits:
     model_calls: int
     tool_calls: int
     timeout_seconds: float
-    max_concurrency: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,7 +20,6 @@ class AgentRuntime:
     model: BaseChatModel
     skills: SkillLibrary
     prompt: SystemPrompt
-    gate: asyncio.Semaphore
     limits: AgentLimits
     clock: Clock
 
@@ -32,7 +29,6 @@ class AgentRuntime:
             model=model,
             skills=SkillLibrary.load(),
             prompt=SystemPrompt.load(),
-            gate=asyncio.Semaphore(limits.max_concurrency),
             limits=limits,
             clock=clock,
         )

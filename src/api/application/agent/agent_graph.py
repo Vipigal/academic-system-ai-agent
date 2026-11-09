@@ -9,7 +9,6 @@ from langgraph.types import StreamPart
 from api.application.agent.agent_runtime import AgentRuntime
 from api.application.agent.agent_stream import STREAM_MODES
 from api.application.agent.langchain_tools import LangchainTools
-from api.application.agent.provider_gate import ProviderGate
 from api.application.agent.tools.registry import RegisteredTool
 
 MAX_MODEL_RETRIES = 2
@@ -44,7 +43,6 @@ class AgentGraph:
                     on_failure="error",
                     initial_delay=RETRY_INITIAL_DELAY_SECONDS,
                 ),
-                ProviderGate(runtime.gate),
                 middleware.ToolErrorMiddleware(on_error=converter.on_crash),
             ],
         )

@@ -1,0 +1,13 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes: !reset []
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    # Acima dos 70 s do --timeout-graceful-shutdown, para o turno em andamento terminar antes do SIGKILL.
+    stop_grace_period: 75s

@@ -79,3 +79,15 @@ ignore_imports =
     api.application.agent.** -> langchain_openai
     api.application.agent.** -> langgraph
 allow_indirect_imports = True
+
+[importlinter:contract:redis-client]
+name = Apenas a infrastructure e o bootstrap importam o Redis
+type = forbidden
+source_modules =
+    api.presentation
+    api.application
+    api.persistence
+    api.domain
+forbidden_modules =
+    redis
+allow_indirect_imports = True
