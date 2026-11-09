@@ -80,6 +80,10 @@ class ProtocolActionItem(GoldenItem):
     pass
 
 
+class ScopeItem(GoldenItem):
+    pass
+
+
 class AttackItem(GoldenItem):
     category: AttackCategory
     bindings: tuple[QueryCall, ...] = ()

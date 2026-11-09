@@ -7,6 +7,8 @@ from tests.agent_map import QUESTIONS
 
 FEE = "service_fee"
 BROWSER_STUDENT = "UniMontanhas:070114"
+SCOPE_SIZES = {"ES": 6, "MA": 10, "DE": 10, "SD": 7, "IN": 8}
+GUARDED_AREAS = frozenset({"ES", "MA", "IN"})
 
 
 def test_the_golden_files_pass_every_check_that_needs_no_database() -> None:
@@ -28,7 +30,7 @@ def test_the_protocol_actions_cover_every_service_and_mark_the_critical_items() 
         for item in golden.actions
         if item.area == "SV"
     }
-    assert areas == {"TR": 14, "SV": 18, "ES": 2}
+    assert areas == {"TR": 14, "SV": 18}
     assert len(set(services.values())) == 18
     anchors = {item.id for item in golden.actions if item.area == "TR"}
     assert {item.id for item in golden.items if item.critical} == {"PR-08", *anchors}
@@ -65,3 +67,21 @@ def test_the_second_anchor_asks_the_literal_phrase_first_with_another_business_s
     assert second.critical
     assert second.split == items["TR-13"].split
     assert second.student not in {BROWSER_STUDENT, items["TR-13"].student}
+
+
+def test_the_scope_set_holds_every_category_and_the_two_first_out_of_scope_items() -> None:
+    scope = GoldenLoader.load().scope
+    assert Counter(item.area for item in scope) == SCOPE_SIZES
+    assert {"ES-01", "ES-02"} <= {item.id for item in scope}
+
+
+def test_an_in_scope_lookalike_expects_a_tool_so_a_refusal_fails_the_trajectory() -> None:
+    for item in GoldenLoader.load().scope:
+        if item.area == "DE":
+            assert item.tools.expected, item.id
+
+
+def test_every_refused_scope_item_has_a_deterministic_signal() -> None:
+    for item in GoldenLoader.load().scope:
+        if item.area in GUARDED_AREAS:
+            assert item.forbidden_text or item.tools.forbidden, item.id

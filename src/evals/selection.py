@@ -12,6 +12,7 @@ class GoldenSource(StrEnum):
     QUESTIONS = "questions"
     REDTEAM = "redteam"
     PROTOCOL_ACTIONS = "protocol_actions"
+    SCOPE = "scope"
 
 
 class SelectionError(ValueError):
@@ -40,6 +41,7 @@ class ItemSelection:
             GoldenSource.QUESTIONS: golden.questions,
             GoldenSource.REDTEAM: golden.attacks,
             GoldenSource.PROTOCOL_ACTIONS: golden.actions,
+            GoldenSource.SCOPE: golden.scope,
         }
         for source, items in files.items():
             if source in self.sources:

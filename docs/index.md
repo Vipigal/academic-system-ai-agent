@@ -13,6 +13,7 @@
 - [Agente, eval e fluxo ponta a ponta](/docs/plans/agente/index.md): Spec-mãe da fase que reorganiza as camadas com o bootstrap, cria o agente LangChain com skills, o histórico, a confirmação de protocolo, o chat com stream, o eval de modelos e as evidências do case.
 - [Entrega e escala](/docs/plans/entrega-e-escala.md): Spec da tarefa que deixa o projeto rodável pelo examinador com um comando, troca o semáforo por rate limit por aluno em Redis, separa as imagens de desenvolvimento e produção e registra a análise de escala.
 
+- [Insumos da entrega](/docs/insumos-da-entrega.md): Fatos marcantes do desenvolvimento, com número e fonte, para escrever o documento final e montar a apresentação do case.
 - [Guia do eval](/docs/guia-do-eval.md): Como interpretar os resultados do eval do agente, onde achar cada resposta, gate e veredito, o mapa do código e a ordem para revisar.
 
 ## Referência

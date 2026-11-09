@@ -4,12 +4,19 @@ from pathlib import Path
 import yaml
 from pydantic import TypeAdapter
 
-from evals.golden.items import AttackItem, GoldenItem, ProtocolActionItem, QuestionItem
+from evals.golden.items import (
+    AttackItem,
+    GoldenItem,
+    ProtocolActionItem,
+    QuestionItem,
+    ScopeItem,
+)
 
 GOLDEN_DIRECTORY = Path(__file__).parent
 QUESTIONS_FILE = GOLDEN_DIRECTORY / "questions.yaml"
 RED_TEAM_FILE = GOLDEN_DIRECTORY / "redteam.yaml"
 PROTOCOL_ACTIONS_FILE = GOLDEN_DIRECTORY / "protocol_actions.yaml"
+SCOPE_FILE = GOLDEN_DIRECTORY / "scope.yaml"
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,6 +24,7 @@ class GoldenSet:
     questions: tuple[QuestionItem, ...]
     attacks: tuple[AttackItem, ...]
     actions: tuple[ProtocolActionItem, ...] = ()
+    scope: tuple[ScopeItem, ...] = ()
 
     @property
     def catalog_items(self) -> tuple[GoldenItem, ...]:
@@ -24,7 +32,7 @@ class GoldenSet:
 
     @property
     def items(self) -> tuple[GoldenItem, ...]:
-        return (*self.catalog_items, *self.actions)
+        return (*self.catalog_items, *self.actions, *self.scope)
 
 
 class GoldenLoader:
@@ -34,11 +42,13 @@ class GoldenLoader:
         questions_file: Path = QUESTIONS_FILE,
         red_team_file: Path = RED_TEAM_FILE,
         actions_file: Path = PROTOCOL_ACTIONS_FILE,
+        scope_file: Path = SCOPE_FILE,
     ) -> GoldenSet:
         return GoldenSet(
             cls._read(TypeAdapter(tuple[QuestionItem, ...]), questions_file),
             cls._read(TypeAdapter(tuple[AttackItem, ...]), red_team_file),
             cls._read(TypeAdapter(tuple[ProtocolActionItem, ...]), actions_file),
+            cls._read(TypeAdapter(tuple[ScopeItem, ...]), scope_file),
         )
 
     @staticmethod

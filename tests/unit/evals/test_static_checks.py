@@ -1,10 +1,13 @@
+from collections.abc import Mapping
+
 from evals.golden.items import AttackItem, ProtocolActionItem
 from evals.golden.loader import GoldenSet
 from evals.golden.static_checks import StaticChecks
-from tests.unit.evals.items_support import QUESTION, attack, question
+from tests.unit.evals.items_support import QUESTION, attack, question, scope_item
 
 TOOLS = frozenset({"get_financial_summary"})
 HOLDOUT_QUESTION = question(split="holdout")
+QUESTIONS = (HOLDOUT_QUESTION,)
 
 
 ATTACKS = tuple(
@@ -25,17 +28,17 @@ def attacks(total: int, holdout: int) -> tuple[AttackItem, ...]:
 
 
 def test_a_consistent_set_has_no_problem_beyond_the_question_split() -> None:
-    golden = GoldenSet((HOLDOUT_QUESTION,), ATTACKS)
+    golden = GoldenSet(QUESTIONS, ATTACKS)
     assert messages(golden) == []
 
 
 def test_fewer_than_25_attacks_is_a_problem() -> None:
-    golden = GoldenSet((HOLDOUT_QUESTION,), attacks(24, 7))
+    golden = GoldenSet(QUESTIONS, attacks(24, 7))
     assert "golden: 24 ataques, mínimo 25" in messages(golden)
 
 
 def test_holdout_far_from_thirty_percent_is_a_problem() -> None:
-    golden = GoldenSet((HOLDOUT_QUESTION,), attacks(25, 2))
+    golden = GoldenSet(QUESTIONS, attacks(25, 2))
     assert "AT: 2 de 25 em holdout, esperado ~30%" in messages(golden)
 
 
@@ -74,7 +77,7 @@ def test_a_protocol_action_needs_no_holdout_share() -> None:
             "facts": [],
         }
     )
-    golden = GoldenSet((HOLDOUT_QUESTION,), ATTACKS, (action,))
+    golden = GoldenSet(QUESTIONS, ATTACKS, (action,))
     assert messages(golden) == []
 
 
@@ -87,7 +90,7 @@ def test_an_anchor_item_must_be_critical() -> None:
             "facts": [],
         }
     )
-    golden = GoldenSet((HOLDOUT_QUESTION,), ATTACKS, (action,))
+    golden = GoldenSet(QUESTIONS, ATTACKS, (action,))
     assert "TR-01: item de trancamento precisa ser crítico" in messages(golden)
 
 
@@ -100,11 +103,54 @@ def test_a_protocol_action_out_of_the_known_prefixes_is_a_problem() -> None:
             "facts": [],
         }
     )
-    golden = GoldenSet((HOLDOUT_QUESTION,), ATTACKS, (action,))
+    golden = GoldenSet(QUESTIONS, ATTACKS, (action,))
     assert "XX-01: prefixo XX fora das ações de protocolo" in messages(golden)
 
 
 def test_a_protocol_action_needs_the_expected_proposal() -> None:
     action = ProtocolActionItem.model_validate({**QUESTION, "id": "SV-01", "facts": []})
-    golden = GoldenSet((HOLDOUT_QUESTION,), ATTACKS, (action,))
+    golden = GoldenSet(QUESTIONS, ATTACKS, (action,))
     assert "SV-01: ação de protocolo sem resultado esperado da proposta" in messages(golden)
+
+
+def scope_set(*changes: Mapping[str, object]) -> GoldenSet:
+    items = tuple(scope_item(**change) for change in changes)
+    return GoldenSet(QUESTIONS, ATTACKS, (), items)
+
+
+def test_each_scope_area_takes_its_kind_and_an_injection_needs_no_category() -> None:
+    found = messages(
+        scope_set(
+            {"id": "ES-01", "split": "holdout"},
+            {"id": "MA-01", "split": "holdout"},
+            {"id": "DE-01", "split": "holdout", "kind": "answerable"},
+            {"id": "SD-01", "split": "holdout", "kind": "no_data", "forbidden_text": []},
+            {"id": "IN-01", "split": "holdout", "kind": "attack"},
+        )
+    )
+    assert found == []
+
+
+def test_a_scope_area_with_the_wrong_kind_is_a_problem() -> None:
+    problems = messages(scope_set({"id": "MA-01", "split": "holdout", "kind": "answerable"}))
+    assert "MA-01: kind answerable, a área pede refusal" in problems
+
+
+def test_a_scope_item_out_of_the_scope_areas_is_a_problem() -> None:
+    problems = messages(scope_set({"id": "FI-09", "split": "holdout", "kind": "answerable"}))
+    assert "FI-09: prefixo FI fora do conjunto de escopo" in problems
+
+
+def test_the_scope_areas_keep_about_a_third_in_holdout() -> None:
+    problems = messages(
+        scope_set(*({"id": f"DE-0{number}", "kind": "answerable"} for number in range(1, 5)))
+    )
+    assert "DE: 0 de 4 em holdout, esperado ~30%" in problems
+
+
+def test_the_out_of_scope_area_no_longer_belongs_to_the_protocol_actions() -> None:
+    action = ProtocolActionItem.model_validate(
+        {**QUESTION, "id": "ES-01", "kind": "refusal", "proposal": "none", "facts": []}
+    )
+    found = messages(GoldenSet(QUESTIONS, ATTACKS, (action,)))
+    assert "ES-01: prefixo ES fora das ações de protocolo" in found

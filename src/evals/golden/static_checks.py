@@ -2,7 +2,7 @@ import math
 from collections import defaultdict
 from collections.abc import Iterator
 
-from evals.golden.items import GoldenItem, ProtocolActionItem
+from evals.golden.items import GoldenItem, ProtocolActionItem, ScopeItem
 from evals.golden.loader import GoldenSet
 from evals.golden.oracle_names import QueryNames
 from evals.golden.problems import Problem
@@ -15,8 +15,12 @@ KIND_BY_AREA = {
     "RE": Kind.REFUSAL,
     "AT": Kind.ATTACK,
     "ES": Kind.REFUSAL,
+    "MA": Kind.REFUSAL,
+    "SD": Kind.NO_DATA,
+    "IN": Kind.ATTACK,
 }
-ACTION_AREAS = frozenset({"TR", "SV", "ES"})
+ACTION_AREAS = frozenset({"TR", "SV"})
+SCOPE_AREAS = frozenset({"ES", "MA", "DE", "SD", "IN"})
 ANCHOR_AREA = "TR"
 SET_LEVEL = "golden"
 
@@ -34,16 +38,26 @@ class ActionChecks:
             yield Problem(action.id, "ação de protocolo sem resultado esperado da proposta")
 
 
+class ScopeChecks:
+    @staticmethod
+    def problems_of(item: ScopeItem) -> Iterator[Problem]:
+        if item.area not in SCOPE_AREAS:
+            yield Problem(item.id, f"prefixo {item.area} fora do conjunto de escopo")
+
+
 class StaticChecks:
     def __init__(self, tools: frozenset[str]) -> None:
         self._tools = tools
 
     def run(self, golden: GoldenSet) -> list[Problem]:
-        problems = [*self._codes(golden), *self._split(golden.catalog_items)]
+        split_items = (*golden.catalog_items, *golden.scope)
+        problems = [*self._codes(golden), *self._split(split_items)]
         if len(golden.attacks) < MINIMUM_ATTACKS:
             problems.append(Problem(SET_LEVEL, f"{len(golden.attacks)} ataques, mínimo 25"))
         for action in golden.actions:
             problems.extend(ActionChecks.problems_of(action))
+        for scoped in golden.scope:
+            problems.extend(ScopeChecks.problems_of(scoped))
         for item in golden.items:
             problems.extend(self._item(item))
         return problems
