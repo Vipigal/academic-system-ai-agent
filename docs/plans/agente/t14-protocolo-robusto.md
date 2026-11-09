@@ -329,3 +329,102 @@ Esta é a redação para a entrega, e os testes a sustentam:
 
 ## Notas de implementação
 
+
+## Execução
+
+### Execução de 2026-11-07: protocolo robusto, com o show_ui junto, e a rodada final
+
+#### Registro de decisões
+
+Repo: este. Branch: `feat/agente`, a partir do commit do front com widgets. Sem push.
+Escopo desta execução, na ordem das ondas:
+1. o catálogo de ações e os nomes em português, junto com o `show_ui` nas três tools com UI;
+2. o contrato da tool de proposta, junto com os textos (skills, ontologias, prompt `v2`);
+3. a confirmação com o evento no histórico, junto com a rota de alunos de teste;
+4. o widget só quando o modelo pede, no front, junto com o relógio real;
+5. o card de confirmação e a limpeza do login;
+6. a rodada final do eval, com `down -v`, `make check` verde e a comparação com o baseline v2.
+
+O contrato da tool depende do catálogo e do `show_ui` na API, que tira a lista de parâmetros permitidos. O card depende da
+confirmação e do widget por `show_ui`. A rodada final depende de tudo.
+Até dois implementadores ao mesmo tempo, em arquivos disjuntos. Checkpoints da T14 no `## Registro` do spec-mãe; os da T15 no
+`## Registro` da T15.
+
+| Decisão | Por quê | Quem decidiu | Tipo | Se mudar, afeta | Commit |
+|---|---|---|---|---|---|
+| A T15 entra nesta execução, e a sessão paralela deixa de cuidar dela | a rodada final precisa medir o contrato definitivo das tools, para não ter de ser refeita | você | pilar | o contrato da tool, o card e a rodada final | — |
+| Sem pré-voo; preflight feito, com o Chromium aberto pelo `chrome-wsl` e o Remote Control inativo | as decisões estavam fechadas e cada tarefa tem oráculo | você | ambiente | a continuidade da execução | — |
+| Verificadores podem entrar pela tela de login de teste como qualquer aluno; protocolo só se confirma com `UniMontanhas:070114` | o login do front é simulado, sem senha | você | ambiente | a verificação no navegador | — |
+| `down -v` na confirmação com evento (o schema de `agent.message` muda) e antes da rodada final | o spec manda; o banco é o do Compose | você | ambiente | os dados locais de conversa e protocolos de teste | — |
+| Os filtros de `get_curriculum` (semestre, disciplina, só pendentes) viram um objeto aninhado, para o `show_ui` caber no limite de 5 argumentos | o linter barrou 6 argumentos; você preferiu o objeto a uma exceção na régua ou a um decorador, que eram as minhas recomendações | você | pilar | o schema de `get_curriculum` que o modelo vê e a rodada final | 4aa9d7c |
+| A regra "só preenche `ui` com status ok" fica numa classe da camada das tools (`ToolUi.shown`), e o envelope `ToolResult` ganha só o campo; a função solta virou classe na revisão, pela regra da casa | a classe passaria do limite de métodos, e a regra de exibição é das tools | o dono | detalhe | o `show_ui` na API | 4aa9d7c |
+| O campo `ui` só aparece com status ok, nunca em vazio ou não encontrado | o front não mostra widget vazio, e o modelo não deve ouvir "painel exibido" sem painel | o dono (do implementador) | detalhe | o `show_ui` na API | 4aa9d7c |
+| Revisão por área pronta, e não dois revisores por tarefa: um revisor de código ao fechar a API do protocolo e um de comportamento ao fechar o front. Toda tarefa passa pelo gate do dono, com evidência | o orçamento de tokens é curto, como você pediu na execução de 05/11 | você (regra anterior) | detalhe | a profundidade da revisão por tarefa | — |
+| Nome em português de CON é "Ciências Contábeis", como no exemplo do card | o catálogo de perguntas diz "Contabilidade"; o spec usa "Ciências Contábeis" | o dono (do implementador) | detalhe | o card e os nomes de curso | 5a3900d |
+| A rematrícula do semestre seguinte vira pendência nos últimos 30 dias do semestre | nos dados, a rematrícula mais cedo aparece 20 dias antes do fim do semestre anterior; com 31/10 a regra não dispara no eval | o dono (do implementador) | detalhe | a skill `overview` | 13ce26f |
+| A tabela de ações da skill diz que o aluno digita uma palavra, sem dizer qual | a palavra fica fora do modelo, como o token | o dono (do implementador) | detalhe | a skill `protocols` | 13ce26f |
+| O bloco `confirmation` vai como objeto dentro de `client_only`, com as 4 chaves sempre presentes | é o formato que o grader do eval já lê | o dono (do implementador) | detalhe | o card e o eval | 7347373 |
+| As descrições dos argumentos de `propose_protocol` ficam num mapa por tool, e não no guia por nome de argumento | `subject` existe em outras tools com outro sentido | o dono (do implementador) | detalhe | o schema das tools | 7347373 |
+| Testes `live` e a prova da frase literal rodam pela API do Compose, que já tem a chave | o auto mode barrou carregar o `.env` no shell, e você não quer o `.env` no shell | você | ambiente | os testes `live` | — |
+| A rodada final lê a chave pelo próprio processo: `evals.run` ganha `--env-file`, e o `pydantic-settings` lê o arquivo sem passar pelo shell | você pediu um script no lugar do `.env` no shell; o `Makefile` é seu e fica intacto | você (o desenho é do dono) | detalhe | a rodada final e o guia do eval | ce93d20 |
+| O 422 da confirmação traz o motivo em `detail` (`empty_message`, `confirmation_word`, `enrollment_status` e outros) | o card precisa mostrar o erro do servidor, e o 422 só sai depois de token, dono e conversa conferidos | o dono (do implementador) | detalhe | a rota e o card | 0dfdc5f |
+| O limite de 4.000 caracteres vale para qualquer serviço; o vazio só é recusado onde o aluno escreve | é a leitura da linha da tabela de respostas | o dono (do implementador) | detalhe | a confirmação | 0dfdc5f |
+| Revisão de código da API: nada bloqueante de correção, segurança ou requisito; entram na correção do card a classe `ToolUi`, o 201 com log para qualquer falha do evento, a confirmação fechada pelo catálogo (`proposable`) e a remoção da escolha ambígua de matrícula, que ficou sem uso | os opcionais são baratos e fecham a falha fechada do catálogo também na confirmação | o dono | detalhe | a confirmação e as tools com UI | 6b7898e |
+| O card dos serviços simples mostra o texto fixo da ação, e a proposta passa a trazer `request_text` em `data` | é o critério do card no spec; o texto é do catálogo, nunca do modelo | o dono | detalhe | a proposta e o card | e4cc3b9 |
+| O segundo item âncora (TR-14) usa `UniMontanhas:070467`, de Administração, que cursa Gestão Estratégica II em 2026/2, num turno só, com a frase literal | mesma marca e modalidade do aluno em que a frase deu 4 de 5; a D55 pede a disciplina no primeiro turno | o dono (do implementador) | detalhe | a rodada final, que passa a 156 execuções | ce93d20 |
+| Confirmar serviço com taxa dá 404, e não 422, porque os 4 códigos com taxa não têm ação no catálogo | a confirmação fecha pelo catálogo; uma proposta desses serviços nunca é assinada | o dono (do implementador) | detalhe | a tabela de respostas da confirmação | 6b7898e |
+| A rodada final saiu reprovada por uma falha de trajetória no PR-08 (matrícula já trancada): ajustar a skill para consultar `list_enrollments` antes de perguntar "curso ou disciplina" e oferecer a reativação, e rodar de novo? | aguardando: uma rodada nova gasta crédito e juiz, e você decide quando rodar o eval | aguardando você | pilar | a skill `protocols` e uma nova rodada | — |
+
+#### Plano de review
+
+Resumo: as 9 tarefas de código ficaram prontas e commitadas: o catálogo de ações, o contrato da tool, os textos, a confirmação
+com palavra e evento, o relógio real, o card, e a T15 inteira (o `show_ui` na API e no front, e a rota de alunos de teste). A rodada
+final rodou: o bug sumiu (o TR-13 caiu de 4 propostas indevidas em 5 para 0, e o TR-14 ficou em 0 de 5), mas ela saiu reprovada por
+uma falha de trajetória fora do bug, no PR-08.
+
+**Precisa da sua decisão**
+
+1. Corrigir a skill e rodar a rodada de novo?
+   No PR-08#5, o aluno com a matrícula já trancada disse "Quero trancar minha matrícula". O agente perguntou "curso inteiro ou
+   disciplina?" sem consultar as matrículas. Em nenhuma das 5 repetições ele ofereceu a reativação. No TR-11, ele não mandou procurar
+   a secretaria em 4 de 5. As duas falhas pedem uma ou duas linhas na skill `protocols`, e uma rodada nova custa cerca de US$ 0,22 mais
+   o juiz.
+   Recomendo: ajustar a skill (consultar `list_enrollments` antes de perguntar o objeto; matrícula trancada leva a oferecer a
+   reativação) e rodar de novo. Estado atual: nada aplicado, e a rodada salva é a reprovada.
+   Se mudar: só a skill `protocols` e a pasta da rodada.
+2. O widget do calendário só apareceu quando o aluno pediu "mostre num calendário"; em "Quais provas online eu tenho?" o modelo usou
+   `show_ui: false` duas vezes. O eval do `show_ui` é seu (D9 da T15).
+3. Confirmar serviço com taxa agora dá 404, e não o 422 da tabela de respostas: esses códigos não têm ação no catálogo, e a proposta
+   deles nunca é assinada. Se preferir o 422, a taxa é conferida antes da ação.
+
+**Onde olhar**
+
+Confirmação e evento
+- `src/api/application/protocol/confirmation.py` e `confirmation_event.py`: a ordem das checagens e o 201 com log quando o evento falha.
+- `src/api/domain/protocol/opening.py`: `StudentAnswer.recorded_text`, onde se decide o texto gravado (do aluno ou fixo).
+- Verificado: tabela de respostas em unitário e na rota; protocolos `20260024923` (trancamento, com "trancar") e `20260025024` (com
+  "migrar") abertos, e o agente citou o número no turno seguinte.
+
+Contrato da tool
+- `src/api/application/protocol/proposer.py` e `src/api/domain/protocol/proposal.py`: recusas `subject_not_supported` e
+  `enrollment_status`.
+- `src/api/application/agent/tool_arguments.py`: a descrição de `subject`, que manda preencher sempre que o aluno cita uma disciplina.
+
+Textos
+- `src/api/application/agent/skills/protocols/SKILL.md`: a regra do curso inteiro. É onde a decisão 1 mexe.
+
+Front
+- `src/app/src/ProtocolCard.tsx` e `proposal.ts`: o card só lê `data` e `client_only`. Screenshots `card-01` a `card-10` e `widget-*`
+  no scratchpad da sessão.
+
+**Pode pular**
+Fakes dos testes, a troca dos testes para o contrato novo, os snapshots de descrição das tools, o `.env.example`, a rota de alunos de
+teste e a leitura do `--env-file`.
+
+**Para você:** a mensagem do banimento de `datetime.now` no `ruff.toml` ainda diz que a data vem da configuração; se o seu `.env`
+tiver `APP_REFERENCE_DATE`, a linha pode sair; `docs/pendencias.md` ainda tem "Corrigir A16", que foi feito.
+
+Para consulta: registro de decisões acima e checkpoints no `## Registro` do spec-mãe e da T15; commits `5a3900d` (catálogo), `4aa9d7c`
+(show_ui na API), `13ce26f` (textos), `d36af62` (rota de alunos de teste), `e125bec` (widget), `7347373` (contrato da tool), `0dfdc5f`
+(confirmação e evento), `6a7463c` (relógio), `6b7898e` (correções da revisão), `e4cc3b9` (card), `ce93d20` (preparação da rodada),
+`d3707a0` (rodada final e comparação).

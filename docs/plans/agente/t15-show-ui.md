@@ -169,6 +169,43 @@ Não confirmar protocolo com `UniSaoPaulo:181722` (TR-01 do eval).
 
 ## Registro
 
+**Checkpoint de implementação** · 2026-11-07 · onda 2, widget só quando o modelo pede
+
+- **Feito:** `widgetsOf` exige `show_ui: true` no input, além de `status: ok`, e mostra só o último widget pedido. Os três widgets já
+  devolviam nada no resultado vazio. Commit `e125bec`.
+- **Critério → evidência:**
+  - `tsc` e build limpos;
+  - oráculo em 1440 e 390 px: financeiro de `UniAraucaria_EAD:013161`, anel de `UniAtlantico:030171` (75%, 2.180 h de 2.900 h) e
+    calendário de `UniLitoral_EAD:012149` apareceram, cada um com `show_ui: true` no input visto no painel de debug;
+  - CR-02 (`UniAraucaria:090271`): nenhum widget em 2 tentativas, mas o modelo nem chamou `get_financial_summary`; o caso
+    `show_ui: false` explícito não apareceu e fica coberto só pela comparação `=== true`.
+- **Divergiu do spec:** nada. Os screenshots salvos mostram o painel de debug aberto, e não o widget; a revisão de comportamento do
+  front, ao fim do card, confere de novo.
+
+**Checkpoint de implementação** · 2026-11-07 · onda 3, rota de alunos de teste
+
+- **Feito:** `GET /auth/dev-students`, só com `dev_login`, do port à rota, e o front lendo a rota no lugar da amostra fixa, que foi
+  apagada. Commit `d36af62`.
+- **Critério → evidência:**
+  - com `dev_login` ligado: 200, os 4 campos, ordenação e uma linha por matrícula; desligado: 404
+    (`tests/integration/identity/test_http_identity.py`, 2 testes);
+  - a tela de unidade mostra as contagens reais: UniSaoPaulo EAD com 164, lida na aba do navegador; a rota devolve 1037 linhas;
+  - gate do condutor: ruff, flake8, mypy e contratos de camada limpos; `tsc` do front limpo.
+- **Divergiu do spec:** nada. A ordenação desempata por marca e matrícula, para ser determinística.
+
+**Checkpoint de implementação** · 2026-11-07 · onda 1, `show_ui` na API
+
+- **Feito:** `show_ui` nas três tools com UI, o campo `ui` no envelope, a regra "só com status ok" numa função das tools
+  (`tools/ui.py`), a lista de parâmetros permitidos fora do registro e a lista de identidade proibida no teste. Commit `4aa9d7c`.
+- **Critério → evidência:**
+  - com `show_ui=true` o resultado traz `ui` e o mesmo `data`, sem ele `ui` não aparece: `tests/unit/agent/test_show_ui.py`, com as
+    três tools e duas chamadas pelo grafo;
+  - o teste de identidade falha se uma tool ganhar `cpf`: mutação feita pelo implementador, com `assert {'cpf'} == set()`, e revertida;
+  - gate do condutor: ruff, flake8 e mypy limpos nos 17 arquivos Python; 390 testes de agente, acadêmico, financeiro e AVA passam.
+- **Divergiu do spec:** os filtros de `get_curriculum` (`semester`, `subject`, `pending_only`) viraram o objeto `filters`, decisão do
+  dono, porque o `show_ui` levava a tool a 6 argumentos e o linter aceita 5. A assinatura da §6.1 fica
+  `get_curriculum(enrollment, filters, *, page, show_ui)`.
+
 **Mudança no spec** · 2026-11-06 · T15 criada
 
 - **O quê:** spec novo, com D1 a D9.

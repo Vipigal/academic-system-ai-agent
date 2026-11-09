@@ -462,6 +462,125 @@ Para consulta: registro de decisões acima e checkpoint no `## Registro`; commit
 
 ## Registro
 
+**Checkpoint de implementação** · 2026-11-08 · T14, rodada final e comparação (F7)
+
+- **Feito:** segundo item âncora TR-14 (`UniMontanhas:070467`, Gestão Estratégica II) e `--env-file` no `evals.run` (commit
+  `ce93d20`); `down -v` às 01:23; `make check` completo verde (1601 testes); rodada `src/evals/results/rodada-final-t14`, 156 de 156
+  execuções, 156 julgadas; comparação em `src/evals/results/rodada-final-t14/antes-e-depois.md`. Commit `d3707a0`.
+- **Critério → evidência:**
+  - segundo item âncora no golden: `evals.golden check` com `Problemas: 0`;
+  - `make check` verde antes da rodada;
+  - itens críticos sem falha: **não atendido**. Uma falha de trajetória no PR-08#5: o agente perguntou "curso inteiro ou
+    disciplina?" sem consultar `list_enrollments` e não disse que a matrícula já estava trancada. A proposta ficou certa em 5 de 5;
+  - o bug sumiu: TR-13 com 0 propostas de ACA-010 em 5 (antes 4 de 5), TR-14 com 0 de 5, nenhuma proposta indevida de trancamento
+    (antes 7) e nenhuma proposta sem bloco de confirmação (antes 13); pass^5 em 14 de 15 itens críticos (antes 7 de 14);
+  - pass@1 determinístico de 61,1% para 89,4%, rubrica de 77,0% para 83,1%, latência p50 de 7,0 s para 4,2 s.
+- **Divergiu do spec:** a rodada ficou reprovada pela regra crítica por uma falha. Corrigir a skill e rodar de novo é decisão do dono.
+
+**Checkpoint de implementação** · 2026-11-08 · T14, card de confirmação e limpeza do login (F6), e correções da revisão da API
+
+- **Feito:** card lido só do resultado da tool e de `client_only`, com título e curso em português; nas ações de alto impacto, a
+  pergunta, o efeito, o limite, o aviso sobre regras e cobranças e o campo da palavra; nos serviços de texto livre, o campo vazio e
+  obrigatório; nos simples, o texto fixo da ação, que a proposta passou a trazer em `request_text`. Botão preso aos campos e à
+  resposta do agente; erro do servidor no card. O atalho de `UniSaoPaulo:181722` já tinha saído no commit `26de271`. Commits
+  `e4cc3b9` (card) e `6b7898e` (correções da revisão da API).
+- **Critério → evidência** (Chromium do WSL, 1440 px, `UniMontanhas:070114`, screenshots `card-01` a `card-10` no scratchpad da sessão):
+  - palavra exigida (ACA-014): botão preso sem a palavra; "MIGRA" voltou 422 e o card mostrou "A palavra de confirmação não confere.";
+    "migrar" abriu o protocolo `20260025024`; no turno seguinte o agente citou o número;
+  - texto livre (TEC-060): campo vazio, botão preso, 4.001 caracteres mostraram o erro do servidor, e o protocolo `20260025027` gravou
+    o texto digitado em `secretary.protocol_interaction`;
+  - serviço simples (FIN-030): "Texto do pedido: "Solicito a segunda via de um boleto."", só com o botão;
+  - nenhum texto do modelo dentro do card; `make check-fast` com 1432 testes; `tsc` e build limpos.
+- **Divergiu do spec:** o trancamento (ACA-010) não foi confirmado no navegador, porque o aluno já tinha o `20260024923`, aberto pela
+  API na confirmação com evento; o mesmo código do card foi provado com ACA-014 e ACA-012. Confirmar serviço com taxa agora dá 404,
+  e não 422, porque esses códigos não têm ação no catálogo e caem antes da taxa; o 422 por taxa segue coberto em unitário.
+
+**Checkpoint de implementação** · 2026-11-08 · T14, relógio real (F3)
+
+- **Feito:** `SystemClock` com o instante real em Brasília, `FixedClock` em 31/10/2026 para testes e eval, `reference_date` fora de
+  `Settings` e do `.env.example`, `Singletons` com o relógio por parâmetro, protocolo aberto no instante real e prompt com a data de
+  hoje (placeholder `{today}`). A16 e §5.8 de `docs/architecture.md` corrigidos. Commit `6a7463c`.
+- **Critério → evidência:**
+  - produção com a data real: no Compose, "Que dia é hoje?" respondeu `08/11/2026`, sem tool;
+  - o eval monta com 31/10: `tests/unit/evals/test_driver_factory.py` confere `clock.today()` e "Hoje é 31/10/2026." no prompt;
+  - nenhum teste depende do `.env` para a data; protocolo no instante real em `tests/unit/protocol/test_opening.py`;
+  - `make check-fast`: 1420 testes passam.
+- **Divergiu do spec:** nada. Efeito aceito: faturas em aberto passam a contar como atrasadas com a data de hoje.
+- **Para você:** a mensagem do banimento de `datetime.now` no `ruff.toml` ainda diz que a data vem da configuração; o arquivo é
+  seu. Se o seu `.env` ainda tiver `APP_REFERENCE_DATE`, a linha pode sair.
+
+**Checkpoint de implementação** · 2026-11-08 · T14, confirmação e evento (F4)
+
+- **Feito:** a rota de confirmação recebe conversa, mensagem e palavra; serviços de texto livre gravam o que o aluno digitou, os
+  simples gravam o texto fixo da ação, e as ações de alto impacto exigem a palavra; depois de gravar, a rota anexa um
+  `system_event` à conversa, que o agente lê como mensagem de sistema. Schema de `agent.message` com o papel novo, aplicado com
+  `down -v` às 00:44 de 08/11. Commit `0dfdc5f`.
+- **Critério → evidência:**
+  - tabela da §6.3 coberta: unitário com fakes (201, 404 de token e de conversa, 422 por vazio, longo, palavra ausente ou errada e
+    situação, colisão repetida) e integração na rota (422 com o motivo, 409, 404 uniforme);
+  - o texto digitado é o gravado no GEN-090, e o texto fixo no DOC-001, mesmo com mensagem enviada;
+  - o aluno não forja evento pelo `/chat` (`tests/integration/chat/test_conversation_identity.py`);
+  - oráculo pela API do Compose com `UniMontanhas:070114`: declaração confirmada (protocolo `20260024922`) e trancamento do curso
+    inteiro confirmado com "trancar" (protocolo `20260024923`). No turno seguinte, sem tool, o agente respondeu "Sim. O pedido de
+    trancamento do curso inteiro de Administração foi aberto. O número do protocolo é 20260024923 [...]". O provedor aceitou a
+    mensagem de sistema no meio do histórico;
+  - `make check-fast`: 1415 testes passam.
+- **Divergiu do spec:** o 422 traz o motivo em `detail`, para o card mostrar o erro do servidor. O teste `live`
+  (`tests/e2e/test_confirmation_event_live.py`) foi escrito, mas não rodou, pelo mesmo motivo do anterior. A §6.5 deste spec ainda
+  descreve `role` só como `user` ou `assistant`.
+
+**Checkpoint de implementação** · 2026-11-08 · T14, contrato da tool e proposta (F2)
+
+- **Feito:** `propose_protocol(action, enrollment, subject)` sem `message`, com a descrição de cada argumento no schema; recusas
+  `subject_not_supported` e `enrollment_status`; a proposta lê o catálogo e falha fechado; `data` com título, efeito, limite e curso em
+  português, mantendo `service.code`; `client_only` com o bloco `confirmation`; token e `SignedProposal` sem mensagem. Commit `7347373`.
+- **Critério → evidência:**
+  - recusas novas testadas com fakes: `tests/unit/protocol/test_proposal_rules.py` e `test_proposer.py`;
+  - token só com `person_id`, `enrollment`, `service_code` e `exp`: `tests/unit/infrastructure/test_proposal_signer.py`;
+  - `test_pr08` corrigido: trancar matrícula já trancada é recusado com `enrollment_status`, e a reativação vira proposta de ACA-011;
+  - `client_only.confirmation` com `question`, `effect`, `limit` e `word`, fora de `executions.jsonl`, `judge_requests.jsonl` e
+    `report.md` (`tests/integration/evals/test_run_proposal.py`);
+  - chamada real, sem LLM: `trancar_curso_inteiro` com "Direito Empresarial" devolveu `subject_not_supported`; sem a disciplina,
+    proposta de ACA-010 para Ciências Contábeis com a palavra TRANCAR;
+  - frase literal "Solicite trancamento de matricula de Gestão Estratégica II", pela API do Compose com `UniMontanhas:070114`: nenhuma
+    proposta em 5 de 5. Antes da correção eram 4 de 5. Numa delas o agente respondeu "Você quer trancar o curso inteiro ou está se
+    referindo à disciplina Gestão Estratégica II? Trancamento vale para o curso inteiro, não para uma disciplina.";
+  - `make check-fast`: 1372 testes passam.
+- **Divergiu do spec:** o teste `live` (`test_subject_lock_live.py`) não rodou, porque o auto mode barrou carregar o `.env` no shell.
+  A mesma prova foi feita pela API, que já tem a chave. Até a confirmação nova, a rota grava o texto fixo da ação em todos os serviços.
+
+**Checkpoint de implementação** · 2026-11-07 · T14, textos (F5)
+
+- **Feito:** skill `protocols` com a regra literal do curso inteiro, o caminho do pedido de disciplina e a tabela de ações gerada do
+  catálogo (`application/agent/action_table.py`); skill `overview` com a rematrícula; ontologias `trancamento`, `matricula`,
+  `matricula_em_disciplina` e `data_de_referencia`; prompt `student_agent_v2` em uso. Commit `13ce26f`.
+- **Critério → evidência:**
+  - prompt `v2` em uso, `v1` preservado, regra de escopo e de certeza: `tests/unit/agent/test_skills.py`;
+  - tabela gerada com uma linha por ação, sem os 4 serviços com taxa e sem a palavra de confirmação: `tests/unit/agent/test_action_table.py`;
+  - entrada só explicativa, com `never_say` para não oferecê-la: `tests/unit/ontology/test_catalog.py`;
+  - `overview` com a rematrícula nos últimos 30 dias do semestre, janela medida em `sag.term_enrollment` (a rematrícula mais cedo
+    aparece 20 dias antes do fim do semestre anterior); com 31/10 a regra não dispara, e o CR-01 não muda;
+  - teste `live` da frase literal escrito (`tests/integration/agent/test_subject_lock_live.py`, 5 repetições); roda depois do contrato
+    novo da tool;
+  - gate do condutor: ruff, flake8 e mypy limpos; 162 testes da área passam.
+- **Divergiu do spec:** nada. A skill descreve o contrato novo da tool antes de ele existir; os dois se encontram no próximo commit.
+
+**Checkpoint de implementação** · 2026-11-07 · T14, catálogo de ações (F1)
+
+- **Feito:** catálogo de ações no domínio (`domain/protocol/action.py`, `action_catalog.py` e três módulos de dados por área), nomes
+  em português dos serviços e dos 8 cursos, busca de serviço pelo nome em português e a entrada de ontologia
+  `matricula_em_disciplina`, com texto provisório. Commit `5a3900d`.
+- **Critério → evidência:**
+  - os 18 códigos cobertos, cada um com texto fixo e `requires_student_message`: `tests/unit/protocol/test_service_actions.py`;
+  - código desconhecido falha fechado: o mesmo teste, e `Service.agent_can_open` exige entrada com ação;
+  - "revisão de nota" acha ACA-020: `tests/unit/protocol/test_queries.py`, com fake, e chamada real com o aluno do PR-03
+    (`list_protocols(service='revisão de nota')` devolveu o protocolo `20260013930`);
+  - `list_services` real trouxe os 18 com título e efeito;
+  - gate do condutor: ruff, flake8 e mypy limpos nos 22 arquivos; 328 testes da área passam.
+- **Divergiu do spec:** nada. A proposta e a confirmação ainda não leem o catálogo: isso é do contrato da tool e da confirmação.
+- **Ponto para o review:** o efeito de ACA-013 diz o que os dados mostram (11 transferências para outro curso e 9 para o mesmo
+  curso em outra marca ou modalidade), mais largo que o nome `transferir_de_curso`. Ciências Contábeis é o nome de CON.
+
 **Checkpoint de implementação** · 2026-11-07 · T10, régua revisada
 
 - **Feito:** a conferência do dono e a régua nova do eval (D50 e D51); o baseline rodado de novo com ela em
