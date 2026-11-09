@@ -1,6 +1,8 @@
 from datetime import date
 
+from api.application.agent.agent_runtime import AgentRuntime
 from api.bootstrap.settings import Settings
+from api.domain.ports.clock import Clock
 from evals.driver_factory import DriverFactory
 
 SETTINGS = Settings.model_validate(
@@ -9,8 +11,8 @@ SETTINGS = Settings.model_validate(
 
 
 async def test_the_eval_builds_the_agent_on_the_day_of_the_data_snapshot() -> None:
-    singletons = DriverFactory.singletons_for(SETTINGS)
+    container = DriverFactory.container_for(SETTINGS)
 
-    assert singletons.clock.today() == date(2026, 10, 31)
-    assert "Hoje é 31/10/2026." in singletons.agent.runtime.system_message()
-    await singletons.dispose()
+    assert (await container.get(Clock)).today() == date(2026, 10, 31)
+    assert "Hoje é 31/10/2026." in (await container.get(AgentRuntime)).system_message()
+    await container.close()

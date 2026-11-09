@@ -35,16 +35,16 @@ class UndeclaredRow(UndeclaredBase):
 
 @pytest.fixture
 async def session(database: Database) -> StudentSession:
-    return await StudentSessionRepository(database.db_session_factory).load(OWNER)
+    return await StudentSessionRepository(database).load(OWNER)
 
 
 @pytest.fixture
 def adapter(database: Database, session: StudentSession) -> RepositoryAdapter:
-    return RepositoryAdapter(database.db_session_factory, session)
+    return RepositoryAdapter(database, session)
 
 
 def adapter_for(database: Database, session: StudentSession) -> RepositoryAdapter:
-    return RepositoryAdapter(database.db_session_factory, session)
+    return RepositoryAdapter(database, session)
 
 
 async def test_restricts_rows_to_the_session_contracts(adapter: RepositoryAdapter) -> None:

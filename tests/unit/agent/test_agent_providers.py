@@ -1,9 +1,12 @@
+from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
+from api.application.agent.agent_runtime import AgentRuntime
 from api.application.agent.scripted_model import ScriptedChatModel
-from api.bootstrap.agent_providers import AgentProviders
+from api.application.agent.student_agent import StudentAgent
+from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
-from api.bootstrap.singletons import Singletons
+from api.domain.ports.clock import Clock
 from api.infrastructure.clock import FixedClock, SystemClock
 from tests.unit.agent.agent_support import tool_results
 from tests.unit.agent.student_stubs import stub_student
@@ -15,10 +18,10 @@ def settings_with(**values: object) -> Settings:
     return Settings.model_validate({"database_url": DATABASE_URL, **values})
 
 
-def test_the_real_model_uses_the_responses_api_with_the_configured_effort() -> None:
+async def test_the_real_model_uses_the_responses_api_with_the_configured_effort() -> None:
     settings = settings_with(agent_model="gpt-6-luna", agent_effort="medium", OPENAI_API_KEY="k")
 
-    model = AgentProviders.chat_model(settings)
+    model = await Containers.http(settings).get(BaseChatModel)
 
     assert isinstance(model, ChatOpenAI)
     assert model.model_name == "gpt-6-luna"
@@ -27,13 +30,12 @@ def test_the_real_model_uses_the_responses_api_with_the_configured_effort() -> N
     assert model.max_retries == 0
 
 
-def test_the_fake_model_is_chosen_by_configuration() -> None:
-    assert isinstance(
-        AgentProviders.chat_model(settings_with(agent_model="fake")), ScriptedChatModel
-    )
+async def test_the_fake_model_is_chosen_by_configuration() -> None:
+    container = Containers.http(settings_with(agent_model="fake"))
+    assert isinstance(await container.get(BaseChatModel), ScriptedChatModel)
 
 
-def test_limits_come_from_the_settings() -> None:
+async def test_limits_come_from_the_settings() -> None:
     settings = settings_with(
         agent_model="fake",
         agent_model_call_limit=3,
@@ -41,7 +43,8 @@ def test_limits_come_from_the_settings() -> None:
         agent_timeout_seconds=5,
     )
 
-    limits = AgentProviders(settings, FixedClock()).runtime.limits
+    container = Containers.http(settings, {Clock: FixedClock()})
+    limits = (await container.get(AgentRuntime)).limits
 
     assert limits.model_calls == 3
     assert limits.tool_calls == 4
@@ -49,26 +52,28 @@ def test_limits_come_from_the_settings() -> None:
 
 
 async def test_singletons_start_without_a_key_and_build_the_model_once() -> None:
-    singletons = Singletons.create(settings_with(agent_model="fake"))
+    container = Containers.http(settings_with(agent_model="fake"))
 
-    assert singletons.agent.runtime is singletons.agent.runtime
-    await singletons.dispose()
+    assert await container.get(AgentRuntime) is await container.get(AgentRuntime)
+    await container.close()
 
 
 async def test_singletons_use_the_system_clock_unless_another_is_given() -> None:
-    production = Singletons.create(settings_with(agent_model="fake"))
-    injected = Singletons.create(settings_with(agent_model="fake"), FixedClock())
+    production = Containers.http(settings_with(agent_model="fake"))
+    injected = Containers.http(settings_with(agent_model="fake"), {Clock: FixedClock()})
 
-    assert isinstance(production.clock, SystemClock)
-    assert "Hoje é 31/10/2026." in injected.agent.runtime.system_message()
-    await production.dispose()
-    await injected.dispose()
+    assert isinstance(await production.get(Clock), SystemClock)
+    assert "Hoje é 31/10/2026." in (await injected.get(AgentRuntime)).system_message()
+    await production.close()
+    await injected.close()
 
 
 async def test_the_fake_model_runs_the_same_script_for_every_request() -> None:
-    providers = AgentProviders(settings_with(agent_model="fake"), FixedClock())
+    container = Containers.http(settings_with(agent_model="fake"), {Clock: FixedClock()})
+    runtime = await container.get(AgentRuntime)
 
     for trace_id in ("um", "dois"):
-        run = await providers.agent_for(stub_student(), trace_id).run("Quanto devo?")
+        agent = StudentAgent(runtime, stub_student().registry().tools, trace_id)
+        run = await agent.run("Quanto devo?")
         assert [item.tool_name for item in tool_results(run.events)] == ["get_financial_summary"]
         assert run.text

@@ -25,7 +25,8 @@ def assert_files_of_the_round(directory: Path) -> None:
 async def test_the_fake_model_produces_a_report_against_the_real_database(
     tmp_path: Path, tracing: Tracing, sink: SpanSink
 ) -> None:
-    driver = StudentDriver(DriverFactory.singletons_for(fake_settings()), tracing, VERSIONS)
+    container = DriverFactory.container_for(fake_settings(), {Tracing: tracing})
+    driver = StudentDriver(container, VERSIONS)
     request = RunRequest(SELECTION, Epochs(), tmp_path)
 
     data = await RunSession(driver, request).run()
@@ -41,7 +42,8 @@ async def test_the_fake_model_produces_a_report_against_the_real_database(
 
 async def test_without_langfuse_keys_the_trace_id_is_null(tmp_path: Path) -> None:
     tracing = Tracing(None, None, None, None)
-    driver = StudentDriver(DriverFactory.singletons_for(fake_settings()), tracing, VERSIONS)
+    container = DriverFactory.container_for(fake_settings(), {Tracing: tracing})
+    driver = StudentDriver(container, VERSIONS)
 
     data = await RunSession(driver, RunRequest(SELECTION, Epochs(), tmp_path)).run()
     await driver.close()
@@ -57,7 +59,8 @@ async def test_the_round_reads_the_oracle_url_from_the_env_file(
     env_file.write_text(f"APP_ORACLE_DATABASE_URL={oracle_url}\n", encoding="utf-8")
     monkeypatch.delenv("APP_ORACLE_DATABASE_URL")
     driver = StudentDriver(
-        DriverFactory.singletons_for(fake_settings()), Tracing(None, None, None, None), VERSIONS
+        DriverFactory.container_for(fake_settings(), {Tracing: Tracing(None, None, None, None)}),
+        VERSIONS,
     )
     request = RunRequest(SELECTION, Epochs(), tmp_path / "rodada", env_file=env_file)
 

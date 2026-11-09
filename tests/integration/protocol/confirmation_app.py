@@ -1,47 +1,44 @@
 import httpx
+from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 
-from api.bootstrap.identity_providers import IdentityProviders
-from api.bootstrap.protocol_confirmation_assembly import ProtocolConfirmationAssembly
-from api.bootstrap.protocol_confirmation_providers import ProtocolConfirmationProviders
-from api.bootstrap.protocol_providers import ProtocolProviders
+from api.application.protocol.service import ProtocolService
+from api.bootstrap.routes import ApiRoutes
 from api.bootstrap.settings import Settings
-from api.bootstrap.student_providers import StudentProviders
-from api.infrastructure.clock import FixedClock
+from api.domain.ports.protocol import ProposalSigner
 from api.persistence.core.database import Database
+from tests.integration.protocol.confirmation_container import confirmation_container
 from tests.integration.protocol.confirmation_settings import settings_with
 from tests.integration.protocol.information_request import (
     WRITTEN,
     conversation_for,
     information_token,
 )
+from tests.integration.support.student_scopes import StudentScopes
 
 
 class ConfirmationApp:
     def __init__(self, database: Database, settings: Settings | None = None) -> None:
         self.settings = settings or settings_with()
-        self.signer = ProtocolProviders.signer_of(self.settings)
+        container = confirmation_container(database, self.settings)
+        self.signer: ProposalSigner = container.get_sync(ProposalSigner)
         self._database = database
         self._application = FastAPI()
-        self._mount(IdentityProviders(self.settings, database))
-
-    def _mount(self, identity: IdentityProviders) -> None:
-        assembly = ProtocolConfirmationAssembly(self._database, FixedClock(), self.signer)
-        confirmation = ProtocolConfirmationProviders(assembly, identity.session_dependency())
-        login_router = identity.auth_router()
-        if login_router is not None:
-            self._application.include_router(login_router)
-        self._application.include_router(confirmation.router())
+        ApiRoutes.mount(self._application, self.settings)
+        setup_dishka(container, self._application)
 
     def client(self) -> httpx.AsyncClient:
         transport = httpx.ASGITransport(app=self._application)
         return httpx.AsyncClient(transport=transport, base_url="http://api")
 
-    def students(self) -> StudentProviders:
-        return StudentProviders(self._database, FixedClock(), self.signer)
+    def students(self) -> StudentScopes:
+        return StudentScopes(self._database, self.signer)
+
+    async def protocols_of(self, person_id: str) -> ProtocolService:
+        return await self.students().of_person(person_id, ProtocolService)
 
     async def proposal_of(self, person_id: str, enrollment: str) -> str:
-        return await information_token(self.students(), person_id, enrollment)
+        return await information_token(await self.protocols_of(person_id), enrollment)
 
     async def conversation_of(self, person_id: str) -> str:
         return await conversation_for(self._database, person_id)

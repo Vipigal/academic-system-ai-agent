@@ -15,17 +15,17 @@ PERSON_WITH_ACCOUNT_AND_PROTOCOLS = "3000071"
 
 
 async def session_of(database: Database, person_id: str) -> StudentSession:
-    return await StudentSessionRepository(database.db_session_factory).load(person_id)
+    return await StudentSessionRepository(database).load(person_id)
 
 
 async def adapter_of(database: Database, person_id: str) -> RepositoryAdapter:
     session = await session_of(database, person_id)
-    return RepositoryAdapter(database.db_session_factory, session)
+    return RepositoryAdapter(database, session)
 
 
 async def test_adapter_limits_lms_accounts_to_the_session(database: Database) -> None:
     session = await session_of(database, PERSON_WITH_ACCOUNT_AND_PROTOCOLS)
-    adapter = RepositoryAdapter(database.db_session_factory, session)
+    adapter = RepositoryAdapter(database, session)
     accounts = await adapter.fetch(select(LmsUserRow))
     expected = await SqlOracle().owned_by_cpf(LMS_OWNERS, session.cpf)
     assert expected
@@ -34,7 +34,7 @@ async def test_adapter_limits_lms_accounts_to_the_session(database: Database) ->
 
 async def test_adapter_limits_protocols_to_the_session(database: Database) -> None:
     session = await session_of(database, PERSON_WITH_ACCOUNT_AND_PROTOCOLS)
-    adapter = RepositoryAdapter(database.db_session_factory, session)
+    adapter = RepositoryAdapter(database, session)
     protocols = await adapter.fetch(select(ProtocolRow))
     expected = await SqlOracle().owned_by_cpf(PROTOCOL_OWNERS, session.cpf)
     assert expected

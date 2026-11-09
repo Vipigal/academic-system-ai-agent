@@ -1,8 +1,7 @@
-from collections.abc import Awaitable, Callable
 from http import HTTPStatus
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from dishka.integrations.fastapi import DishkaRoute, FromDishka
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 
@@ -21,6 +20,8 @@ RETRY_AFTER = "Retry-After"
 RATE_LIMIT_LIMIT = "RateLimit-Limit"
 RATE_LIMIT_REMAINING = "RateLimit-Remaining"
 RATE_LIMIT_RESET = "RateLimit-Reset"
+
+router = APIRouter(route_class=DishkaRoute)
 
 
 class UiMessagePart(BaseModel):
@@ -71,40 +72,23 @@ class RateLimitHeaders:
         return HTTPException(status, status.phrase, headers=headers)
 
 
-class ChatRouter:
-    @staticmethod
-    def build(
-        chat_service: Callable[..., Awaitable[ChatService]],
-        chat_rate_limit: Callable[..., Awaitable[ChatRateLimit]],
-    ) -> APIRouter:
-        router = APIRouter()
+@router.post("/conversations", status_code=HTTPStatus.CREATED)
+async def create_conversation(service: FromDishka[ChatService]) -> ConversationDto:
+    return await service.create_conversation()
 
-        @router.post("/conversations", status_code=HTTPStatus.CREATED)
-        async def create_conversation(
-            service: Annotated[ChatService, Depends(chat_service)],
-        ) -> ConversationDto:
-            return await service.create_conversation()
 
-        @router.post("/chat")
-        async def chat(
-            request: ChatRequest,
-            rate_limit: Annotated[ChatRateLimit, Depends(chat_rate_limit)],
-            service: Annotated[ChatService, Depends(chat_service)],
-        ) -> StreamingResponse:
-            decision = await rate_limit.admit()
-            if not decision.allowed:
-                raise RateLimitHeaders.refusal(decision)
-            return await ChatRouter._streamed(service, request, decision)
-
-        return router
-
-    @staticmethod
-    async def _streamed(
-        service: ChatService, request: ChatRequest, decision: RateLimitDecision
-    ) -> StreamingResponse:
-        try:
-            events = await service.begin(request.id, request.last_user_text)
-        except ConversationNotFoundError:
-            raise HTTPException(HTTPStatus.NOT_FOUND, HTTPStatus.NOT_FOUND.phrase) from None
-        headers = {**HEADERS, **RateLimitHeaders.of(decision)}
-        return StreamingResponse(UiMessageStream.of(events), headers=headers)
+@router.post("/chat")
+async def chat(
+    request: ChatRequest,
+    rate_limit: FromDishka[ChatRateLimit],
+    service: FromDishka[ChatService],
+) -> StreamingResponse:
+    decision = await rate_limit.admit()
+    if not decision.allowed:
+        raise RateLimitHeaders.refusal(decision)
+    try:
+        events = await service.begin(request.id, request.last_user_text)
+    except ConversationNotFoundError:
+        raise HTTPException(HTTPStatus.NOT_FOUND, HTTPStatus.NOT_FOUND.phrase) from None
+    headers = {**HEADERS, **RateLimitHeaders.of(decision)}
+    return StreamingResponse(UiMessageStream.of(events), headers=headers)

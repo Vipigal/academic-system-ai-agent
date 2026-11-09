@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from api.bootstrap.student_providers import StudentProviders
+from api.application.protocol.service import ProtocolService
 from api.domain.conversation.message import Message
 from api.domain.protocol.action import ProtocolAction
 from api.domain.protocol.action_catalog import ServiceActions
@@ -17,18 +17,16 @@ WRITTEN = {"message": TYPED}
 WINDOW = 20
 
 
-async def information_token(students: StudentProviders, person_id: str, enrollment: str) -> str:
-    services = await students.services_of(person_id)
-    result = await services.protocol().propose_protocol(INFORMATION, enrollment, None)
+async def information_token(protocols: ProtocolService, enrollment: str) -> str:
+    result = await protocols.propose_protocol(INFORMATION, enrollment, None)
     token = (result.client_only or {}).get("token")
     assert isinstance(token, str)
     return token
 
 
 async def conversations_of(database: Database, person_id: str) -> SqlConversationRepository:
-    factory = database.db_session_factory
-    session = await StudentSessionRepository(factory).load(person_id)
-    return SqlConversationRepository(RepositoryAdapter(factory, session))
+    session = await StudentSessionRepository(database).load(person_id)
+    return SqlConversationRepository(RepositoryAdapter(database, session))
 
 
 async def conversation_for(database: Database, person_id: str) -> str:

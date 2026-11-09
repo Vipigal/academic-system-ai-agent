@@ -21,7 +21,7 @@ async def people() -> list[str]:
 @pytest.fixture
 async def volumes(database: Database, people: list[str]) -> list[invariant_volumes.Volumes]:
     factory = tools_factory(database)
-    repository = StudentSessionRepository(database.db_session_factory)
+    repository = StudentSessionRepository(database)
     return [
         invariant_volumes.Volumes(
             SqlOracle(),

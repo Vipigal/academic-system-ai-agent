@@ -1,22 +1,19 @@
 from collections.abc import Sequence
 
 from sqlalchemy import Select, Update
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.domain.identity.session import StudentSession
 from api.persistence.core.base import Base
+from api.persistence.core.database import Database
 from api.persistence.core.ownership_criteria import STUDENT, OwnershipRegistry
 
 type Rows[*RowT] = Sequence[tuple[*RowT]]
 
 
 class RepositoryAdapter:
-    def __init__(
-        self,
-        db_session_factory: async_sessionmaker[AsyncSession],
-        student_session: StudentSession,
-    ) -> None:
-        self._db_session_factory = db_session_factory
+    def __init__(self, database: Database, student_session: StudentSession) -> None:
+        self._database = database
         self._student_session = student_session
 
     @property
@@ -45,7 +42,7 @@ class RepositoryAdapter:
                     await db.flush()
 
     def _db_session(self) -> AsyncSession:
-        return self._db_session_factory(info={STUDENT: self._student_session})
+        return self._database.db_session_factory(info={STUDENT: self._student_session})
 
     @staticmethod
     def _assert_declared(step: Sequence[Base] | Update) -> None:

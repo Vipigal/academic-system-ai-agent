@@ -17,9 +17,8 @@ NO_STUDENT = {"skip_ownership": True}
 async def test_a_row_from_the_adapter_does_not_bring_the_requester(
     database: Database, attribute: str
 ) -> None:
-    factory = database.db_session_factory
-    session = await StudentSessionRepository(factory).load(PERSON)
-    rows = await RepositoryAdapter(factory, session).fetch(select(ProtocolRow))
+    session = await StudentSessionRepository(database).load(PERSON)
+    rows = await RepositoryAdapter(database, session).fetch(select(ProtocolRow))
     assert rows
     assert attribute not in vars(rows[0])
     with pytest.raises(DetachedInstanceError):

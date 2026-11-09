@@ -1,14 +1,12 @@
 from pydantic import SecretStr
 
 from api.bootstrap.settings import Settings
-from api.infrastructure.logging import JsonLogging
 from api.infrastructure.tracing import Tracing, UserPseudonym
 
 
 class Observability:
     @staticmethod
     def start(settings: Settings) -> Tracing:
-        JsonLogging.configure()
         return Tracing(
             _reveal(settings.langfuse_public_key),
             _reveal(settings.langfuse_secret_key),

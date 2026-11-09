@@ -30,9 +30,8 @@ FOREIGN_OPENING = ProtocolOpening(
 async def test_the_writer_refuses_an_enrollment_outside_the_session(database: Database) -> None:
     oracle = SqlOracle()
     before = await table_counts(oracle)
-    factory = database.db_session_factory
-    session = await StudentSessionRepository(factory).load(PERSON)
-    writer = SqlProtocolWriter(RepositoryAdapter(factory, session))
+    session = await StudentSessionRepository(database).load(PERSON)
+    writer = SqlProtocolWriter(RepositoryAdapter(database, session))
     with pytest.raises(OwnershipError):
         await writer.save(FOREIGN_OPENING)
     assert await table_counts(oracle) == before

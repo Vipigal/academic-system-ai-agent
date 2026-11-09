@@ -174,7 +174,7 @@ async def test_the_new_protocol_appears_for_the_student(
     app: ConfirmationApp, student: str, person: str
 ) -> None:
     number = await opened_number(app, student, person)
-    protocols = (await app.students().services_of(person)).protocol()
+    protocols = await app.protocols_of(person)
     listed = await protocols.list_protocols(None, None, None, FIRST_PAGE)
     detail = await protocols.get_protocol(number)
     assert number in {item.number for item in listed.data or []}
@@ -184,8 +184,8 @@ async def test_the_new_protocol_appears_for_the_student(
 
 async def test_another_student_does_not_see_the_new_protocol(app: ConfirmationApp) -> None:
     number = await opened_number(app, STUDENT, PERSON)
-    services = await app.students().services_of(ONLINE_PERSON)
-    assert (await services.protocol().get_protocol(number)).data is None
+    protocols = await app.protocols_of(ONLINE_PERSON)
+    assert (await protocols.get_protocol(number)).data is None
 
 
 async def test_the_token_of_another_student_is_not_found_and_writes_nothing(

@@ -1,27 +1,16 @@
-from collections.abc import Awaitable, Callable
-from typing import Annotated
-
-from fastapi import APIRouter, Depends
+from dishka import Provider, Scope, provide, provide_all
 
 from api.application.protocol.confirmation import ProtocolConfirmation
-from api.bootstrap.protocol_confirmation_assembly import ProtocolConfirmationAssembly
-from api.domain.identity.session import StudentSession
-from api.presentation.http.protocol_confirmation import ProtocolConfirmationRouter
+from api.application.protocol.confirmation_ports import ConfirmationPorts
+from api.domain.ports.identity import RequesterDirectory
+from api.domain.ports.protocol import ProtocolWriter
+from api.persistence.identity.requester_directory import SqlRequesterDirectory
+from api.persistence.secretary.protocol_writer import SqlProtocolWriter
 
 
-class ProtocolConfirmationProviders:
-    def __init__(
-        self,
-        assembly: ProtocolConfirmationAssembly,
-        session_dependency: Callable[..., Awaitable[StudentSession]],
-    ) -> None:
-        self._assembly = assembly
-        self._session_dependency = session_dependency
+class ProtocolConfirmationProvider(Provider):
+    scope = Scope.REQUEST
 
-    def router(self) -> APIRouter:
-        async def confirmation(
-            session: Annotated[StudentSession, Depends(self._session_dependency)],
-        ) -> ProtocolConfirmation:
-            return self._assembly.for_session(session)
-
-        return ProtocolConfirmationRouter.build(confirmation)
+    requesters = provide(SqlRequesterDirectory, provides=RequesterDirectory)
+    writer = provide(SqlProtocolWriter, provides=ProtocolWriter)
+    confirmation = provide_all(ConfirmationPorts, ProtocolConfirmation)

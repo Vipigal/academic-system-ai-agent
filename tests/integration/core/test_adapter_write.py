@@ -35,8 +35,8 @@ def message(conversation_id: UUID, position: int) -> MessageRow:
 
 
 async def adapter_of(database: Database, person_id: str) -> RepositoryAdapter:
-    session = await StudentSessionRepository(database.db_session_factory).load(person_id)
-    return RepositoryAdapter(database.db_session_factory, session)
+    session = await StudentSessionRepository(database).load(person_id)
+    return RepositoryAdapter(database, session)
 
 
 async def count_of(table: str, conversation_id: UUID) -> int:

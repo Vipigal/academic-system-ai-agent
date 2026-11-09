@@ -1,37 +1,24 @@
-from api.application.agent.student_tools import StudentTools
-from api.application.agent.tools.registry import ToolRegistry
-from api.bootstrap.protocol_providers import ProtocolProviders
-from api.bootstrap.student_services import StudentServices
-from api.bootstrap.tool_providers import ToolProviders
-from api.domain.identity.session import StudentSession
-from api.domain.ports.clock import Clock
-from api.domain.ports.identity import StudentSessionLoader
-from api.domain.ports.protocol import ProposalSigner
-from api.persistence.core.database import Database
+from dishka import AnyOf, Provider, Scope, provide, provide_all
+
+from api.application.academic.service import AcademicService
+from api.application.finance.service import FinancialService
+from api.application.lms.service import LmsService
+from api.domain.ports.academic import AcademicCatalogRepository, StudentAcademicRepository
+from api.domain.ports.finance import FinanceRepository, ServiceFeeRepository
+from api.domain.ports.lms import LmsRepository
 from api.persistence.core.repository_adapter import RepositoryAdapter
-from api.persistence.identity.student_session_repository import StudentSessionRepository
+from api.persistence.finance.repositories import SqlFinanceRepository
+from api.persistence.lms.repository import SqlLmsRepository
+from api.persistence.sag.catalog_repository import SagAcademicCatalogRepository
+from api.persistence.sag.student_repository import SagStudentAcademicRepository
 
 
-class StudentProviders:
-    def __init__(self, database: Database, clock: Clock, signer: ProposalSigner) -> None:
-        self._database = database
-        self._clock = clock
-        self._signer = signer
+class StudentProvider(Provider):
+    scope = Scope.REQUEST
 
-    def session_loader(self) -> StudentSessionLoader:
-        return StudentSessionRepository(self._database.db_session_factory)
-
-    async def services_of(self, person_id: str) -> StudentServices:
-        return self.services_for(await self.session_loader().load(person_id))
-
-    def services_for(self, session: StudentSession) -> StudentServices:
-        adapter = RepositoryAdapter(self._database.db_session_factory, session)
-        return StudentServices(
-            adapter, self._clock, ProtocolProviders(adapter, self._clock, self._signer)
-        )
-
-    async def tools_of(self, person_id: str) -> StudentTools:
-        return ToolProviders.tools_for(await self.services_of(person_id))
-
-    async def for_person(self, person_id: str) -> ToolRegistry:
-        return (await self.tools_of(person_id)).registry()
+    adapter = provide(RepositoryAdapter)
+    finance = provide(SqlFinanceRepository, provides=AnyOf[FinanceRepository, ServiceFeeRepository])
+    catalog = provide(SagAcademicCatalogRepository, provides=AcademicCatalogRepository)
+    academic = provide(SagStudentAcademicRepository, provides=StudentAcademicRepository)
+    lms = provide(SqlLmsRepository, provides=LmsRepository)
+    services = provide_all(AcademicService, FinancialService, LmsService)

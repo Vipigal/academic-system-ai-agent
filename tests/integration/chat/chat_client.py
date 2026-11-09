@@ -99,7 +99,6 @@ class ChatClient:
 
 
 async def history_of(database: Database, conversation: str) -> Sequence[Message]:
-    factory = database.db_session_factory
-    session = await StudentSessionRepository(factory).load(STUDENT_PERSON)
-    repository = SqlConversationRepository(RepositoryAdapter(factory, session))
+    session = await StudentSessionRepository(database).load(STUDENT_PERSON)
+    repository = SqlConversationRepository(RepositoryAdapter(database, session))
     return await repository.window(UUID(conversation), WINDOW)

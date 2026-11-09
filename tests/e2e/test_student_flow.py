@@ -38,7 +38,7 @@ def scripted() -> TurnModel:
 async def whole_flow(
     bank: RolledBackBank, model: TurnModel | None = None
 ) -> tuple[FlowResult, str]:
-    with running_api(bank, e2e_settings(), model or scripted()) as api:
+    async with running_api(bank, e2e_settings(), model or scripted()) as api:
         result = await StudentFlow(api.client, PROPOSAL_TEXT, LISTING_TEXT).run()
         return result, api.log.getvalue()
 
@@ -76,7 +76,7 @@ async def test_the_next_turn_sees_the_confirmation_event_before_the_new_question
 
 
 async def chat_log_entries(bank: RolledBackBank) -> list[dict[str, str]]:
-    with running_api(bank, e2e_settings(), scripted()) as api:
+    async with running_api(bank, e2e_settings(), scripted()) as api:
         chat = await ChatClient.logged_in(api.client)
         conversation = await chat.create_conversation()
         api.log.truncate(0)

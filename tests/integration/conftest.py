@@ -36,7 +36,7 @@ async def admin_database() -> AsyncIterator[Database]:
 async def everyone() -> AsyncIterator[list[StudentSession]]:
     connected = Database(Settings.from_environment().database_url.get_secret_value())
     people = await SqlOracle().values(ONE_ID_PER_PERSON)
-    repository = StudentSessionRepository(connected.db_session_factory)
+    repository = StudentSessionRepository(connected)
     yield list(await asyncio.gather(*(repository.load(person_id) for person_id in sorted(people))))
     await connected.dispose()
 
@@ -49,8 +49,8 @@ async def owned_by_everyone(everyone: list[StudentSession]) -> AsyncIterator[lis
 
 
 @pytest.fixture
-def financial_services(
+async def financial_services(
     database: Database, everyone: list[StudentSession]
 ) -> list[FinancialService]:
     factory = tools_factory(database)
-    return [factory.services_for(session).financial() for session in everyone]
+    return [await factory.of_session(session, FinancialService) for session in everyone]

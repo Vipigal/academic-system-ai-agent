@@ -43,8 +43,8 @@ def assistant(text: str, *calls: ToolCall) -> Message:
 
 
 async def repository_of(database: Database, person_id: str) -> SqlConversationRepository:
-    session = await StudentSessionRepository(database.db_session_factory).load(person_id)
-    return SqlConversationRepository(RepositoryAdapter(database.db_session_factory, session))
+    session = await StudentSessionRepository(database).load(person_id)
+    return SqlConversationRepository(RepositoryAdapter(database, session))
 
 
 @pytest.fixture
@@ -139,7 +139,7 @@ async def test_the_stored_result_is_what_the_model_saw(
 
 async def test_the_adapter_hides_the_conversation_from_other_people(database: Database) -> None:
     conversation = await (await repository_of(database, OWNER)).create(OWNER)
-    session = await StudentSessionRepository(database.db_session_factory).load(OTHER)
-    adapter = RepositoryAdapter(database.db_session_factory, session)
+    session = await StudentSessionRepository(database).load(OTHER)
+    adapter = RepositoryAdapter(database, session)
     statement = select(ConversationRow).where(ConversationRow.id == conversation)
     assert await adapter.fetch(statement) == []

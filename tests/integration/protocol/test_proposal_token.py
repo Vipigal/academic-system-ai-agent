@@ -2,7 +2,8 @@ import pytest
 
 from api.application.protocol.dto.proposal import Proposal
 from api.application.shared.tool_result import ToolResult, ToolStatus
-from api.bootstrap.protocol_providers import ProtocolProviders
+from api.bootstrap.containers import Containers
+from api.domain.ports.protocol import ProposalSigner
 from api.domain.protocol.action import ProtocolAction
 from api.persistence.core.database import Database
 from tests.integration.protocol.confirmation_app import ConfirmationApp
@@ -15,8 +16,8 @@ INFORMATION = ProtocolAction.INFORMACOES_GERAIS
 
 async def proposed(database: Database) -> tuple[ConfirmationApp, ToolResult[Proposal]]:
     app = ConfirmationApp(database)
-    services = await app.students().services_of(PERSON)
-    return app, await services.protocol().propose_protocol(INFORMATION, STUDENT, None)
+    protocols = await app.protocols_of(PERSON)
+    return app, await protocols.propose_protocol(INFORMATION, STUDENT, None)
 
 
 async def test_the_token_and_the_confirmation_go_to_the_client(database: Database) -> None:
@@ -43,7 +44,7 @@ async def test_the_json_that_goes_to_the_model_has_no_token_and_no_confirmation(
 
 async def test_refusals_and_candidates_carry_no_token(database: Database) -> None:
     app = ConfirmationApp(database)
-    protocols = (await app.students().services_of(PERSON)).protocol()
+    protocols = await app.protocols_of(PERSON)
 
     refused = await protocols.propose_protocol(
         ProtocolAction.TRANCAR_CURSO_INTEIRO, STUDENT, "Direito Empresarial"
@@ -54,6 +55,8 @@ async def test_refusals_and_candidates_carry_no_token(database: Database) -> Non
     assert (refused.client_only, missing.client_only) == (None, None)
 
 
-def test_a_missing_proposal_secret_fails_closed() -> None:
+async def test_a_missing_proposal_secret_fails_closed() -> None:
+    container = Containers.students(settings_with(proposal_secret=None))
     with pytest.raises(ValueError, match="secret"):
-        ProtocolProviders.signer_of(settings_with(proposal_secret=None))
+        await container.get(ProposalSigner)
+    await container.close()

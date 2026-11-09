@@ -16,7 +16,7 @@ LISTING_TEXT = "Liste os meus protocolos em andamento."
 
 @pytest.mark.live
 async def test_the_whole_flow_with_the_real_model(bank: RolledBackBank) -> None:
-    with running_api(bank, live_settings()) as api:
+    async with running_api(bank, live_settings()) as api:
         result = await StudentFlow(api.client, PROPOSAL_TEXT, LISTING_TEXT).run()
 
     assert PROPOSE_TOOL in tools_called(result.proposal)
