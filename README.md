@@ -21,7 +21,9 @@ enunciado está em [Diretrizes do case](/docs/diretrizes.md).
 
 ## Como rodar
 
-Requisito: Docker com Compose v2.24.0 ou mais novo (o `env_file` opcional do `compose.yaml` exige essa versão).
+Requisitos: 
+- Docker com Compose v2.24.0 ou mais novo.
+- Chave de API OPENAI_API_KEY
 
 **Para avaliar**
 
@@ -36,7 +38,7 @@ Abra http://localhost:5173 e escolha um aluno no login simulado (sem senha). Sob
 |---|---|---|
 | `db` | `127.0.0.1:5432` | Postgres 18; na primeira subida, carrega os CSVs dos quatro sistemas e cria a role restrita da API |
 | `redis` | `127.0.0.1:6379` | Contador do rate limit, sem persistência |
-| `api` | `127.0.0.1:8000` | FastAPI; `/health/live` e `/health/ready` |
+| `api` | `127.0.0.1:8000` | FastAPI; API Principal do projeto |
 | `web` | `127.0.0.1:5173` | Front em React servido por nginx |
 
 Langfuse é opcional: para ver os traces, descomente e preencha as chaves `LANGFUSE_*` no `.env`. Sem elas, nada muda.
