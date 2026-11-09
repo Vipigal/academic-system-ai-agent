@@ -5,7 +5,7 @@ from sqlalchemy.orm import ColumnProperty
 from api.bootstrap.app import ApiFactory
 from api.persistence.core.base import Base
 from api.persistence.core.ownership import OwnershipError
-from api.persistence.core.ownership_registry import OwnershipRegistry
+from api.persistence.core.ownership_criteria import OwnershipRegistry
 from api.persistence.finance.models import ContractRow
 from api.persistence.identity.tables import IDENTITY_METADATA
 from api.persistence.lms.models import LmsUserRow

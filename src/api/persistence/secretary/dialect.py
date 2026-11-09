@@ -67,8 +67,12 @@ class SecretaryDialect:
     @classmethod
     def protocols_of(cls, cpf: str, keys: Collection[EnrollmentKey]) -> Select[str]:
         student_ids = {key.ref: key.student_id for key in keys}
-        requested = select(REQUESTER.c.protocol).outerjoin(OTHER_ENROLLMENT, NAMED_ENROLLMENT)
-        return requested.where(cls._owned_by(cpf, student_ids))
+        requested = REQUESTER.outerjoin(OTHER_ENROLLMENT, NAMED_ENROLLMENT)
+        return (
+            select(REQUESTER.c.protocol)
+            .select_from(requested)
+            .where(cls._owned_by(cpf, student_ids))
+        )
 
     @classmethod
     def _owned_by(cls, cpf: str, student_ids: Mapping[EnrollmentRef, str]) -> ColumnElement[bool]:

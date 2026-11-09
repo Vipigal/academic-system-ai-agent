@@ -1,7 +1,6 @@
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 
-from api.persistence.core.base import Base
-from api.persistence.core.ownership import OwnershipRule, Public, Via
+from api.persistence.core.ownership import PUBLIC, OwnershipMap
 from api.persistence.secretary.dialect import SecretaryDialect
 from api.persistence.secretary.models import (
     DemandTypeRow,
@@ -13,18 +12,15 @@ from api.persistence.secretary.models import (
 
 PUBLIC_MESSAGE = "False"
 
-SECRETARY_OWNERSHIP: dict[type[Base], OwnershipRule] = {
+SECRETARY_OWNERSHIP: OwnershipMap = {
     ProtocolRow: lambda session: ProtocolRow.id.in_(
         SecretaryDialect.protocols_of(session.cpf, session.enrollment_keys)
     ),
-    ProtocolHistoryRow: Via(ProtocolRow, ProtocolHistoryRow.protocol_id == ProtocolRow.id),
-    ProtocolInteractionRow: Via(
-        ProtocolRow,
-        and_(
-            ProtocolInteractionRow.protocol_id == ProtocolRow.id,
-            ProtocolInteractionRow.is_internal_note == PUBLIC_MESSAGE,
-        ),
+    ProtocolHistoryRow: lambda _: ProtocolHistoryRow.protocol_id.in_(select(ProtocolRow.id)),
+    ProtocolInteractionRow: lambda _: and_(
+        ProtocolInteractionRow.protocol_id.in_(select(ProtocolRow.id)),
+        ProtocolInteractionRow.is_internal_note == PUBLIC_MESSAGE,
     ),
-    IssuedDocumentRow: Via(ProtocolRow, IssuedDocumentRow.protocol_id == ProtocolRow.id),
-    DemandTypeRow: Public(),
+    IssuedDocumentRow: lambda _: IssuedDocumentRow.protocol_id.in_(select(ProtocolRow.id)),
+    DemandTypeRow: PUBLIC,
 }

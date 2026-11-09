@@ -28,21 +28,9 @@ class SqlProtocolRepository:
         sources = await asyncio.gather(
             self._adapter.fetch(select(ProtocolRow)),
             self._adapter.fetch(select(DemandTypeRow)),
-            self._adapter.fetch(
-                select(IssuedDocumentRow).join(
-                    ProtocolRow, IssuedDocumentRow.protocol_id == ProtocolRow.id
-                )
-            ),
-            self._adapter.fetch(
-                select(ProtocolHistoryRow).join(
-                    ProtocolRow, ProtocolHistoryRow.protocol_id == ProtocolRow.id
-                )
-            ),
-            self._adapter.fetch(
-                select(ProtocolInteractionRow).join(
-                    ProtocolRow, ProtocolInteractionRow.protocol_id == ProtocolRow.id
-                )
-            ),
+            self._adapter.fetch(select(IssuedDocumentRow)),
+            self._adapter.fetch(select(ProtocolHistoryRow)),
+            self._adapter.fetch(select(ProtocolInteractionRow)),
         )
         return ProtocolMapper.to_entities(ProtocolSources(*sources), self._own_references())
 

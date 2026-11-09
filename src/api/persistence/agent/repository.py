@@ -1,18 +1,15 @@
 from collections.abc import Sequence
 from uuid import UUID, uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import Update, func, select, update
 from sqlalchemy.exc import IntegrityError
 
 from api.domain.conversation.errors import ConversationConflictError, ConversationNotFoundError
 from api.domain.conversation.message import Message
 from api.persistence.agent.mappers import MessageMapper
 from api.persistence.agent.models import ConversationRow, MessageRow, ToolCallRow
-from api.persistence.core.ownership import OwnershipError, Update
+from api.persistence.core.ownership import OwnershipError
 from api.persistence.core.repository_adapter import RepositoryAdapter
-
-OF_CONVERSATION = MessageRow.conversation_id == ConversationRow.id
-OF_MESSAGE = ToolCallRow.message_id == MessageRow.id
 
 
 class SqlConversationRepository:
@@ -48,28 +45,24 @@ class SqlConversationRepository:
         await self.require(conversation_id)
         messages = await self._adapter.fetch(
             select(MessageRow)
-            .join(ConversationRow, OF_CONVERSATION)
-            .where(ConversationRow.id == conversation_id)
+            .where(MessageRow.conversation_id == conversation_id)
             .order_by(MessageRow.position.desc())
             .limit(limit)
         )
         calls = await self._adapter.fetch(
-            select(ToolCallRow)
-            .join(MessageRow, OF_MESSAGE)
-            .join(ConversationRow, OF_CONVERSATION)
-            .where(MessageRow.id.in_([row.id for row in messages]))
+            select(ToolCallRow).where(ToolCallRow.message_id.in_([row.id for row in messages]))
         )
         return MessageMapper.to_entities(messages, calls)
 
     async def _next_position(self, conversation_id: UUID) -> int:
         last = await self._adapter.fetch(
-            select(func.max(MessageRow.position))
-            .join(ConversationRow, OF_CONVERSATION)
-            .where(ConversationRow.id == conversation_id)
+            select(func.max(MessageRow.position)).where(
+                MessageRow.conversation_id == conversation_id
+            )
         )
         return (last[0] or 0) + 1
 
     @staticmethod
     def _touch(conversation_id: UUID) -> Update:
         of_conversation = ConversationRow.id == conversation_id
-        return Update(ConversationRow, of_conversation, {"updated_at": func.now()})
+        return update(ConversationRow).where(of_conversation).values(updated_at=func.now())

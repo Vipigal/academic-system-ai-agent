@@ -8,11 +8,13 @@ from api.persistence.finance.models import ContractRow
 from api.persistence.sag.dialect import SagDialect
 from tests.integration.support.sql_oracle import SqlOracle
 
+NO_STUDENT = {"skip_ownership": True}
+
 
 async def contracts_of(database: Database, enrollment: EnrollmentRef) -> set[str]:
     statement = select(ContractRow.id).where(FinanceDialect.contract_of([enrollment]))
     async with database.db_session_factory() as db:
-        result = await db.scalars(statement)
+        result = await db.scalars(statement, execution_options=NO_STUDENT)
         return set(result.all())
 
 
@@ -98,5 +100,5 @@ async def test_same_student_number_in_other_brand_is_another_contract(database: 
 async def test_no_enrollment_finds_no_contract(database: Database) -> None:
     statement = select(ContractRow.id).where(FinanceDialect.contract_of([]))
     async with database.db_session_factory() as db:
-        result = await db.scalars(statement)
+        result = await db.scalars(statement, execution_options=NO_STUDENT)
         assert not result.all()

@@ -10,7 +10,7 @@ from api.bootstrap.request_log import RequestLog
 from api.bootstrap.settings import Settings
 from api.bootstrap.singletons import Singletons
 from api.bootstrap.student_routes import StudentRoutes
-from api.persistence.core.ownership_registry import OwnershipRegistry
+from api.persistence.core.ownership_criteria import OwnershipRegistry
 from api.presentation.http.health import HealthRouter
 
 CORS_METHODS = ["GET", "POST", "OPTIONS"]

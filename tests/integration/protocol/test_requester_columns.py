@@ -10,6 +10,7 @@ from api.persistence.secretary.models import ProtocolRow
 
 PERSON = "3032393"
 REQUESTER_COLUMNS = ["requester_cpf", "requester_name"]
+NO_STUDENT = {"skip_ownership": True}
 
 
 @pytest.mark.parametrize("attribute", REQUESTER_COLUMNS)
@@ -30,7 +31,7 @@ async def test_touching_the_requester_inside_a_session_raises_instead_of_loading
     database: Database, attribute: str
 ) -> None:
     async with database.db_session_factory() as db:
-        row = await db.scalar(select(ProtocolRow).limit(1))
+        row = await db.scalar(select(ProtocolRow).limit(1), execution_options=NO_STUDENT)
         assert row is not None
         with pytest.raises(InvalidRequestError, match=f"{attribute}.*raiseload"):
             getattr(row, attribute)

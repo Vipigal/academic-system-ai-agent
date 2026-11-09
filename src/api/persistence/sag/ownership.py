@@ -1,7 +1,6 @@
-from sqlalchemy import tuple_
+from sqlalchemy import select, tuple_
 
-from api.persistence.core.base import Base
-from api.persistence.core.ownership import OwnershipRule, Public, Via
+from api.persistence.core.ownership import PUBLIC, OwnershipMap
 from api.persistence.sag.catalog_models import (
     CourseOfferRow,
     CourseRow,
@@ -20,7 +19,7 @@ from api.persistence.sag.models import (
     TermEnrollmentRow,
 )
 
-SAG_OWNERSHIP: dict[type[Base], OwnershipRule] = {
+SAG_OWNERSHIP: OwnershipMap = {
     PersonRow: lambda session: PersonRow.id.in_(session.person_ids),
     EnrollmentRow: lambda session: EnrollmentRow.person_id.in_(session.person_ids),
     EnrollmentHistoryRow: lambda session: tuple_(
@@ -33,14 +32,14 @@ SAG_OWNERSHIP: dict[type[Base], OwnershipRule] = {
         SagDialect.source_keys(session.enrollment_keys)
     ),
     UnitRow: lambda session: UnitRow.brand.in_(SagDialect.source_brands(session.brands)),
-    CourseOfferRow: Via(UnitRow, CourseOfferRow.unit_id == UnitRow.id),
+    CourseOfferRow: lambda _: CourseOfferRow.unit_id.in_(select(UnitRow.id)),
     ClassSectionRow: lambda session: ClassSectionRow.brand.in_(
         SagDialect.source_brands(session.brands)
     ),
     ProfessorRow: lambda session: ProfessorRow.brand.in_(SagDialect.source_brands(session.brands)),
-    TermRow: Public(),
-    CourseRow: Public(),
-    CurriculumRow: Public(),
-    CurriculumSubjectRow: Public(),
-    SubjectRow: Public(),
+    TermRow: PUBLIC,
+    CourseRow: PUBLIC,
+    CurriculumRow: PUBLIC,
+    CurriculumSubjectRow: PUBLIC,
+    SubjectRow: PUBLIC,
 }
