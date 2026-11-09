@@ -20,7 +20,6 @@ KEY_SEPARATOR = ":"
 class StudentDriver:
     def __init__(self, singletons: Singletons, tracing: Tracing, versions: RunVersions) -> None:
         self.versions = versions
-        self.max_concurrency = singletons.settings.agent_max_concurrency
         self._singletons = singletons
         self._tracing = tracing
         self._scope = ChatAgentScope(singletons, tracing)

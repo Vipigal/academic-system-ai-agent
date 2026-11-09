@@ -22,6 +22,9 @@ class RunListener(Protocol):
     def add_usage(self, tokens_in: int, tokens_out: int) -> None: ...
 
 
+DEFAULT_CONCURRENCY = 8
+
+
 class AgentDriver(Protocol):
     async def run(
         self, student: str, question: str, history: tuple[str, ...], listener: RunListener

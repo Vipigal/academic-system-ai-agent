@@ -27,7 +27,6 @@ class AgentProviders:
             model_calls=settings.agent_model_call_limit,
             tool_calls=settings.agent_tool_call_limit,
             timeout_seconds=settings.agent_timeout_seconds,
-            max_concurrency=settings.agent_max_concurrency,
         )
         return AgentRuntime.create(self.chat_model(settings), limits, self._clock)
 

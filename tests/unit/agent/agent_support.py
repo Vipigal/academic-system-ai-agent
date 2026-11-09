@@ -14,7 +14,7 @@ from api.infrastructure.clock import FixedClock
 from tests.unit.agent.student_stubs import stub_student
 
 FINAL_ANSWER = "Resposta final ao aluno."
-DEFAULT_LIMITS = AgentLimits(model_calls=8, tool_calls=12, timeout_seconds=5, max_concurrency=8)
+DEFAULT_LIMITS = AgentLimits(model_calls=8, tool_calls=12, timeout_seconds=5)
 
 
 class RecordingModel(ScriptedChatModel):
@@ -57,9 +57,9 @@ def answer(text: str = FINAL_ANSWER) -> AIMessage:
 
 
 def limits_with(
-    model_calls: int = 8, tool_calls: int = 12, timeout_seconds: float = 5, max_concurrency: int = 8
+    model_calls: int = 8, tool_calls: int = 12, timeout_seconds: float = 5
 ) -> AgentLimits:
-    return AgentLimits(model_calls, tool_calls, timeout_seconds, max_concurrency)
+    return AgentLimits(model_calls, tool_calls, timeout_seconds)
 
 
 def runtime_with(model: ScriptedChatModel, limits: AgentLimits = DEFAULT_LIMITS) -> AgentRuntime:

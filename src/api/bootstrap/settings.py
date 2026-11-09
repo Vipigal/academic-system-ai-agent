@@ -21,7 +21,6 @@ class Settings(BaseSettings):
     agent_model_call_limit: int = 8
     agent_tool_call_limit: int = 12
     agent_timeout_seconds: float = 60
-    agent_max_concurrency: int = 8
     history_window: int = 20
 
     jwt_secret: SecretStr | None = None
