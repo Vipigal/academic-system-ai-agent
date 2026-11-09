@@ -8,7 +8,7 @@ from api.infrastructure.logging import LogContext
 
 logger = logging.getLogger(__name__)
 MILLISECONDS = 1000
-QUIET_PATHS = frozenset({"/health"})
+QUIET_PATHS = frozenset({"/health/live", "/health/ready"})
 UNFINISHED = 500
 
 

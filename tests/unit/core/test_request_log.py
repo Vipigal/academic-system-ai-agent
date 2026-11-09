@@ -18,8 +18,12 @@ def application() -> FastAPI:
         LogContext.bind_trace("trace-from-the-endpoint")
         return {}
 
-    @app.get("/health")
-    async def health() -> dict[str, str]:
+    @app.get("/health/live")
+    async def live() -> dict[str, str]:
+        return {}
+
+    @app.get("/health/ready")
+    async def ready() -> dict[str, str]:
         return {}
 
     return app
@@ -45,8 +49,11 @@ async def test_each_request_logs_one_json_line_without_query_or_body(
     assert entry["trace_id"] == "trace-from-the-endpoint"
 
 
-async def test_the_health_probe_is_not_logged(caplog: pytest.LogCaptureFixture) -> None:
+@pytest.mark.parametrize("path", ["/health/live", "/health/ready"])
+async def test_the_health_probes_are_not_logged(
+    path: str, caplog: pytest.LogCaptureFixture
+) -> None:
     with caplog.at_level(logging.INFO, logger="api.bootstrap.request_log"):
-        await get("/health")
+        await get(path)
 
     assert not caplog.records
