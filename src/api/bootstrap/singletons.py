@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Self
 
 from api.bootstrap.agent_providers import AgentProviders
+from api.bootstrap.rate_limit_providers import RateLimitProviders
 from api.bootstrap.settings import Settings
 from api.domain.ports.clock import Clock
 from api.infrastructure.clock import SystemClock
@@ -14,6 +15,7 @@ class Singletons:
     database: Database
     clock: Clock
     agent: AgentProviders
+    rate_limit: RateLimitProviders
 
     @classmethod
     def create(cls, settings: Settings, clock: Clock | None = None) -> Self:
@@ -23,6 +25,7 @@ class Singletons:
             database=Database(settings.database_url.get_secret_value(), cls._pool(settings)),
             clock=chosen,
             agent=AgentProviders(settings, chosen),
+            rate_limit=RateLimitProviders.create(settings),
         )
 
     @staticmethod
@@ -35,3 +38,4 @@ class Singletons:
 
     async def dispose(self) -> None:
         await self.database.dispose()
+        await self.rate_limit.aclose()

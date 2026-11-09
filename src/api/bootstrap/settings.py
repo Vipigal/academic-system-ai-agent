@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     db_pool_timeout_seconds: float = 5
 
     redis_url: SecretStr | None = None
-    chat_rate_limit_per_hour: int = 60
+    chat_rate_limit_per_hour: int = Field(default=60, gt=0)
 
     agent_model: str = "gpt-6-luna"
     agent_effort: str = "low"
