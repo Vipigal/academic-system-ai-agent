@@ -8,6 +8,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_")
 
     database_url: SecretStr
+    db_pool_size: int = 20
+    db_max_overflow: int = 10
+    db_pool_timeout_seconds: float = 5
+
+    redis_url: SecretStr | None = None
+    chat_rate_limit_per_hour: int = 60
 
     agent_model: str = "gpt-6-luna"
     agent_effort: str = "low"
