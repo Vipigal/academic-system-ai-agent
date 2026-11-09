@@ -2,6 +2,7 @@ import pytest
 from sqlalchemy import or_, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from api.domain.finance.invoice import InvoiceStatus
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
 from api.persistence.core.ownership import OwnershipError
@@ -61,7 +62,9 @@ async def test_empty_session_sees_nothing(database: Database) -> None:
 
 
 async def test_or_in_the_query_cannot_widen_the_result(adapter: RepositoryAdapter) -> None:
-    statement = OWN_INVOICES.where(or_(InvoiceRow.status == "PAID", InvoiceRow.status == "OVERDUE"))
+    statement = OWN_INVOICES.where(
+        or_(InvoiceRow.status == InvoiceStatus.PAID, InvoiceRow.status == InvoiceStatus.OVERDUE)
+    )
     rows = await adapter.fetch(statement)
     assert rows
     assert {row.contract_id for row in rows} == {OWN_CONTRACT}

@@ -1,15 +1,15 @@
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from decimal import Decimal
 from operator import attrgetter
 
 from api.domain.lms.exam import ExamAttempt, OnlineExam
 from api.domain.shared.brand import Brand
-from api.persistence.lms.dialect import LmsDialect
 from api.persistence.lms.models import LmsCourseRow, LmsQuizAttemptRow, LmsQuizRow
-from api.persistence.lms.vocabulary import CourseLabel, LmsVocabulary
+from api.persistence.lms.vocabulary import TENANT_BRAND, CourseLabel
 from api.persistence.sag.catalog_models import SubjectRow
+
+SECONDS_PER_MINUTE = 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +47,7 @@ class ExamMapper:
         labeled = {row.id: CourseLabel.of(row.shortname) for row in sources.courses}
         return ExamIndex(
             labels={key: label for key, label in labeled.items() if label is not None},
-            brands={row.id: LmsDialect.brand_of(row.tenant_id) for row in sources.courses},
+            brands={row.id: TENANT_BRAND.member_of(row.tenant_id) for row in sources.courses},
             names={subject.code: subject.name for subject in sources.subjects},
             attempts=cls._attempts_by_quiz(sources.attempts),
         )
@@ -62,10 +62,10 @@ class ExamMapper:
             subject_name=index.names[label.subject_code],
             term=label.term,
             delivery=label.delivery,
-            kind=LmsVocabulary.exam_kind(quiz.name),
-            opens_at=LmsVocabulary.brasilia(quiz.time_open),
-            closes_at=LmsVocabulary.brasilia(quiz.time_close),
-            time_limit_minutes=LmsVocabulary.minutes(quiz.time_limit),
+            kind=quiz.kind,
+            opens_at=quiz.time_open,
+            closes_at=quiz.time_close,
+            time_limit_minutes=int(quiz.time_limit) // SECONDS_PER_MINUTE,
             max_attempts=int(quiz.max_attempts),
             attempts=tuple(sorted(index.attempts[quiz.id], key=attrgetter("number"))),
         )
@@ -79,10 +79,10 @@ class ExamMapper:
             grouped[row.quiz_id].append(
                 ExamAttempt(
                     number=int(row.number),
-                    state=LmsVocabulary.attempt_state(row.state),
-                    started_at=LmsVocabulary.brasilia(row.time_start),
-                    finished_at=LmsVocabulary.brasilia_or_none(row.time_finish),
-                    grade=None if row.sum_grades is None else Decimal(row.sum_grades),
+                    state=row.state,
+                    started_at=row.time_start,
+                    finished_at=row.time_finish,
+                    grade=row.sum_grades,
                 )
             )
         return grouped

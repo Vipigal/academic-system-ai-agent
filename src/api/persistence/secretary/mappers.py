@@ -1,14 +1,12 @@
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import datetime
 
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.document import ProtocolDocument
 from api.domain.protocol.message import ProtocolMessage
 from api.domain.protocol.request import Protocol
 from api.domain.protocol.status import ProtocolStatusChange
-from api.persistence.core.brasilia import BrasiliaTime
 from api.persistence.secretary.models import (
     DemandTypeRow,
     IssuedDocumentRow,
@@ -16,12 +14,7 @@ from api.persistence.secretary.models import (
     ProtocolInteractionRow,
     ProtocolRow,
 )
-from api.persistence.secretary.vocabulary import (
-    DocumentVocabulary,
-    ProtocolVocabulary,
-    ServiceVocabulary,
-    UnitVocabulary,
-)
+from api.persistence.secretary.vocabulary import UnitVocabulary
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,10 +44,10 @@ class ServiceMapper:
         return Service(
             code=row.code,
             name=row.name,
-            area=ServiceVocabulary.area(row.area),
+            area=row.area,
             sla_hours=int(row.sla_hours),
-            fee=ServiceVocabulary.fee(row.fee),
-            active=ServiceVocabulary.is_active(row.active),
+            fee=row.fee,
+            active=row.active,
         )
 
 
@@ -81,26 +74,23 @@ class ChildMapper:
     def _document(row: IssuedDocumentRow) -> ProtocolDocument:
         return ProtocolDocument(
             id=row.id,
-            type=DocumentVocabulary.document_type(row.document_type),
-            issued_at=BrasiliaTime.from_utc(row.issued_at),
+            type=row.document_type,
+            issued_at=row.issued_at,
             validation_code=row.validation_code,
-            delivery=DocumentVocabulary.delivery(row.delivery),
+            delivery=row.delivery,
         )
 
     @staticmethod
     def _change(row: ProtocolHistoryRow) -> ProtocolStatusChange:
-        return ProtocolStatusChange(
-            status=ProtocolVocabulary.status(row.to_status),
-            changed_at=BrasiliaTime.from_utc(row.changed_at),
-        )
+        return ProtocolStatusChange(status=row.to_status, changed_at=row.changed_at)
 
     @staticmethod
     def _message(row: ProtocolInteractionRow) -> ProtocolMessage:
         return ProtocolMessage(
             id=row.id,
-            sender=ProtocolVocabulary.sender(row.author_type),
+            sender=row.author_type,
             text=row.message,
-            created_at=BrasiliaTime.from_utc(row.created_at),
+            created_at=row.created_at,
         )
 
 
@@ -126,22 +116,18 @@ class ProtocolMapper:
         return Protocol(
             number=row.id,
             service=service,
-            status=ProtocolVocabulary.status(row.status),
-            resolution=ProtocolVocabulary.resolution(row.resolution),
-            requester=ProtocolVocabulary.requester(row.requester_type),
+            status=row.status,
+            resolution=row.resolution,
+            requester=row.requester_type,
             brand=brand,
             modality=modality,
             enrollment_reference=reference if reference in own else None,
             course_label=row.course_label,
-            opened_at=BrasiliaTime.from_utc(row.opened_at),
-            first_response_at=ProtocolMapper._optional_moment(row.first_response_at),
-            due_at=BrasiliaTime.from_utc(row.due_at),
-            closed_at=ProtocolMapper._optional_moment(row.closed_at),
+            opened_at=row.opened_at,
+            first_response_at=row.first_response_at,
+            due_at=row.due_at,
+            closed_at=row.closed_at,
             documents=children.documents,
             history=children.history,
             messages=children.messages,
         )
-
-    @staticmethod
-    def _optional_moment(value: str | None) -> datetime | None:
-        return None if value is None else BrasiliaTime.from_utc(value)

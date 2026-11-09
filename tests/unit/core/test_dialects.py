@@ -2,9 +2,10 @@ import pytest
 
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
-from api.persistence.core.dialect_lookup import UnknownDialectValueError
-from api.persistence.finance.dialect import FinanceDialect
+from api.persistence.core.source_enum import SourceEnum, UnknownDialectValueError
 from api.persistence.sag.dialect import SagDialect
+
+INVOICE_STATUS = SourceEnum.by_name(InvoiceStatus)
 
 
 def test_same_student_number_in_other_brand_is_another_enrollment() -> None:
@@ -19,12 +20,12 @@ def test_sag_separates_modality_from_brand() -> None:
 
 
 def test_finance_translates_invoice_status() -> None:
-    assert FinanceDialect.invoice_status("OVERDUE") is InvoiceStatus.OVERDUE
+    assert INVOICE_STATUS.from_source("OVERDUE") is InvoiceStatus.OVERDUE
 
 
 def test_finance_raises_on_unknown_status() -> None:
     with pytest.raises(UnknownDialectValueError):
-        FinanceDialect.invoice_status("WAIVED")
+        INVOICE_STATUS.from_source("WAIVED")
 
 
 def test_sag_raises_on_unknown_brand() -> None:

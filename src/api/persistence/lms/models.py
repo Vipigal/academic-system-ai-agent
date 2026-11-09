@@ -1,6 +1,20 @@
+from datetime import datetime
+from decimal import Decimal
+
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.lms.exam import AttemptState, ExamKind
+from api.domain.lms.material import MaterialKind
 from api.persistence.core.base import Base
+from api.persistence.core.column_types import TextDecimal
+from api.persistence.lms.column_types import (
+    ATTEMPT_STATE,
+    EXAM_KIND,
+    MATERIAL_KIND,
+    SUSPENDED,
+    EpochMoment,
+    OptionalEpochMoment,
+)
 
 LMS_SCHEMA = {"schema": "lms"}
 
@@ -12,8 +26,8 @@ class LmsUserRow(Base):
     id: Mapped[str] = mapped_column("student_lms_id", primary_key=True)
     tenant_id: Mapped[str]
     student_id: Mapped[str | None]
-    suspended: Mapped[str]
-    last_access: Mapped[str] = mapped_column("lastaccess")
+    suspended: Mapped[bool] = mapped_column(SUSPENDED)
+    last_access: Mapped[datetime | None] = mapped_column("lastaccess", OptionalEpochMoment())
 
 
 class LmsEnrolmentRow(Base):
@@ -40,9 +54,9 @@ class LmsQuizRow(Base):
 
     id: Mapped[str] = mapped_column(primary_key=True)
     course_id: Mapped[str] = mapped_column("course")
-    name: Mapped[str]
-    time_open: Mapped[str] = mapped_column("timeopen")
-    time_close: Mapped[str] = mapped_column("timeclose")
+    kind: Mapped[ExamKind] = mapped_column("name", EXAM_KIND)
+    time_open: Mapped[datetime] = mapped_column("timeopen", EpochMoment())
+    time_close: Mapped[datetime] = mapped_column("timeclose", EpochMoment())
     time_limit: Mapped[str] = mapped_column("timelimit")
     max_attempts: Mapped[str] = mapped_column("attempts")
 
@@ -55,10 +69,10 @@ class LmsQuizAttemptRow(Base):
     quiz_id: Mapped[str] = mapped_column("quiz")
     user_id: Mapped[str] = mapped_column("userid")
     number: Mapped[str] = mapped_column("attempt")
-    state: Mapped[str]
-    time_start: Mapped[str] = mapped_column("timestart")
-    time_finish: Mapped[str] = mapped_column("timefinish")
-    sum_grades: Mapped[str | None] = mapped_column("sumgrades")
+    state: Mapped[AttemptState] = mapped_column(ATTEMPT_STATE)
+    time_start: Mapped[datetime] = mapped_column("timestart", EpochMoment())
+    time_finish: Mapped[datetime | None] = mapped_column("timefinish", OptionalEpochMoment())
+    sum_grades: Mapped[Decimal | None] = mapped_column("sumgrades", TextDecimal())
 
 
 class LmsCourseModuleRow(Base):
@@ -67,7 +81,7 @@ class LmsCourseModuleRow(Base):
 
     id: Mapped[str] = mapped_column(primary_key=True)
     course_id: Mapped[str] = mapped_column("course")
-    kind: Mapped[str] = mapped_column("modname")
+    kind: Mapped[MaterialKind] = mapped_column("modname", MATERIAL_KIND)
     name: Mapped[str]
     section: Mapped[str]
 
@@ -80,4 +94,4 @@ class LmsLogRow(Base):
     event_name: Mapped[str] = mapped_column("eventname")
     module_id: Mapped[str] = mapped_column("contextinstanceid")
     user_id: Mapped[str] = mapped_column("userid")
-    time_created: Mapped[str] = mapped_column("timecreated")
+    time_created: Mapped[datetime] = mapped_column("timecreated", EpochMoment())

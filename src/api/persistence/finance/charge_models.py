@@ -1,6 +1,20 @@
+from datetime import date, datetime
+from decimal import Decimal
+
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.finance.agreement import AgreementStatus
+from api.domain.shared.money import Money
 from api.persistence.core.base import Base
+from api.persistence.core.column_types import (
+    BlankableIsoDate,
+    IsoDate,
+    TextCents,
+    TextDecimal,
+    TextFlag,
+    UtcMoment,
+)
+from api.persistence.core.source_enum import SourceEnum
 from api.persistence.finance.models import FINANCE_SCHEMA
 
 
@@ -11,9 +25,9 @@ class DiscountRow(Base):
     id: Mapped[str] = mapped_column("discountid", primary_key=True)
     contract_id: Mapped[str] = mapped_column("contractid")
     kind: Mapped[str] = mapped_column("discounttype")
-    rate: Mapped[str]
-    valid_from: Mapped[str] = mapped_column("validfrom")
-    valid_to: Mapped[str | None] = mapped_column("validto")
+    rate: Mapped[Decimal] = mapped_column(TextDecimal())
+    valid_from: Mapped[date] = mapped_column("validfrom", IsoDate())
+    valid_to: Mapped[date | None] = mapped_column("validto", BlankableIsoDate())
 
 
 class LateChargeRow(Base):
@@ -22,10 +36,10 @@ class LateChargeRow(Base):
 
     id: Mapped[str] = mapped_column("latechargeid", primary_key=True)
     invoice_id: Mapped[str] = mapped_column("invoiceid")
-    reference_date: Mapped[str] = mapped_column("referencedate")
-    fine_cents: Mapped[str] = mapped_column("finecents")
-    interest_cents: Mapped[str] = mapped_column("interestcents")
-    waived: Mapped[str]
+    reference_date: Mapped[date] = mapped_column("referencedate", IsoDate())
+    fine: Mapped[Money] = mapped_column("finecents", TextCents())
+    interest: Mapped[Money] = mapped_column("interestcents", TextCents())
+    waived: Mapped[bool] = mapped_column(TextFlag("True", "False"))
 
 
 class AgreementRow(Base):
@@ -34,8 +48,8 @@ class AgreementRow(Base):
 
     id: Mapped[str] = mapped_column("agreementid", primary_key=True)
     contract_id: Mapped[str] = mapped_column("contractid")
-    created_at: Mapped[str] = mapped_column("createdat")
-    original_debt_cents: Mapped[str] = mapped_column("originaldebtcents")
-    waived_cents: Mapped[str] = mapped_column("waivedcents")
-    agreed_cents: Mapped[str] = mapped_column("agreedamountcents")
-    status: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column("createdat", UtcMoment())
+    original_debt: Mapped[Money] = mapped_column("originaldebtcents", TextCents())
+    waived: Mapped[Money] = mapped_column("waivedcents", TextCents())
+    agreed: Mapped[Money] = mapped_column("agreedamountcents", TextCents())
+    status: Mapped[AgreementStatus] = mapped_column(SourceEnum.by_name(AgreementStatus))

@@ -1,7 +1,7 @@
 from sqlalchemy import ColumnElement, Select, case, func, select
 
 from api.domain.finance.contract import PayerType
-from api.persistence.finance.labels import COMPANY_CUSTOMER
+from api.persistence.finance.dialect import COMPANY_CUSTOMER
 from api.persistence.finance.models import ContractRow
 from api.persistence.identity.tables import CONTRACT_PAYER, CUSTOMER_TAX_ID
 

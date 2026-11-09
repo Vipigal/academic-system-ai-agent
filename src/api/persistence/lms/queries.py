@@ -2,6 +2,7 @@ from collections.abc import Collection
 
 from sqlalchemy import Select, select
 
+from api.domain.lms.material import MaterialKind
 from api.persistence.lms.models import (
     LmsCourseModuleRow,
     LmsCourseRow,
@@ -11,7 +12,7 @@ from api.persistence.lms.models import (
     LmsQuizRow,
     LmsUserRow,
 )
-from api.persistence.lms.vocabulary import MATERIAL_KIND_BY_SOURCE, VIEW_EVENTS
+from api.persistence.lms.vocabulary import VIEW_EVENTS
 from api.persistence.sag.catalog_models import SubjectRow
 
 
@@ -46,7 +47,7 @@ class LmsQueries:
     def modules(courses: Collection[str]) -> Select[LmsCourseModuleRow]:
         return select(LmsCourseModuleRow).where(
             LmsCourseModuleRow.course_id.in_(courses),
-            LmsCourseModuleRow.kind.in_(list(MATERIAL_KIND_BY_SOURCE)),
+            LmsCourseModuleRow.kind.in_(list(MaterialKind)),
         )
 
     @staticmethod
@@ -56,7 +57,7 @@ class LmsQueries:
             .join(LmsCourseModuleRow, LmsLogRow.module_id == LmsCourseModuleRow.id)
             .where(
                 LmsCourseModuleRow.course_id.in_(courses),
-                LmsCourseModuleRow.kind.in_(list(MATERIAL_KIND_BY_SOURCE)),
+                LmsCourseModuleRow.kind.in_(list(MaterialKind)),
                 LmsLogRow.event_name.in_(VIEW_EVENTS),
             )
         )

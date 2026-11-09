@@ -4,7 +4,8 @@ from typing import Any
 
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.shared.page import PageRequest
-from api.persistence.lms.vocabulary import MATERIAL_KIND_BY_SOURCE, VIEW_EVENTS
+from api.persistence.lms.column_types import MATERIAL_KIND
+from api.persistence.lms.vocabulary import VIEW_EVENTS
 from tests.integration.agent import invariant_queries, invariant_support
 from tests.integration.agent.invariant_json import Output
 from tests.integration.support.owned import Owned
@@ -41,7 +42,7 @@ class Volumes:
             invariant_queries.OWN_VIEWS_BY_SUBJECT,
             accounts=self._accounts,
             events=",".join(VIEW_EVENTS),
-            kinds=",".join(MATERIAL_KIND_BY_SOURCE),
+            kinds=",".join(MATERIAL_KIND.sources),
         )
         subjects = await self._oracle.values(
             invariant_queries.OWN_SUBJECTS,

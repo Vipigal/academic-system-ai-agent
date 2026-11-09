@@ -5,7 +5,7 @@ from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import ToolStatus
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.protocol.status import DeadlineSituation, ProtocolStage, ProtocolStatus, Resolution
-from api.persistence.core.brasilia import BRASILIA
+from api.persistence.core.column_types import BRASILIA
 from api.persistence.core.database import Database
 from tests.integration.protocol import harness, support
 from tests.integration.support.sql_oracle import SqlOracle

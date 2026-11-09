@@ -6,7 +6,7 @@ from api.domain.finance.debt import DebtPosition
 from api.domain.finance.invoice import Invoice, InvoiceKind, InvoiceStatus
 from api.domain.finance.tuition import TuitionChange, TuitionChangeCause
 from api.domain.shared.money import Money
-from api.persistence.core.brasilia import BrasiliaTime
+from api.persistence.core.column_types import UtcMoment
 
 REFERENCE = date(2026, 10, 31)
 CONTRACT = "CT00000001"
@@ -119,5 +119,5 @@ def test_empty_debt_position_is_zero() -> None:
 
 
 def test_utc_time_turns_into_brasilia_time() -> None:
-    converted = BrasiliaTime.from_utc("2024-12-08 00:29:12+00:00")
+    converted = UtcMoment().from_source("2024-12-08 00:29:12+00:00")
     assert converted.isoformat() == "2024-12-07T21:29:12-03:00"

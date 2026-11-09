@@ -1,4 +1,4 @@
-from sqlalchemy import Select, select
+from sqlalchemy import Select, String, select, type_coerce
 
 from api.persistence.identity.tables import PERSON_CPF
 from api.persistence.sag.dialect import SagDialect
@@ -26,7 +26,7 @@ class IdentityQueries:
                 EnrollmentRow.brand,
                 EnrollmentRow.student_id,
                 PERSON_CPF.c.full_name,
-                EnrollmentRow.status,
+                type_coerce(EnrollmentRow.status, String),
             )
             .join(PERSON_CPF, EnrollmentRow.person_id == PERSON_CPF.c.person_id)
             .order_by(PERSON_CPF.c.full_name, EnrollmentRow.brand, EnrollmentRow.student_id)

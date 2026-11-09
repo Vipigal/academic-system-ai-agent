@@ -1,14 +1,11 @@
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
-from decimal import Decimal
 
 from api.domain.academic.enrollment import Enrollment, StatusChange, TermStatus
 from api.persistence.sag.catalog_models import CourseRow, CurriculumRow, UnitRow
 from api.persistence.sag.dialect import SagDialect
 from api.persistence.sag.models import EnrollmentHistoryRow, EnrollmentRow, TermEnrollmentRow
-from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,7 +27,7 @@ class EnrollmentMapper:
             registered = self._registered[
                 SagDialect.reference(registration.brand, registration.student_id)
             ]
-            registered[registration.term] = AcademicVocabulary.term_status(registration.term_status)
+            registered[registration.term] = registration.term_status
         self._changes: defaultdict[str, list[StatusChange]] = defaultdict(list)
         for event in sources.history:
             key = SagDialect.reference(event.brand, event.student_id)
@@ -47,14 +44,14 @@ class EnrollmentMapper:
             curriculum_id=row.curriculum_id,
             curriculum_hours=self._hours[row.curriculum_id],
             unit_name=self._units[row.unit_id].name,
-            modality=AcademicVocabulary.modality(row.modality),
-            shift=AcademicVocabulary.shift(row.shift),
-            status=AcademicVocabulary.enrollment_status(row.status),
-            status_date=date.fromisoformat(row.status_date),
+            modality=row.modality,
+            shift=row.shift,
+            status=row.status,
+            status_date=row.status_date,
             entry_term=row.entry_term,
             semester=int(row.semester),
-            completion_pct=Decimal(row.completion_pct),
-            gpa=SourceColumn.decimal(row.gpa),
+            completion_pct=row.completion_pct,
+            gpa=row.gpa,
             origin_reference=self._origin(row),
             registrations=self._registered[reference],
             history=tuple(self._changes[reference]),
@@ -68,11 +65,10 @@ class EnrollmentMapper:
 
     @staticmethod
     def _change(event: EnrollmentHistoryRow) -> StatusChange:
-        previous = event.old_status
         return StatusChange(
-            event_date=date.fromisoformat(event.event_date),
+            event_date=event.event_date,
             term=event.term,
-            previous=None if previous is None else AcademicVocabulary.enrollment_status(previous),
-            current=AcademicVocabulary.enrollment_status(event.new_status),
+            previous=event.old_status,
+            current=event.new_status,
             reason=event.reason,
         )

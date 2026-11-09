@@ -6,7 +6,7 @@ from api.bootstrap.settings import Settings
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
-from api.persistence.finance.dialect import FinanceDialect
+from api.persistence.core.source_enum import SourceEnum
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 from api.persistence.sag.dialect import SagDialect
 from tests.integration.support.owned import Owned, owned_by
@@ -98,7 +98,8 @@ async def test_every_contract_belongs_to_exactly_one_person(owned_by_everyone: l
 
 async def test_every_invoice_status_in_the_database_has_translation() -> None:
     statuses = await SqlOracle().values("SELECT DISTINCT status FROM finance.invoice")
-    translated = {FinanceDialect.invoice_status(status) for status in statuses}
+    invoice_status = SourceEnum.by_name(InvoiceStatus)
+    translated = {invoice_status.member_of(status) for status in statuses}
     assert translated == set(InvoiceStatus)
 
 

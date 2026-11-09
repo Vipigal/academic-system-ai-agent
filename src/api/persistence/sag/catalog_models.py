@@ -1,6 +1,12 @@
+from datetime import date
+
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.academic.enrollment import Shift
 from api.persistence.core.base import Base
+from api.persistence.core.column_types import IsoDate
+from api.persistence.core.source_enum import SourceEnum
+from api.persistence.sag.column_types import YES_NO
 from api.persistence.sag.models import SAG_SCHEMA
 
 
@@ -9,11 +15,11 @@ class TermRow(Base):
     __table_args__ = SAG_SCHEMA
 
     code: Mapped[str] = mapped_column("term", primary_key=True)
-    start_date: Mapped[str]
-    end_date: Mapped[str]
-    av1_start: Mapped[str]
-    av2_start: Mapped[str]
-    is_current: Mapped[str]
+    start_date: Mapped[date] = mapped_column(IsoDate())
+    end_date: Mapped[date] = mapped_column(IsoDate())
+    av1_start: Mapped[date] = mapped_column(IsoDate())
+    av2_start: Mapped[date] = mapped_column(IsoDate())
+    is_current: Mapped[bool] = mapped_column(YES_NO)
 
 
 class CourseRow(Base):
@@ -43,7 +49,7 @@ class CourseOfferRow(Base):
     id: Mapped[str] = mapped_column("offer_id", primary_key=True)
     unit_id: Mapped[str]
     course_id: Mapped[str] = mapped_column("course")
-    shift: Mapped[str]
+    shift: Mapped[Shift] = mapped_column(SourceEnum.by_name(Shift))
 
 
 class CurriculumRow(Base):
@@ -61,7 +67,7 @@ class CurriculumSubjectRow(Base):
     curriculum_id: Mapped[str] = mapped_column(primary_key=True)
     subject_code: Mapped[str] = mapped_column(primary_key=True)
     semester: Mapped[str]
-    mandatory: Mapped[str]
+    mandatory: Mapped[bool] = mapped_column(YES_NO)
     prerequisite_code: Mapped[str | None]
 
 

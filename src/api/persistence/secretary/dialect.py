@@ -4,7 +4,7 @@ from sqlalchemy import ColumnElement, Select, and_, func, or_, select, tuple_
 
 from api.domain.identity.session import EnrollmentKey
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
-from api.persistence.core.dialect_lookup import DialectLookup
+from api.persistence.core.source_enum import UnknownDialectValueError
 from api.persistence.identity.tables import PROTOCOL_REQUESTER
 from api.persistence.sag.models import EnrollmentRow
 
@@ -62,7 +62,10 @@ ID_OF_NO_ENROLLMENT = OTHER_ENROLLMENT.c.student_id.is_(None)
 class SecretaryDialect:
     @staticmethod
     def unit_code(academic_unit_name: str) -> str:
-        return DialectLookup.find(UNIT_CODE_BY_ACADEMIC_UNIT, academic_unit_name, "unit_name")
+        unit_code = UNIT_CODE_BY_ACADEMIC_UNIT.get(academic_unit_name)
+        if unit_code is None:
+            raise UnknownDialectValueError(academic_unit_name)
+        return unit_code
 
     @classmethod
     def protocols_of(cls, cpf: str, keys: Collection[EnrollmentKey]) -> Select[str]:

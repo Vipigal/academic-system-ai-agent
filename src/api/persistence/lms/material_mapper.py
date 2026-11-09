@@ -6,7 +6,7 @@ from operator import attrgetter
 
 from api.domain.lms.material import CourseMaterial
 from api.persistence.lms.models import LmsCourseModuleRow, LmsCourseRow, LmsLogRow
-from api.persistence.lms.vocabulary import CourseLabel, LmsVocabulary
+from api.persistence.lms.vocabulary import CourseLabel
 from api.persistence.sag.catalog_models import SubjectRow
 
 
@@ -59,7 +59,7 @@ class MaterialMapper:
             subject_name=index.names[label.subject_code],
             term=label.term,
             name=module.name,
-            kind=LmsVocabulary.material_kind(module.kind),
+            kind=module.kind,
             section=int(module.section),
             views=tuple(sorted(index.views[module.id])),
         )
@@ -68,5 +68,5 @@ class MaterialMapper:
     def _views_by_module(rows: Sequence[LmsLogRow]) -> defaultdict[str, list[datetime]]:
         grouped: defaultdict[str, list[datetime]] = defaultdict(list)
         for row in rows:
-            grouped[row.module_id].append(LmsVocabulary.brasilia(row.time_created))
+            grouped[row.module_id].append(row.time_created)
         return grouped

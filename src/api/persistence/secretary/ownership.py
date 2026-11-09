@@ -10,7 +10,7 @@ from api.persistence.secretary.models import (
     ProtocolRow,
 )
 
-PUBLIC_MESSAGE = "False"
+PUBLIC_MESSAGE = False
 
 SECRETARY_OWNERSHIP: OwnershipMap = {
     ProtocolRow: lambda session: ProtocolRow.id.in_(
