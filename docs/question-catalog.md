@@ -7,7 +7,7 @@ status: draft
 generated: { by: claude_code/claude-opus-5-5, at: 2026-11-05T04:00:00Z }
 sources:
   - id: readme
-    resource: /README.md
+    resource: /docs/diretrizes.md
     title: Enunciado do case
   - id: banco
     resource: /db/init/01_load.sh

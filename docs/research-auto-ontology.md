@@ -40,7 +40,7 @@ sources:
     resource: https://github.com/NVIDIA/auto-ontology/blob/2a24f5d34ef6b6e168a7f22d308504d3ab36a198/skills/nvidia-ontology-query/references/query-validation.md
     title: Auto Ontology, validação de resposta
   - id: case
-    resource: /README.md
+    resource: /docs/diretrizes.md
     title: Enunciado do case
   - id: arch
     resource: /docs/architecture.md

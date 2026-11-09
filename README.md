@@ -1,149 +1,129 @@
-# Case — Engenharia de IA: agente de atendimento ao aluno
+# Agente de atendimento ao aluno
 
-## Contexto
+[![check](https://github.com/Vipigal/academic-system-ai-agent/actions/workflows/check.yml/badge.svg)](https://github.com/Vipigal/academic-system-ai-agent/actions/workflows/check.yml)
+[![Coverage badge](https://raw.githubusercontent.com/Vipigal/academic-system-ai-agent/python-coverage-comment-action-data/badge.svg)](https://github.com/Vipigal/academic-system-ai-agent/tree/python-coverage-comment-action-data)
 
-Um grupo educacional fictício opera **5 marcas** de ensino superior (UniSaoPaulo, UniMontanhas, UniLitoral, UniAtlantico e UniAraucaria), nas modalidades **presencial** e **EAD**. Os dados de cerca de 1.000 alunos estão espalhados por **quatro sistemas** independentes, cada um com convenções próprias de nomes, formatos e identificadores.
+## Propósito
 
-O arquivo [`dados.zip`](dados.zip) traz as 47 tabelas desses sistemas em CSV (UTF-8, com cabeçalho), organizadas em uma pasta por sistema. Os dados são sintéticos, mas reproduzem situações de sistemas reais, inclusive inconsistências. A data de referência é **31/10/2026**: o semestre 2026/2 está em andamento.
+Um agente de IA que atende alunos de um grupo educacional com 5 marcas, consultando quatro sistemas independentes: acadêmico
+(SAG), ambiente virtual (LMS), secretaria e financeiro. Ele responde sobre curso, notas, frequência, mensalidades, protocolos e
+provas, e abre protocolos com a confirmação do aluno. A garantia central é de arquitetura, não de prompt: a identidade vem só
+da sessão, e nenhuma consulta alcança dados de outro aluno ou dados corporativos, seja qual for o texto da conversa. O
+enunciado está em [Diretrizes do case](/docs/diretrizes.md).
 
----
+## Como rodar
 
-## 1. O desafio
+Requisito: Docker com Compose v2.24.0 ou mais novo (o `env_file` opcional do `compose.yaml` exige essa versão).
 
-Construir um **agente de IA para atender alunos**. Ele deve, por exemplo:
+**Para avaliar**
 
-- **Tirar dúvidas** sobre curso, matriz curricular, calendário, disciplinas e serviços da secretaria.
-- **Consultar a vida acadêmica** do aluno: status da matrícula, notas, frequência, disciplinas cursadas, progresso no curso.
-- **Consultar a situação financeira** do aluno: mensalidades, pagamentos, débitos e acordos.
-- **Resolver protocolos:**
-  - consultar o andamento dos protocolos do aluno;
-  - orientar sobre os serviços disponíveis;
-  - abrir novas solicitações quando fizer sentido.
-- **Consultar a atividade no ambiente virtual (LMS):** provas, tentativas, acessos.
+```bash
+cp .env.example .env          # preencha só a OPENAI_API_KEY
+docker compose up -d --wait
+```
 
-### Requisitos obrigatórios
+Abra http://localhost:5173 e escolha um aluno no login simulado (sem senha). Sobem:
 
-1. **Escalável:**
-   - pensado para atender milhares de alunos simultâneos;
-   - mantém latência baixa e custo controlado.
-2. **Seguro:**
-   - zero risco de **jailbreak**, **prompt injection** e outras técnicas de ataque a LLMs ou aos sistemas por trás deles;
-   - zero vazamento de dados **entre usuários**: um aluno nunca acessa dados de outro aluno;
-   - zero vazamento de **dados corporativos**: dados internos, de funcionários, de outras marcas, prompts, credenciais etc.
-3. **Correto:** respostas fiéis aos dados. Quando a informação não existir ou estiver fora do escopo, o agente deve dizer isso, e não inventar.
+| Serviço | Endereço | Papel |
+|---|---|---|
+| `db` | `127.0.0.1:5432` | Postgres 18; na primeira subida, carrega os CSVs dos quatro sistemas e cria a role restrita da API |
+| `redis` | `127.0.0.1:6379` | Contador do rate limit, sem persistência |
+| `api` | `127.0.0.1:8000` | FastAPI; `/health/live` e `/health/ready` |
+| `web` | `127.0.0.1:5173` | Front em React servido por nginx |
 
-### Premissa de identidade
+Langfuse é opcional: para ver os traces, descomente e preencha as chaves `LANGFUSE_*` no `.env`. Sem elas, nada muda.
 
-O agente atende um aluno **já autenticado** pela aplicação. Você pode simular o login como preferir, desde que a identidade do aluno venha da sessão e **nunca** do texto da conversa.
+**Modo produção**
 
----
+```bash
+docker compose -f compose.yaml -f compose.prod.yaml up -d --wait --build
+```
 
-## 2. Liberdade e critérios de avaliação
+O overlay troca a imagem de desenvolvimento (`local.dockerfile`, com reload e o código montado) pela de produção
+(`Dockerfile` multi-stage com uv, usuário 10001, só a venv no estágio final) e roda a API com sistema de arquivos só de
+leitura, `/tmp` em memória, sem capabilities e com `no-new-privileges`. Os dois modos usam o mesmo nome de imagem, por isso o
+`--build` ao trocar de um para o outro; para voltar ao desenvolvimento, `docker compose up -d --wait --build`.
 
-Você tem liberdade total de tecnologia:
-- qualquer linguagem, modelo (comercial ou aberto) e framework de agentes;
-- ou nenhum framework.
+**Desenvolvimento** (exige o [uv](https://docs.astral.sh/uv/))
 
-A **estratégia e a arquitetura** fazem parte da avaliação. Técnicas como vetorização (RAG), grafos de conhecimento e ontologias, controle de acesso e validação de consultas impactam diretamente o resultado.
-
-| Critério | O que observamos |
+| Comando | O que faz |
 |---|---|
-| **Qualidade e assertividade das respostas** | Respostas corretas, completas e coerentes com os dados, inclusive nas perguntas que exigem cruzar sistemas; recusa adequada quando não há resposta |
-| **Latência** | Tempo de resposta das perguntas, medido e relatado por você |
-| **Segurança** | Resistência a jailbreak, prompt injection, extração de dados de terceiros e de dados corporativos. Quanto mais a segurança depender de garantias de arquitetura, e não só de instruções no prompt, melhor |
-| **Arquitetura e engenharia** | Clareza das decisões, escalabilidade, organização do código, testes e observabilidade |
+| `make setup` | `uv sync` com o grupo dev: cria `.venv` com Python 3.14 e as versões travadas no `uv.lock` |
+| `docker compose up -d --wait db` | Sobe só o banco, que os testes exigem |
+| `make check` | Formatação, lint, contratos de camada, tipos (mypy e Pyright) e testes com coverage |
+| `make check-fast` | O mesmo, sem as varreduras longas, para o loop de desenvolvimento |
 
-### Entregáveis
+## Arquitetura em alto nível
 
-1. **Repositório com o código** e instruções para rodar.
-2. **Documento de arquitetura:** decisões, trade-offs e por que você escolheu cada técnica.
-3. **Evidências:**
-   - exemplos de conversas;
-   - testes de segurança (tentativas de ataque e o resultado);
-   - medição de latência;
-   - como você avaliou a qualidade das respostas.
+```text
+Aluno ── navegador ──► web (React, nginx) ──► api (FastAPI)
+                                                │
+   JWT ──► sessão do aluno, carregada do banco a cada request
+                                                │
+   rate limit por aluno ◄──────────────────────►│◄────► Redis (contador de 1 hora)
+                                                │
+   agente LangChain, tools sem parâmetro de identidade ◄────► OpenAI
+                                                │
+   services da application (composição entre sistemas)
+                                                │
+   adapter de repositório: AND de ownership em toda consulta
+                                                │
+   Postgres, role `api` com menor privilégio: sag · lms · secretary · finance · agent
 
----
+   traces do turno, das tools e do modelo ─────────────────► Langfuse (opcional)
+```
 
-## 3. Os sistemas e suas tabelas
+O código fica em seis camadas: `bootstrap` (composition root, monta o grafo por request), `presentation` (só rotas HTTP),
+`application` (services, o agente e as tools), `domain` (regras e ports, só biblioteca padrão), `persistence` (o único lugar
+que importa SQLAlchemy) e `infrastructure` (JWT, relógio, Langfuse, log e Redis). As dependências apontam para o domínio, e o
+import-linter quebra o build se uma camada importar o que não pode. As decisões e os trade-offs estão na
+[Arquitetura](/docs/architecture.md).
 
-Cada sistema tem as próprias convenções de nomes de colunas, de datas e horários e de valores. Os sistemas **se referem às mesmas entidades** (alunos, marcas, cursos, unidades, protocolos) usando **identificadores e formatos diferentes**, e descobrir como relacioná-los faz parte do desafio. Abaixo, para cada tabela, indicamos apenas a chave primária (**PK**) e as chaves estrangeiras (**FK**) dentro do próprio sistema.
+## Como foi feito
 
-### 3.1 SAG — sistema acadêmico (`sag/`)
+**Stack.** Python 3.14, FastAPI, SQLAlchemy assíncrono com asyncpg, LangChain com modelo da OpenAI, Postgres, Redis,
+Langfuse e uv. Front em React com Vite.
 
-O sistema oficial da vida acadêmica: matrículas, cursos, matrizes, turmas e notas. Colunas em MAIÚSCULAS; notas de 0 a 10.
+**Segurança por arquitetura, não por prompt.**
 
-| Tabela | Descrição | Linhas | PK | FKs |
-|---|---|---|---|---|
-| `brand` | Marcas (cada marca separada em presencial e EAD) | 10 | BRAND | — |
-| `unit` | Unidades: campi e polos EAD | 27 | UNIT_ID | BRAND → brand |
-| `course` | Cursos de graduação | 8 | COURSE | — |
-| `curriculum` | Matrizes curriculares (versões de cada curso) | 10 | CURRICULUM_ID | COURSE → course |
-| `subject` | Catálogo de disciplinas | 260 | SUBJECT_CODE | — |
-| `curriculum_subject` | Disciplinas de cada matriz, por semestre | 328 | CURRICULUM_ID, SUBJECT_CODE | CURRICULUM_ID → curriculum; SUBJECT_CODE → subject; PREREQUISITE_CODE → subject |
-| `course_offer` | Cursos oferecidos em cada unidade e turno | 138 | OFFER_ID | UNIT_ID → unit; COURSE → course; CURRICULUM_ID → curriculum |
-| `term` | Calendário acadêmico (semestres) | 12 | TERM | — |
-| `professor` | Professores | 60 | PROFESSOR_ID | BRAND → brand |
-| `person` | Dados pessoais dos alunos | 1.015 | PERSON_ID | — |
-| `enrollment` | Matrículas: uma por aluno em cada curso | 1.037 | BRAND, STUDENT_ID | BRAND → brand; PERSON_ID → person; COURSE → course; CURRICULUM_ID → curriculum; UNIT_ID → unit; ENTRY_TERM → term; (ORIGIN_BRAND, ORIGIN_STUDENT_ID) → enrollment |
-| `enrollment_status_history` | Histórico de mudanças de status da matrícula | 1.559 | HISTORY_ID | (BRAND, STUDENT_ID) → enrollment; TERM → term |
-| `term_enrollment` | Rematrícula a cada semestre | 4.637 | BRAND, STUDENT_ID, TERM | (BRAND, STUDENT_ID) → enrollment; TERM → term |
-| `class_section` | Turmas de cada disciplina por semestre | 11.051 | CLASS_ID | TERM → term; SUBJECT_CODE → subject; BRAND → brand; UNIT_ID → unit; PROFESSOR_ID → professor |
-| `student_class` | Disciplinas cursadas, com notas, frequência e resultado | 20.277 | CLASS_ID, BRAND, STUDENT_ID | CLASS_ID → class_section; (BRAND, STUDENT_ID) → enrollment; CURRICULUM_ID → curriculum |
+- A identidade vem só da sessão, montada a partir do JWT; o texto da conversa nunca define quem é o aluno.
+- Nenhuma tool recebe identidade como parâmetro: cada uma é uma closure sobre services que já carregam a sessão.
+- O adapter de repositório acrescenta o `AND` de ownership em toda consulta, e um teste chama todas as tools com todos os
+  argumentos para provar que nenhuma linha de outro aluno volta.
+- A API conecta ao banco com uma role de menor privilégio: lê só as tabelas mapeadas e escreve só nas de protocolo e de
+  conversa.
+- O agente não escreve sozinho: ele propõe a abertura de protocolo num token assinado, e a escrita só acontece quando o aluno
+  confirma no front, numa rota fora do LLM.
 
-### 3.2 LMS — ambiente virtual de aprendizagem (`lms/`)
+**Escala.** A API é stateless: a sessão nasce e morre no request, o histórico está no Postgres e a proposta de protocolo é um
+token assinado. Um processo uvicorn por container, escalando por réplicas. O custo é contido por um rate limit por aluno em
+Redis (60 mensagens do chat por hora por padrão, `APP_CHAT_RATE_LIMIT_PER_HOUR`), que responde 429 com `Retry-After` e
+deixa passar se o Redis estiver fora do ar. O pool do banco é configurável (`APP_DB_POOL_SIZE`, `APP_DB_MAX_OVERFLOW`,
+`APP_DB_POOL_TIMEOUT_SECONDS`). A análise de escala completa vai no documento de entrega.
 
-Uma instância no estilo Moodle compartilhada pelas marcas, com dados a partir de 15/01/2023. Horários em epoch (segundos, UTC). Atenção: no LMS, `mdl_course` é uma **sala de aula** (turma de uma disciplina), não um curso de graduação.
+**Eval.** Um conjunto de perguntas de referência, de red team e de abertura de protocolo, com os fatos da referência
+conferidos por SQL independente das tools; os itens críticos precisam acertar em todas as repetições (pass^k), e um juiz
+LLM, calibrado com respostas corretas e adulteradas, avalia cada critério da rubrica. Como ler os resultados está no
+[Guia do eval](/docs/guia-do-eval.md).
 
-| Tabela | Descrição | Linhas | PK | FKs |
-|---|---|---|---|---|
-| `mdl_tenant` | Ambientes (um por marca) | 5 | id | — |
-| `mdl_course_categories` | Árvore de categorias: ambiente > modalidade > curso | 75 | id | tenant_id → mdl_tenant; parent → mdl_course_categories |
-| `mdl_user` | Contas: alunos, professores, administradores e testes | 1.078 | student_lms_id | tenant_id → mdl_tenant |
-| `mdl_user_info_field` | Campos de perfil personalizados | 4 | id | — |
-| `mdl_user_info_data` | Valores dos campos de perfil | 2.957 | id | userid → mdl_user; fieldid → mdl_user_info_field |
-| `mdl_course` | Salas de aula virtuais | 9.214 | id | tenant_id → mdl_tenant; category → mdl_course_categories |
-| `mdl_user_enrolments` | Usuários inscritos em cada sala, com papel | 30.442 | id | courseid → mdl_course; userid → mdl_user |
-| `mdl_course_modules` | Atividades e materiais (páginas, fóruns, provas…) | 58.390 | id | course → mdl_course |
-| `mdl_quiz` | Provas online | 12.360 | id | course → mdl_course |
-| `mdl_quiz_attempts` | Tentativas de prova | 18.857 | id | quiz → mdl_quiz; userid → mdl_user |
-| `mdl_logstore_standard_log` | Log de eventos (acessos, visualizações, envios) | 151.111 | id | userid → mdl_user; courseid → mdl_course; relateduserid → mdl_user |
+**Desenvolvimento assistido por IA, com gates.** O código foi escrito com um agente de código a partir de specs em
+[`docs/plans`](/docs/plans). Nenhuma tarefa fecha sem `make check` verde: ruff, flake8 com limites de tamanho e
+complexidade, contratos de camada no import-linter, mypy em modo estrito, Pyright e a suíte de testes. O CI roda o mesmo gate,
+confere o `uv.lock` e publica a cobertura.
 
-### 3.3 Secretaria — protocolos de atendimento (`secretary/`)
+## Evidências
 
-O sistema de atendimento ao aluno, com dados a partir de 01/03/2022. Horários em texto ISO-8601 (UTC).
+Em preparação. Esta seção vai trazer:
 
-| Tabela | Descrição | Linhas | PK | FKs |
-|---|---|---|---|---|
-| `unit` | Unidades de atendimento | 27 | Unit_Code | — |
-| `analyst` | Analistas de atendimento | 25 | Analyst_Login | Unit_Code → unit |
-| `demand_type` | Catálogo de serviços, com SLA e taxa | 18 | Demand_Code | — |
-| `protocol` | Protocolos abertos pelos alunos ou responsáveis | 3.933 | Protocol | Unit_Code → unit; Demand → demand_type; Demand_Analyst → analyst |
-| `protocol_status_history` | Mudanças de status de cada protocolo | 14.274 | Protocol, Seq | Protocol → protocol |
-| `protocol_interaction` | Mensagens trocadas em cada protocolo | 14.853 | Interaction_ID | Protocol → protocol |
-| `issued_document` | Documentos emitidos (certificados, históricos, diplomas) | 1.001 | Document_ID | Protocol → protocol; Signed_By → analyst |
-| `satisfaction_survey` | Pesquisas de satisfação | 1.503 | Survey_ID | Protocol → protocol |
+- exemplos de conversa;
+- tentativas de ataque e o resultado de cada uma;
+- medição de latência;
+- avaliação da qualidade das respostas;
+- traces públicos do Langfuse.
 
-### 3.4 Financeiro — cobrança e recebíveis (`finance/`)
+## Documentos
 
-O sistema de cobrança. Ele conhece o **pagador**, que pode ser o próprio aluno, um responsável ou uma empresa. Valores em **centavos**; taxas entre 0 e 1.
-
-| Tabela | Descrição | Linhas | PK | FKs |
-|---|---|---|---|---|
-| `company` | Empresas (uma por marca) | 5 | companyCode | — |
-| `product` | Produtos: mensalidades por curso e modalidade, e serviços | 15 | productCode | — |
-| `price_list` | Preços por produto, empresa e ano | 450 | priceId | productCode → product; companyCode → company |
-| `customer` | Pagadores | 985 | customerId | — |
-| `contract` | Contratos financeiros dos alunos | 1.065 | contractId | customerId → customer; companyCode → company; productCode → product |
-| `discount` | Bolsas e descontos | 304 | discountId | contractId → contract |
-| `invoice` | Faturas: mensalidades, taxas de serviço e parcelas de acordo | 25.931 | invoiceId | contractId → contract; customerId → customer; companyCode → company; productCode → product; agreementId → agreement |
-| `invoice_tax` | Impostos de cada fatura | 76.692 | invoiceId, taxType | invoiceId → invoice |
-| `payment` | Histórico de pagamentos | 24.380 | paymentId | invoiceId → invoice |
-| `late_charge` | Multas e juros por atraso | 5.241 | lateChargeId | invoiceId → invoice |
-| `receivable_snapshot` | Posição mensal da dívida por contrato | 6.866 | snapshotDate, contractId | contractId → contract; customerId → customer; companyCode → company |
-| `agreement` | Acordos de renegociação de dívida | 65 | agreementId | contractId → contract; customerId → customer |
-| `agreement_invoice` | Faturas incluídas em cada acordo | 196 | agreementId, invoiceId | agreementId → agreement; invoiceId → invoice |
-
----
-
-Boa sorte! Dúvidas sobre o case podem ser enviadas ao recrutador responsável.
+- [Índice dos documentos](/docs/index.md)
+- [Arquitetura](/docs/architecture.md)
+- [Diretrizes do case](/docs/diretrizes.md)
+- [Guia do eval](/docs/guia-do-eval.md)
