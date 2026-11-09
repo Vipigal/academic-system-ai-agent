@@ -26,11 +26,11 @@ def tuition(
         kind=kind,
         competence=competence,
         due_date=date.fromisoformat(f"{competence}-10"),
-        gross=Money.from_cents(gross),
-        net=Money.from_cents(net),
+        gross=Money(gross),
+        net=Money(net),
         status=status,
         payments=(),
-        late_charge=Money.from_cents(0),
+        late_charge=Money(0),
     )
 
 
@@ -108,13 +108,13 @@ def test_debt_position_keeps_only_the_debts() -> None:
         [overdue, tuition("2026-11", 100, 100, status=InvoiceStatus.OPEN)], REFERENCE
     )
     assert position.invoices == (overdue,)
-    assert position.total == Money.from_cents(100)
+    assert position.total == Money(100)
     assert position.max_days_overdue == 51
 
 
 def test_empty_debt_position_is_zero() -> None:
     position = DebtPosition.of([], REFERENCE)
-    assert position.total == Money.from_cents(0)
+    assert position.total == Money(0)
     assert position.max_days_overdue == 0
 
 

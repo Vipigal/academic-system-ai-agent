@@ -70,7 +70,7 @@ class Invoice:
     @property
     def balance(self) -> Money:
         if self.status in SETTLED_STATUSES:
-            return Money.from_cents(0)
+            return Money(0)
         return self.net - self.paid
 
     def is_debt(self, reference: date) -> bool:
@@ -80,7 +80,7 @@ class Invoice:
         return self.status in UPCOMING_STATUSES and self.due_date >= reference
 
     def late_charge_due(self, reference: date) -> Money:
-        return self.late_charge if self.is_debt(reference) else Money.from_cents(0)
+        return self.late_charge if self.is_debt(reference) else Money(0)
 
     def amount_due(self, reference: date) -> Money:
         return self.balance + self.late_charge_due(reference)

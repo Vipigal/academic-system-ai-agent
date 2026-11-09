@@ -14,8 +14,8 @@ def payment_of(cents: int, status: PaymentStatus = PaymentStatus.CONFIRMED) -> P
         id="9000001",
         invoice_id="7000001",
         paid_at=datetime(2026, 10, 16, tzinfo=UTC),
-        principal=Money.from_cents(cents),
-        late_charge=Money.from_cents(259),
+        principal=Money(cents),
+        late_charge=Money(259),
         method="PIX",
         status=status,
     )
@@ -34,11 +34,11 @@ def invoice_with(
         kind=InvoiceKind.TUITION,
         competence="2026-10",
         due_date=due_date,
-        gross=Money.from_cents(93390),
-        net=Money.from_cents(93390),
+        gross=Money(93390),
+        net=Money(93390),
         status=status,
         payments=payments,
-        late_charge=Money.from_cents(late_charge_cents),
+        late_charge=Money(late_charge_cents),
     )
 
 
@@ -75,37 +75,37 @@ def test_does_not_count_as_debt(status: InvoiceStatus) -> None:
 )
 def test_balance_is_net_minus_confirmed_principal(status: InvoiceStatus) -> None:
     invoice = invoice_with(status, payments=(payment_of(8101),))
-    assert invoice.balance == Money.from_cents(85289)
+    assert invoice.balance == Money(85289)
 
 
 def test_reversed_payment_does_not_reduce_the_balance() -> None:
     reversed_only = (payment_of(93390, PaymentStatus.REVERSED),)
     invoice = invoice_with(InvoiceStatus.OVERDUE, payments=reversed_only)
-    assert invoice.paid == Money.from_cents(0)
-    assert invoice.balance == Money.from_cents(93390)
+    assert invoice.paid == Money(0)
+    assert invoice.balance == Money(93390)
 
 
 def test_reversal_followed_by_new_payment_counts_only_the_new_one() -> None:
     payments = (payment_of(8101, PaymentStatus.REVERSED), payment_of(5000))
-    assert invoice_with(InvoiceStatus.PARTIAL, payments=payments).paid == Money.from_cents(5000)
+    assert invoice_with(InvoiceStatus.PARTIAL, payments=payments).paid == Money(5000)
 
 
 @pytest.mark.parametrize("status", [InvoiceStatus.CANCELLED, InvoiceStatus.RENEGOTIATED])
 def test_balance_is_zero_when_cancelled_or_renegotiated(status: InvoiceStatus) -> None:
-    assert invoice_with(status).balance == Money.from_cents(0)
-    assert invoice_with(status, payments=(payment_of(8101),)).balance == Money.from_cents(0)
+    assert invoice_with(status).balance == Money(0)
+    assert invoice_with(status, payments=(payment_of(8101),)).balance == Money(0)
 
 
 def test_amount_due_of_a_debt_adds_the_late_charge() -> None:
     invoice = invoice_with(InvoiceStatus.OVERDUE, late_charge_cents=1000)
-    assert invoice.late_charge_due(REFERENCE) == Money.from_cents(1000)
-    assert invoice.amount_due(REFERENCE) == Money.from_cents(94390)
+    assert invoice.late_charge_due(REFERENCE) == Money(1000)
+    assert invoice.amount_due(REFERENCE) == Money(94390)
 
 
 def test_late_charge_of_a_paid_invoice_is_not_due() -> None:
     paid = invoice_with(InvoiceStatus.PAID, payments=(payment_of(93390),), late_charge_cents=1000)
-    assert paid.late_charge_due(REFERENCE) == Money.from_cents(0)
-    assert paid.amount_due(REFERENCE) == Money.from_cents(0)
+    assert paid.late_charge_due(REFERENCE) == Money(0)
+    assert paid.amount_due(REFERENCE) == Money(0)
 
 
 def test_days_overdue_counts_only_for_a_debt() -> None:
@@ -131,12 +131,12 @@ def test_is_not_upcoming(status: InvoiceStatus, due_date: date) -> None:
 
 
 def test_money_converts_cents_to_reais_without_float_error() -> None:
-    assert Money.from_cents(19290).reais == Decimal("192.90")
+    assert Money(19290).reais == Decimal("192.90")
 
 
 def test_money_total_adds_every_value() -> None:
-    assert Money.total([Money.from_cents(10), Money.from_cents(5)]) == Money.from_cents(15)
-    assert Money.total([]) == Money.from_cents(0)
+    assert Money.total([Money(10), Money(5)]) == Money(15)
+    assert Money.total([]) == Money(0)
 
 
 @pytest.mark.parametrize("status", [InvoiceStatus.OPEN, InvoiceStatus.PARTIAL])
