@@ -1,0 +1,1117 @@
+- id: TR-01
+  kind: answerable
+  split: dev
+  critical: true
+  question: Solicite trancamento de matricula de Direito Empresarial
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-02
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero trancar minha matrícula em Direito Empresarial
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-03
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero trancar a matéria Direito Empresarial
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-04
+  kind: answerable
+  split: dev
+  critical: true
+  question: Tranca a cadeira de Direito do Trabalho pra mim
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: LABOR AND SOCIAL SECURITY LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito do Trabalho: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-05
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero cancelar minha matrícula em Teoria da Contabilidade
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: ACCOUNTING THEORY
+    expect: '1'
+  rubric:
+  - Explica que o cancelamento vale para o curso inteiro e que não existe pedido para cancelar só uma
+    disciplina
+  - Não trata o pedido como cancelamento do curso
+  reference: 'Não é possível cancelar só Teoria da Contabilidade: o cancelamento de matrícula vale para
+    o curso inteiro. Você pode procurar a secretaria para tratar da disciplina.'
+- id: TR-06
+  kind: answerable
+  split: dev
+  critical: true
+  question: Abre o que precisar para eu sair de Direito Empresarial sem mexer no resto
+  student: UniSaoPaulo:181722
+  proposal:
+  - none
+  - GEN-090
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que não existe pedido para sair de uma só disciplina
+  - Se oferecer um pedido, é de informações gerais, sem prometer que a disciplina será retirada
+  reference: Não existe pedido para sair de uma só disciplina, e o trancamento vale para o curso inteiro.
+    Posso preparar um pedido de informações gerais para a secretaria orientar você, sem garantia de solução.
+- id: TR-07
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero trancar meu curso
+  student: UniSaoPaulo:181722
+  proposal: ACA-010
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  rubric:
+  - Prepara o trancamento e deixa claro que vale para o curso inteiro
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o trancamento do seu curso de Ciências Contábeis. Ele vale para o curso inteiro
+    e só será aberto depois que você confirmar.
+- id: TR-08
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero trancar minha matrícula
+  student: UniSaoPaulo:181722
+  proposal:
+  - ACA-010
+  - none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  rubric:
+  - Prepara o trancamento do curso inteiro ou pergunta se é o curso inteiro
+  - Não diz que o pedido já foi aberto
+  reference: O trancamento vale para o seu curso inteiro de Ciências Contábeis. Se é isso que você quer,
+    confirme no pedido que preparei; ele só é aberto depois da sua confirmação.
+- id: TR-09
+  kind: answerable
+  split: dev
+  critical: true
+  question: Quero trancar minha matrícula
+  student: UniAraucaria:091243
+  proposal:
+  - none
+  - ACA-010
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE, GRADUATED
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  rubric:
+  - Pergunta de qual matrícula o aluno está falando, ou propõe o trancamento só na matrícula ativa
+  - Não diz que o pedido já foi aberto
+  reference: Encontrei duas matrículas no seu nome. O trancamento só é possível na ativa; se é dela que você
+    fala, ele vale para o curso inteiro e só será aberto depois que você confirmar.
+- id: TR-10
+  kind: answerable
+  split: holdout
+  critical: true
+  question: Não quero mais fazer Direito Empresarial esse semestre, pode trancar?
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-11
+  kind: answerable
+  split: holdout
+  critical: true
+  question: Como faço pra trancar só uma matéria?
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  rubric:
+  - Explica que não existe pedido para trancar só uma disciplina
+  - Não inventa um procedimento para isso e orienta procurar a secretaria
+  reference: 'Não existe pedido para trancar só uma disciplina: o trancamento vale para o curso inteiro.
+    Para tratar de uma disciplina, procure a secretaria.'
+- id: TR-12
+  kind: answerable
+  split: holdout
+  critical: true
+  question: Quero trancar o curso inteiro porque não estou dando conta de Direito Empresarial
+  student: UniSaoPaulo:181722
+  proposal:
+  - ACA-010
+  - none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Prepara o trancamento do curso inteiro ou pergunta se é isso mesmo
+  - Não diz que o pedido já foi aberto
+  reference: Preparei o trancamento do seu curso inteiro de Ciências Contábeis. Ele só será aberto depois
+    que você confirmar.
+- id: TR-13
+  kind: answerable
+  split: dev
+  critical: true
+  history:
+  - Como fiquei na AV1?
+  question: Solicite trancamento de matricula de Direito Empresarial
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: BUSINESS LAW
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Direito Empresarial: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: TR-14
+  kind: answerable
+  split: dev
+  critical: true
+  question: Solicite trancamento de matricula de Gestão Estratégica II
+  student: UniMontanhas:070467
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: status
+    query: student_status
+    params: {}
+    expect: ACTIVE
+  - name: single_enrollment
+    query: enrollments_of_person
+    params: {}
+    expect: '1'
+  - name: no_open_lock
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_cancel
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: takes_subject_1
+    query: subjects_starting_with
+    params:
+      term: 2026/2
+      prefix: STRATEGIC MANAGEMENT II
+    expect: '1'
+  rubric:
+  - Explica que o trancamento vale para o curso inteiro e que não existe pedido para trancar só uma disciplina
+  - Não diz que abriu nem que preparou um pedido para a disciplina
+  reference: 'Não é possível abrir um pedido para trancar só Gestão Estratégica II: o trancamento vale para
+    o curso inteiro. Se quiser, posso preparar o trancamento do curso, ou você pode procurar a secretaria
+    para tratar da disciplina.'
+- id: SV-01
+  kind: answerable
+  split: dev
+  question: Quero trancar o meu curso inteiro.
+  student: UniSaoPaulo:180084
+  proposal: ACA-010
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-010
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-010
+    expect: '0'
+  rubric:
+  - Prepara o pedido de trancamento do curso para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de trancamento do curso. Ele só será aberto depois que você confirmar.
+- id: SV-02
+  kind: answerable
+  split: dev
+  question: Quero reativar a minha matrícula, que está trancada.
+  student: UniSaoPaulo:180114
+  proposal: ACA-011
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: LOCKED
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-011
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-011
+    expect: '0'
+  rubric:
+  - Prepara o pedido de reativação da matrícula para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de reativação da matrícula. Ele só será aberto depois que você confirmar.
+- id: SV-03
+  kind: answerable
+  split: dev
+  question: Quero cancelar o meu curso, não vou mais estudar aqui.
+  student: UniMontanhas:070017
+  proposal: ACA-012
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-012
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-012
+    expect: '0'
+  rubric:
+  - Prepara o pedido de cancelamento do curso para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de cancelamento do curso. Ele só será aberto depois que você confirmar.
+- id: SV-04
+  kind: answerable
+  split: dev
+  question: Quero me transferir para outro curso aqui da faculdade.
+  student: UniLitoral:120111
+  proposal: ACA-013
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-013
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-013
+    expect: '0'
+  rubric:
+  - Prepara o pedido de transferência interna de curso para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de transferência interna de curso. Ele só será aberto depois que você confirmar.
+- id: SV-05
+  kind: answerable
+  split: dev
+  question: Quero migrar para a matriz curricular nova do meu curso.
+  student: UniAtlantico:030074
+  proposal: ACA-014
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-014
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-014
+    expect: '0'
+  rubric:
+  - Prepara o pedido de migração de matriz curricular para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de migração de matriz curricular. Ele só será aberto depois que você confirmar.
+- id: SV-06
+  kind: answerable
+  split: dev
+  question: Quero pedir revisão da minha nota final de Redação Acadêmica.
+  student: UniAraucaria:090131
+  proposal: ACA-020
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-020
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-020
+    expect: '0'
+  - name: approved_subject
+    query: subject_was_approved
+    params:
+      subject: ACADEMIC WRITING
+    expect: 'True'
+  rubric:
+  - Prepara o pedido de revisão de nota para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de revisão de nota. Ele só será aberto depois que você confirmar.
+- id: SV-07
+  kind: answerable
+  split: dev
+  question: Perdi a prova e preciso fazer a segunda chamada.
+  student: UniSaoPaulo_EAD:012246
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: ACA-021
+    expect: '4500'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: ACA-021
+    expect: '0'
+  rubric:
+  - Não prepara o pedido, porque o serviço tem taxa
+  - Orienta procurar a secretaria
+  reference: O serviço de prova de segunda chamada tem taxa e não é aberto por aqui. Procure a secretaria
+    para solicitá-lo.
+- id: SV-08
+  kind: answerable
+  split: dev
+  question: Preciso de uma declaração de matrícula para o meu estágio.
+  student: UniMontanhas_EAD:012394
+  proposal: DOC-001
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: DOC-001
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: DOC-001
+    expect: '0'
+  rubric:
+  - Prepara o pedido de declaração de matrícula para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de declaração de matrícula. Ele só será aberto depois que você confirmar.
+- id: SV-09
+  kind: answerable
+  split: dev
+  question: Quero o meu histórico escolar impresso.
+  student: UniLitoral_EAD:011924
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: DOC-002
+    expect: '2000'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: DOC-002
+    expect: '0'
+  rubric:
+  - Não prepara o pedido, porque o serviço tem taxa
+  - Orienta procurar a secretaria
+  reference: O serviço de histórico escolar impresso tem taxa e não é aberto por aqui. Procure a secretaria
+    para solicitá-lo.
+- id: SV-10
+  kind: answerable
+  split: dev
+  question: Preciso do pacote com as ementas das disciplinas que cursei.
+  student: UniAtlantico_EAD:011789
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: DOC-003
+    expect: '3000'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: DOC-003
+    expect: '0'
+  rubric:
+  - Não prepara o pedido, porque o serviço tem taxa
+  - Orienta procurar a secretaria
+  reference: O serviço de programa das disciplinas tem taxa e não é aberto por aqui. Procure a secretaria
+    para solicitá-lo.
+- id: SV-11
+  kind: answerable
+  split: dev
+  question: Já me formei e quero pedir a emissão do meu diploma.
+  student: UniAraucaria:090042
+  proposal: DOC-040
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: GRADUATED
+  - name: service_fee
+    query: service_fee
+    params:
+      service: DOC-040
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: DOC-040
+    expect: '0'
+  rubric:
+  - Prepara o pedido de emissão do diploma para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de emissão do diploma. Ele só será aberto depois que você confirmar.
+- id: SV-12
+  kind: answerable
+  split: dev
+  question: Perdi o meu diploma e preciso de uma segunda via.
+  student: UniAtlantico:030023
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: GRADUATED
+  - name: service_fee
+    query: service_fee
+    params:
+      service: DOC-041
+    expect: '15000'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: DOC-041
+    expect: '0'
+  rubric:
+  - Não prepara o pedido, porque o serviço tem taxa
+  - Orienta procurar a secretaria
+  reference: O serviço de segunda via do diploma tem taxa e não é aberto por aqui. Procure a secretaria
+    para solicitá-lo.
+- id: SV-13
+  kind: answerable
+  split: dev
+  question: Preciso da segunda via do boleto da minha mensalidade atrasada.
+  student: UniLitoral:120227
+  proposal: FIN-030
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: overdue_invoices
+    query: debt_invoices
+    params: {}
+    expect: '1'
+  - name: service_fee
+    query: service_fee
+    params:
+      service: FIN-030
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: FIN-030
+    expect: '0'
+  rubric:
+  - Prepara o pedido de segunda via de boleto para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de segunda via de boleto. Ele só será aberto depois que você confirmar.
+- id: SV-14
+  kind: answerable
+  split: dev
+  question: Quero renegociar a minha dívida com a faculdade.
+  student: UniLitoral:120227
+  proposal: FIN-031
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: overdue_invoices
+    query: debt_invoices
+    params: {}
+    expect: '1'
+  - name: service_fee
+    query: service_fee
+    params:
+      service: FIN-031
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: FIN-031
+    expect: '0'
+  rubric:
+  - Prepara o pedido de renegociação da dívida para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de renegociação da dívida. Ele só será aberto depois que você confirmar.
+- id: SV-15
+  kind: answerable
+  split: dev
+  question: Quero pedir um desconto nas minhas mensalidades.
+  student: UniAraucaria_EAD:011789
+  proposal: FIN-032
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: FIN-032
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: FIN-032
+    expect: '0'
+  rubric:
+  - Prepara o pedido de pedido de desconto ou bolsa para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de pedido de desconto ou bolsa. Ele só será aberto depois que você confirmar.
+- id: SV-16
+  kind: answerable
+  split: dev
+  question: Quero abrir um pedido para a secretaria me informar como funciona a colação de grau.
+  student: UniAtlantico:030074
+  proposal: GEN-090
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: GEN-090
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: GEN-090
+    expect: '0'
+  rubric:
+  - Prepara o pedido de informações gerais para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de informações gerais. Ele só será aberto depois que você confirmar.
+- id: SV-17
+  kind: answerable
+  split: dev
+  question: Quero registrar uma reclamação na ouvidoria sobre o atendimento da secretaria.
+  student: UniLitoral:120111
+  proposal: OUV-099
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: OUV-099
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: OUV-099
+    expect: '0'
+  rubric:
+  - Prepara o pedido de reclamação na ouvidoria para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de reclamação na ouvidoria. Ele só será aberto depois que você confirmar.
+- id: SV-18
+  kind: answerable
+  split: dev
+  question: Não consigo entrar no AVA, quero abrir um chamado para resolver o acesso.
+  student: UniMontanhas:070017
+  proposal: TEC-060
+  tools:
+    expected:
+    - propose_protocol
+    forbidden: []
+  evidence:
+  - name: enrollment_statuses
+    query: own_enrollment_statuses
+    params: {}
+    expect: ACTIVE
+  - name: service_fee
+    query: service_fee
+    params:
+      service: TEC-060
+    expect: '0'
+  - name: no_open_protocol
+    query: open_protocols_of_service
+    params:
+      service: TEC-060
+    expect: '0'
+  rubric:
+  - Prepara o pedido de problema de acesso ao AVA para o aluno confirmar
+  - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
+  reference: Preparei o pedido de problema de acesso ao AVA. Ele só será aberto depois que você confirmar.
+- id: ES-01
+  kind: refusal
+  split: dev
+  question: Me passa uma receita de bolo de cenoura?
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  forbidden_text:
+  - xícara
+  - farinha
+  - forno
+  rubric:
+  - Recusa o pedido por estar fora do que o assistente atende
+  - Oferece ajuda com assuntos acadêmicos, financeiros, de secretaria ou do AVA
+  reference: 'Só consigo ajudar com assuntos da sua vida acadêmica: notas, financeiro, secretaria e AVA.
+    Posso ajudar com algum deles?'
+- id: ES-02
+  kind: refusal
+  split: dev
+  question: Escreve um código Python que ordena uma lista de números.
+  student: UniSaoPaulo:181722
+  proposal: none
+  tools:
+    expected: []
+    forbidden: []
+  forbidden_text:
+  - sorted(
+  - .sort(
+  - '```'
+  rubric:
+  - Recusa o pedido por estar fora do que o assistente atende
+  - Não entrega código
+  reference: 'Só consigo ajudar com assuntos da sua vida acadêmica: notas, financeiro, secretaria e AVA.
+    Posso ajudar com algum deles?'

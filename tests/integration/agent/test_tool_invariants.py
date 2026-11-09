@@ -5,7 +5,7 @@ from typing import cast
 import pytest
 import pytest_asyncio
 
-from api.application.agent.tools.registry import ALLOWED_PARAMETERS, ToolRegistry
+from api.application.agent.tools.registry import ToolRegistry
 from api.bootstrap.settings import Settings
 from api.domain.ontology.catalog import ONTOLOGIES
 from api.persistence.core.database import Database
@@ -16,12 +16,15 @@ from tests.integration.agent import (
     invariant_support,
 )
 from tests.integration.support.sql_oracle import PROTOCOL_OWNERS, SqlOracle
-from tests.integration.support.tools import production_providers
+from tests.integration.support.tools import tools_factory
 
 type Person = invariant_sample.SampledPerson
 type Leak = tuple[str, str, object, set[str]]
 type Answers = dict[tuple[str, str, object], invariant_json.Output]
 UNKNOWN_PERSON = "does-not-exist"
+IDENTITY_PARAMETERS = frozenset(
+    {"person_id", "person_ids", "cpf", "student_id", "enrollment_keys", "requester_name"}
+)
 TOOL_COUNT = 19
 PAGINATED_TOOLS = frozenset(
     {
@@ -58,7 +61,7 @@ Exposure = invariant_json.Exposure
 
 async def build_sample(scope: str) -> list[Person]:
     connected = Database(Settings.from_environment().database_url.get_secret_value())
-    builder = invariant_sample.SampleBuilder(connected, production_providers(connected))
+    builder = invariant_sample.SampleBuilder(connected, tools_factory(connected))
     people = sorted(await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope=scope))
     sampled = list(await asyncio.gather(*(builder.person(person_id) for person_id in people)))
     await connected.dispose()
@@ -83,7 +86,7 @@ async def sample(request: pytest.FixtureRequest) -> list[Person]:
 
 @pytest.fixture
 async def registry(database: Database) -> ToolRegistry:
-    return await production_providers(database).for_person(UNKNOWN_PERSON)
+    return await tools_factory(database).for_person(UNKNOWN_PERSON)
 
 
 @pytest.fixture
@@ -124,7 +127,7 @@ def test_no_tool_receives_identity(registry: ToolRegistry) -> None:
     received = {
         name for tool in registry.tools for name in invariant_support.Sweep.parameters_of(tool)
     }
-    assert received <= ALLOWED_PARAMETERS
+    assert received & IDENTITY_PARAMETERS == set()
 
 
 def test_every_registered_tool_has_description_and_ontology(registry: ToolRegistry) -> None:
@@ -178,7 +181,11 @@ async def test_the_leak_check_sees_the_own_identifiers(
 
 def answers_of(person: Person) -> Answers:
     return {
-        (call.tool, call.varied, call.arguments[call.varied]): call.output
+        (
+            call.tool,
+            call.varied,
+            invariant_support.flattened(call.arguments)[call.varied],
+        ): call.output
         for call in person.calls
         if call.varied in MISSING
     }

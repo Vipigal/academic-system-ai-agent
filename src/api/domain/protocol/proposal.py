@@ -1,12 +1,17 @@
 import re
 from collections.abc import Iterable
+from dataclasses import dataclass
 from enum import Enum
+from typing import Self
 
 from api.domain.academic.enrollment import Enrollment
+from api.domain.identity.session import StudentSession
+from api.domain.protocol.action import ServiceAction
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.request import Protocol
 
 NOT_A_DIGIT = re.compile(r"\D")
+MAX_MESSAGE_LENGTH = 4000
 
 
 class RefusalReason(Enum):
@@ -14,6 +19,21 @@ class RefusalReason(Enum):
     SERVICE_INACTIVE = "service_inactive"
     EMPTY_MESSAGE = "empty_message"
     DUPLICATE_IN_PROGRESS = "duplicate_in_progress"
+    SUBJECT_NOT_SUPPORTED = "subject_not_supported"
+    ENROLLMENT_STATUS = "enrollment_status"
+    MESSAGE_TOO_LONG = "message_too_long"
+    CONFIRMATION_WORD = "confirmation_word"
+
+
+@dataclass(frozen=True, slots=True)
+class SignedProposal:
+    person_id: str
+    enrollment: str
+    service_code: str
+
+    @classmethod
+    def of(cls, session: StudentSession, service: Service, enrollment: Enrollment) -> Self:
+        return cls(min(session.person_ids), enrollment.reference, service.code)
 
 
 class ProtocolNumber:
@@ -24,14 +44,39 @@ class ProtocolNumber:
 
 class ProposalRules:
     @staticmethod
-    def refusal(service: Service, message: str) -> RefusalReason | None:
+    def refusal(service: Service) -> RefusalReason | None:
         if not service.active:
             return RefusalReason.SERVICE_INACTIVE
         if service.has_fee:
             return RefusalReason.SERVICE_HAS_FEE
-        if not message.strip():
+        return None
+
+    @staticmethod
+    def action_refusal(action: ServiceAction, subject: str | None) -> RefusalReason | None:
+        if subject is not None and not action.accepts_subject:
+            return RefusalReason.SUBJECT_NOT_SUPPORTED
+        return None
+
+    @staticmethod
+    def enrollment_refusal(action: ServiceAction, enrollment: Enrollment) -> RefusalReason | None:
+        if not action.accepts(enrollment.status):
+            return RefusalReason.ENROLLMENT_STATUS
+        return None
+
+    @staticmethod
+    def message_refusal(action: ServiceAction, message: str) -> RefusalReason | None:
+        if len(message) > MAX_MESSAGE_LENGTH:
+            return RefusalReason.MESSAGE_TOO_LONG
+        if action.requires_student_message and not message.strip():
             return RefusalReason.EMPTY_MESSAGE
         return None
+
+    @staticmethod
+    def word_refusal(action: ServiceAction, word: str) -> RefusalReason | None:
+        expected = action.confirmation_word
+        if expected is None or word.strip().casefold() == expected.casefold():
+            return None
+        return RefusalReason.CONFIRMATION_WORD
 
     @staticmethod
     def duplicate_of(

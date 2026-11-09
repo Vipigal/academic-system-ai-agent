@@ -39,6 +39,7 @@ RESOLUTION_BY_SOURCE = {
     "Duplicate": Resolution.DUPLICATE,
     "Withdrawn": Resolution.WITHDRAWN,
 }
+SOURCE_BY_STATUS = {status: source for source, status in STATUS_BY_SOURCE.items()}
 REQUESTER_BY_SOURCE = {
     "Student": Requester.SELF,
     "Alumni": Requester.SELF,
@@ -66,6 +67,10 @@ class ProtocolVocabulary:
     @staticmethod
     def status(source: str) -> ProtocolStatus:
         return DialectLookup.find(STATUS_BY_SOURCE, source, "demand_status")
+
+    @staticmethod
+    def source_of_status(status: ProtocolStatus) -> str:
+        return SOURCE_BY_STATUS[status]
 
     @staticmethod
     def resolution(source: str | None) -> Resolution | None:

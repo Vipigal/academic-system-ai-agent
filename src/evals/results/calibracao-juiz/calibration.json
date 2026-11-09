@@ -1,0 +1,15 @@
+{
+  "judge_model": "claude-sonnet-5-5",
+  "tpr": {
+    "right": 20,
+    "judged": 20,
+    "total": 20
+  },
+  "tnr": {
+    "right": 20,
+    "judged": 20,
+    "total": 20
+  },
+  "pending": [],
+  "misses": []
+}

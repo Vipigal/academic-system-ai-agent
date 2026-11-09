@@ -2,5 +2,5 @@
   "get_protocol": "Mostra um protocolo com andamento, prazo, mensagens públicas, documentos e taxa.\n\nUse quando o aluno informar o número do pedido.",
   "list_protocols": "Lista os protocolos do aluno com situação de prazo, taxa e documentos.\n\nUse para pedidos em andamento, certificado emitido ou pedido aberto por responsável.",
   "list_services": "Lista os serviços da secretaria com taxa, prazo e se o agente pode abrir.\n\nUse para saber o que o aluno pode pedir, quanto custa e quanto demora.",
-  "propose_protocol": "Prepara um pedido gratuito para o aluno confirmar, sem abrir nada.\n\nUse para declaração, boleto, trancamento ou revisão. Recusa serviço com taxa ou duplicado."
+  "propose_protocol": "Prepara um pedido gratuito para o aluno confirmar, sem abrir nada.\n\nConfira antes se o aluno fala do curso inteiro ou de uma disciplina. Recusa duplicado."
 }

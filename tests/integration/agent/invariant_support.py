@@ -21,7 +21,6 @@ FIXED_VALUES: Mapping[str, tuple[object, ...]] = {
     "year": (2026, 1999),
     "period": ("2026-10", "x"),
     "service": ("DOC-001", "ACA-021", "XYZ-999"),
-    "message": ("Preciso de uma declaração de matrícula.",),
     "query": ("Semana 2",),
     "page": (PageRequest(offset=1, limit=3),),
 }
@@ -29,6 +28,17 @@ FIXED_VALUES: Mapping[str, tuple[object, ...]] = {
 
 def joined(identifiers: frozenset[str] | set[str]) -> str:
     return ",".join(sorted(identifiers))
+
+
+def flattened(arguments: Arguments) -> Arguments:
+    nested = {
+        name: value
+        for model in arguments.values()
+        if isinstance(model, BaseModel)
+        for name, value in model
+        if name in model.model_fields_set
+    }
+    return {**arguments, **nested}
 
 
 def enrollment_refs(owned: Owned) -> frozenset[str]:
@@ -89,8 +99,8 @@ class ArgumentPool:
         base = self.base(tool)
         yield None, base
         for name in inspect.signature(tool.handler).parameters:
-            for value in self._candidates(name, hints[name]):
-                yield name, {**base, name: value}
+            for varied, value in self._variations(name, hints[name]):
+                yield varied, {**base, name: value}
 
     def base(self, tool: RegisteredTool) -> Arguments:
         hints = get_type_hints(tool.handler)
@@ -99,6 +109,23 @@ class ArgumentPool:
             for name, parameter in inspect.signature(tool.handler).parameters.items()
             if parameter.default is inspect.Parameter.empty
         }
+
+    def _variations(self, name: str, hint: object) -> Iterator[tuple[str, object]]:
+        nested = self._nested(name, hint)
+        if nested is None:
+            yield from ((name, value) for value in self._candidates(name, hint))
+            return
+        for field, info in nested.model_fields.items():
+            for value in self._candidates(field, info.annotation):
+                yield field, nested.model_validate({field: value})
+
+    def _nested(self, name: str, hint: object) -> type[BaseModel] | None:
+        if name in self._values:
+            return None
+        for option in (hint, *get_args(hint)):
+            if isinstance(option, type) and issubclass(option, BaseModel):
+                return option
+        return None
 
     def _candidates(self, name: str, hint: object) -> tuple[object, ...]:
         for option in (hint, *get_args(hint)):

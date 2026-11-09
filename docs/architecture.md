@@ -132,7 +132,7 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | A13 | O conjunto de cada pessoa é pequeno | No máximo 3 contratos, 2 contas no LMS e 18 protocolos por pessoa | Cada consulta devolve poucas linhas; resolver o dono na consulta é barato com índice |
 | A14 | Protocolo nasce com três linhas | 3.933/3.933 têm histórico `Open` (`changed_by = system`) e mensagem inicial do requerente; `SLA_Due_At` = abertura + `SLA_Hours` em 3.933/3.933 | Regra do domínio para abertura (5.6) |
 | A15 | Parte dos serviços tem taxa | 4 de 18 serviços têm taxa; 732 faturas `SERVICE_FEE` apontam para protocolos | B27 |
-| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; data de referência é 31/10/2026[^eda] | Regras no domínio e relógio injetado |
+| A16 | A semântica de negócio tem armadilhas | Dívida real exclui `OPEN` e `RENEGOTIATED`; só pagamento `CONFIRMED` conta; frequência online é nula; os dados são a foto de 31/10/2026[^eda] | Regras no domínio e relógio injetado: data real em produção, 31/10/2026 nos testes e no eval |
 | A17 | O catálogo está em inglês | "Administração" versus `BUSINESS ADMINISTRATION`; `Course_Label` tem 24 grafias para 8 cursos[^eda] | As tools precisam de um resolvedor de entidades |
 
 ## 5. Desenho
@@ -410,9 +410,10 @@ Três filtros em sequência, cada um mais restrito:
 | Entidade de domínio | Só o que a regra de negócio usa, com métodos | `Invoice.is_debt()` |
 | DTO de saída | Allowlist do que o agente vê | Status em linguagem canônica, valor em reais |
 
-O CPF, os dados do requerente e o vínculo entre contrato e pagador só aparecem em tabelas Core locais, fora de
+Para leitura, o CPF, os dados do requerente e o vínculo entre contrato e pagador só aparecem em tabelas Core locais, fora de
 `Base.metadata`, usadas na carga da sessão. O tipo de pagador é calculado ali. A sessão guarda o CPF com `repr=False`,
-para não aparecer em log.
+para não aparecer em log. A exceção é a escrita do protocolo: `requester_cpf` e `requester_name` estão em `ProtocolRow` como
+`deferred` com `raiseload`, então não carregam numa consulta, e tocar neles levanta erro.
 
 ### 5.5 Composição entre sistemas
 
@@ -438,13 +439,12 @@ Trecho ilustrativo; ainda não foi testado.
 # domain/protocol.py: regras e efeitos em memória
 class StudentProtocol:
     @classmethod
-    def open(cls, *, session, enrollment, demand, message, number, now) -> "StudentProtocol":
+    def open(cls, *, session, enrollment, demand, message, now) -> "StudentProtocol":
         if not session.owns(enrollment):
             raise EnrollmentNotOwned()
         if not demand.active or demand.has_fee:
             raise DemandUnavailable(demand.code)
         return cls(
-            number=number,
             enrollment=enrollment,
             demand=demand,
             status=ProtocolStatus.OPEN,
@@ -455,22 +455,25 @@ class StudentProtocol:
         )
 
 
-# persistence/secretary/repositories.py: traduz e grava em uma transação
+# persistence/secretary/protocol_writer.py: traduz e grava em uma transação
 class ProtocolWriter:
-    async def save(self, protocol: StudentProtocol) -> None:
-        async with self._db_session_factory() as db, db.begin():
-            db.add(ProtocolMapper.to_row(protocol))
-            await db.flush()  # sem relationship(), a ordem precisa ser explícita
-            db.add_all(ProtocolMapper.history_rows(protocol))
-            db.add_all(ProtocolMapper.interaction_rows(protocol))
+    async def save(self, protocol: StudentProtocol) -> str:
+        row = ProtocolMapper.to_row(protocol)  # número por nextval no INSERT
+        await self._adapter.write(
+            [row],
+            ProtocolMapper.history_rows(protocol),
+            ProtocolMapper.interaction_rows(protocol),
+        )
+        return row.protocol
 ```
 
-O `flush` é obrigatório: sem ele, o ORM gravou as linhas filhas antes do protocolo no teste, o que violaria as FKs
-criadas em `02_constraints.sql`. A ordem com `flush` foi confirmada em transação desfeita.
+O `write` faz `flush` entre os lotes: sem ele, o ORM gravou as linhas filhas antes do protocolo no teste, o que violaria as
+FKs criadas em `02_constraints.sql`. A ordem com `flush` foi confirmada em transação desfeita.
 
 A unidade e o nome do curso vêm da matrícula e são traduzidos pelo dialeto da secretaria; unidades de SAG e secretaria
 casam em 27/27 por marca, modalidade, cidade e UF.[^atlas] Números de protocolo e de mensagem vêm de sequências no
-schema `agent`, sem alterar as tabelas recebidas.
+schema `agent`, sem alterar as tabelas recebidas, e saem de `nextval` e `currval` no próprio INSERT. Duas confirmações no mesmo
+instante podem abrir dois protocolos: o `409` de duplicado é checado na aplicação, e o front desabilita o botão.
 
 ### 5.7 Banco
 
@@ -490,7 +493,7 @@ schema `agent`, sem alterar as tabelas recebidas.
 - Paralelismo com `asyncio.gather` usa uma sessão do ORM por tarefa, porque ela não aceita uso concorrente.
 - Custo do ORM medido: 5,07 ms contra 4,35 ms em conexão direta, com 49 faturas e conversão para entidade.
 - A aplicação é stateless. A sessão morre com o pedido.
-- Relógio injetado, com a data de referência de 31/10/2026 em configuração.
+- Relógio injetado: `SystemClock` com a data real em produção, `FixedClock` com 31/10/2026 nos testes e no eval.
 
 Limites de concorrência, deadlines, retry e proteção do provedor de LLM entram junto com o agente.
 

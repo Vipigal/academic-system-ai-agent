@@ -85,12 +85,9 @@ def test_number_keeps_only_digits(text: str) -> None:
 def test_refusal_reasons() -> None:
     with_fee = replace(SERVICE, fee=Money(4500))
 
-    assert ProposalRules.refusal(SERVICE, "texto") is None
-    assert ProposalRules.refusal(with_fee, "texto") is RefusalReason.SERVICE_HAS_FEE
-    assert ProposalRules.refusal(replace(SERVICE, active=False), "x") is (
-        RefusalReason.SERVICE_INACTIVE
-    )
-    assert ProposalRules.refusal(SERVICE, " ") is RefusalReason.EMPTY_MESSAGE
+    assert ProposalRules.refusal(SERVICE) is None
+    assert ProposalRules.refusal(with_fee) is RefusalReason.SERVICE_HAS_FEE
+    assert ProposalRules.refusal(replace(SERVICE, active=False)) is RefusalReason.SERVICE_INACTIVE
 
 
 def enrollment(reference: str, brand: Brand, modality: Modality) -> Enrollment:

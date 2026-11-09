@@ -20,7 +20,7 @@ services:
 
   api:
     build: .
-    command: uvicorn --factory api.bootstrap.app:ApiFactory.create --app-dir src --host 0.0.0.0 --port 8000 --reload --reload-dir src/api
+    command: uvicorn --factory api.bootstrap.app:ApiFactory.create --app-dir src --host 0.0.0.0 --port 8000 --no-access-log --reload --reload-dir src/api
     env_file:
       - path: .env
         required: false

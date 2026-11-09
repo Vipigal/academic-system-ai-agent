@@ -7,6 +7,7 @@ PERSON_CPF = Table(
     IDENTITY_METADATA,
     Column("person_id", Text, primary_key=True),
     Column("cpf", Text),
+    Column("full_name", Text),
     schema="sag",
 )
 CONTRACT_PAYER = Table(

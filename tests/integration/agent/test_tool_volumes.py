@@ -7,7 +7,7 @@ from api.persistence.identity.student_session_repository import StudentSessionRe
 from tests.integration.agent import invariant_queries, invariant_volumes
 from tests.integration.support.owned import owned_by
 from tests.integration.support.sql_oracle import SqlOracle
-from tests.integration.support.tools import production_providers
+from tests.integration.support.tools import tools_factory
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
@@ -20,7 +20,7 @@ async def people() -> list[str]:
 
 @pytest.fixture
 async def volumes(database: Database, people: list[str]) -> list[invariant_volumes.Volumes]:
-    factory = production_providers(database)
+    factory = tools_factory(database)
     repository = StudentSessionRepository(database.db_session_factory)
     return [
         invariant_volumes.Volumes(

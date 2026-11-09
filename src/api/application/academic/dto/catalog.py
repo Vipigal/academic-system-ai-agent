@@ -5,6 +5,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict
 
 from api.application.shared.tool_result import StatedValue
+from api.domain.academic.course import CourseNames
 from api.domain.academic.enrollment import CourseOffer, Shift, SubjectTeacher
 from api.domain.academic.term_calendar import AcademicCalendar, Term
 from api.domain.shared.brand import Modality
@@ -57,6 +58,7 @@ class CourseOfferDto(BaseModel):
     id: str
     course_code: str
     course_name: str
+    course_name_pt: str | None
     unit_id: str
     unit_name: str
     city: str
@@ -70,6 +72,7 @@ class CourseOfferDto(BaseModel):
             id=offer.id,
             course_code=offer.course_code,
             course_name=offer.course_name,
+            course_name_pt=CourseNames.portuguese(offer.course_code),
             unit_id=offer.unit_id,
             unit_name=offer.unit_name,
             city=offer.city,

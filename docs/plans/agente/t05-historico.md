@@ -23,7 +23,8 @@ Guardar e ler conversas no schema `agent` (spec-mãe, §6.5), com o mesmo isolam
 2. Models, mappers, ownership e o `SqlConversationRepository` em `persistence/agent/`. `conversation` tem dono pelo
    `person_id` da sessão; `message` e `tool_call` chegam a ele por `Via` (B33). Registrar as tabelas em
    `persistence/core/ownership_registry.py`.
-3. A janela nunca corta uma mensagem do assistente com chamadas de tool longe dos resultados.
+3. A janela nunca corta uma mensagem do assistente com chamadas de tool longe dos resultados. `tool_call.result` guarda o
+   que o modelo viu, sem `client_only` (D26). O port cria a conversa com id gerado pelo servidor (D25).
 4. `bootstrap/history_providers.py`: provider por request a partir do adapter.
 
 ## Testes

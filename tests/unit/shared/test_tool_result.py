@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, ConfigDict
 
 from api.application.shared.page import PageRequest
+from api.application.shared.tool_input_error import ToolInputError
 from api.application.shared.tool_result import (
     MAX_CANDIDATES,
     Candidate,
@@ -201,3 +202,38 @@ def test_candidates_are_capped_for_not_found_and_ambiguous() -> None:
     many = tuple(Candidate(code=str(number), name="x") for number in range(MAX_CANDIDATES + 10))
     for result in (ToolResult[str].not_found(many), ToolResult[str].ambiguous(many)):
         assert result.candidates == many[:MAX_CANDIDATES]
+
+
+def test_the_explanation_appears_only_when_there_is_one() -> None:
+    result = ToolResult[str](status=ToolStatus.INVALID, explanation="O parâmetro veio errado.")
+
+    assert result.model_dump(mode="json") == {
+        "status": "invalid",
+        "data": None,
+        "totals": {},
+        "caveats": [],
+        "candidates": [],
+        "explanation": "O parâmetro veio errado.",
+    }
+    assert ToolStatus.ERROR.value == "error"
+    assert "explanation" not in ToolResult.ok("x").model_dump(mode="json")
+
+
+def test_tool_input_error_carries_the_paragraph() -> None:
+    assert ToolInputError("Use o formato AAAA-MM.").explanation == "Use o formato AAAA-MM."
+
+
+def test_client_only_never_leaves_through_the_default_serialization() -> None:
+    result = ToolResult.ok("proposta").with_client_only({"token": "segredo"})
+
+    assert result.client_only == {"token": "segredo"}
+    assert "segredo" not in result.model_dump_json()
+    assert "client_only" not in result.model_dump(mode="json")
+    assert "segredo" not in repr(result)
+
+
+def test_ui_is_serialized_only_when_set() -> None:
+    shown = ToolResult.ok("resumo").model_copy(update={"ui": "Painel exibido ao aluno."})
+
+    assert shown.model_dump(mode="json")["ui"] == "Painel exibido ao aluno."
+    assert "ui" not in ToolResult.ok("resumo").model_dump(mode="json")

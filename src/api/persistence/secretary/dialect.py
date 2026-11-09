@@ -4,6 +4,7 @@ from sqlalchemy import ColumnElement, Select, and_, func, or_, select, tuple_
 
 from api.domain.identity.session import EnrollmentKey
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
+from api.persistence.core.dialect_lookup import DialectLookup
 from api.persistence.identity.tables import PROTOCOL_REQUESTER
 from api.persistence.sag.models import EnrollmentRow
 
@@ -13,6 +14,35 @@ UNIT_PREFIX_BY_BRAND = {
     Brand.LITORAL: "LIT",
     Brand.ATLANTICO: "ATL",
     Brand.ARAUCARIA: "ARA",
+}
+UNIT_CODE_BY_ACADEMIC_UNIT = {
+    "CAMPUS PAULISTA": "SPA-PAU",
+    "CAMPUS CAMPINAS": "SPA-CPS",
+    "POLO SAO PAULO - PAULISTA": "SPA-SAO-EAD",
+    "POLO CAMPINAS CENTRO": "SPA-CPS-EAD",
+    "POLO RIBEIRAO PRETO": "SPA-RAO-EAD",
+    "POLO SANTOS - GONZAGA": "SPA-STS-EAD",
+    "POLO RIO DE JANEIRO - CENTRO": "SPA-RIO-EAD",
+    "CAMPUS SAVASSI": "MON-SAV",
+    "CAMPUS UBERLANDIA": "MON-UDI",
+    "POLO BELO HORIZONTE - CENTRO": "MON-BHZ-EAD",
+    "POLO JUIZ DE FORA": "MON-JDF-EAD",
+    "POLO GOIANIA - SETOR BUENO": "MON-GYN-EAD",
+    "CAMPUS BOTAFOGO": "LIT-BOT",
+    "CAMPUS NITEROI": "LIT-NIT",
+    "POLO RIO DE JANEIRO - TIJUCA": "LIT-RIO-EAD",
+    "POLO VITORIA": "LIT-VIX-EAD",
+    "CAMPUS PITUBA": "ATL-PIT",
+    "CAMPUS RECIFE - BOA VISTA": "ATL-REC",
+    "POLO SALVADOR - IGUATEMI": "ATL-SSA-EAD",
+    "POLO RECIFE": "ATL-REC-EAD",
+    "POLO FORTALEZA - ALDEOTA": "ATL-FOR-EAD",
+    "POLO SAO PAULO - MOOCA": "ATL-SAO-EAD",
+    "CAMPUS BATEL": "ARA-BAT",
+    "CAMPUS PORTO ALEGRE": "ARA-POA",
+    "POLO CURITIBA - CENTRO": "ARA-CWB-EAD",
+    "POLO JOINVILLE": "ARA-JOI-EAD",
+    "POLO PORTO ALEGRE - MOINHOS": "ARA-POA-EAD",
 }
 GUARDIAN = "Guardian"
 STUDENT_REQUESTERS = ("Student", "Alumni")
@@ -30,6 +60,10 @@ ID_OF_NO_ENROLLMENT = OTHER_ENROLLMENT.c.student_id.is_(None)
 
 
 class SecretaryDialect:
+    @staticmethod
+    def unit_code(academic_unit_name: str) -> str:
+        return DialectLookup.find(UNIT_CODE_BY_ACADEMIC_UNIT, academic_unit_name, "unit_name")
+
     @classmethod
     def protocols_of(cls, cpf: str, keys: Collection[EnrollmentKey]) -> Select[str]:
         student_ids = {key.ref: key.student_id for key in keys}

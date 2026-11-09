@@ -1,4 +1,5 @@
 from api.application.agent.tools.registry import ToolRegistry
+from api.application.agent.tools.ui import ToolUi
 from api.application.lms.dto.account import LmsAccountDto
 from api.application.lms.dto.exam import OnlineExamDto
 from api.application.lms.dto.material import MaterialViewDto
@@ -6,6 +7,8 @@ from api.application.lms.service import LmsService
 from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology import lms, overview
+
+EXAMS_UI = "Calendário das provas online exibido ao aluno."
 
 
 class LmsTools:
@@ -24,12 +27,16 @@ class LmsTools:
         subject: str | None = None,
         term: str | None = None,
         page: PageRequest = FIRST_PAGE,
+        *,
+        show_ui: bool = False,
     ) -> ToolResult[list[OnlineExamDto]]:
-        """Lista as provas online do aluno com janela, tentativas e nota do AVA e do histórico.
+        """Lista as provas online com janela, tentativas e nota do AVA e do histórico.
 
         Use para prazo, tentativas restantes, entrega registrada ou nota de AV e simulado.
+        Pode mostrar UI ao aluno com show_ui.
         """
-        return await self._service.list_online_exams(subject, term, page)
+        exams = await self._service.list_online_exams(subject, term, page)
+        return ToolUi.shown(exams, EXAMS_UI) if show_ui else exams
 
     @ToolRegistry.declares(lms.ULTIMO_ACESSO, lms.SUSPENSAO_DO_AVA)
     async def get_lms_account(self) -> ToolResult[list[LmsAccountDto]]:

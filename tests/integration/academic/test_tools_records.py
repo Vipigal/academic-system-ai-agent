@@ -1,6 +1,7 @@
 import asyncio
 from decimal import Decimal
 
+from api.application.academic.dto.curriculum import CurriculumFilter
 from api.application.academic.dto.record import SubjectRecordDto
 from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import DataState, ToolResult, ToolStatus
@@ -123,7 +124,7 @@ async def test_va08_pending_subjects_and_hours_summary(database: Database) -> No
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
     key = support.MIGRATED_ADS
 
-    result = await tools.get_curriculum(enrollment=key, pending_only=True)
+    result = await tools.get_curriculum(enrollment=key, filters=CurriculumFilter(pending_only=True))
 
     found = support.rows(result)
     assert {subject.code: subject.hours for subject in found} == {"ADS5303": 80, "ADS0502": 60}
@@ -143,7 +144,9 @@ async def test_va08_pending_subjects_and_hours_summary(database: Database) -> No
 async def test_hours_summary_does_not_change_with_filters_or_page(database: Database) -> None:
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
-    filtered = await tools.get_curriculum(semester=1, page=PageRequest(limit=1))
+    filtered = await tools.get_curriculum(
+        filters=CurriculumFilter(semester=1), page=PageRequest(limit=1)
+    )
     complete = await tools.get_curriculum()
 
     assert filtered.totals == complete.totals

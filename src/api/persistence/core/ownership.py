@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 from sqlalchemy import ColumnElement, FromClause, Select
@@ -25,6 +25,13 @@ class Via:
             parent_name = self.parent.__tablename__
             message = f"{table} exige JOIN com {parent_name}"
             raise OwnershipError(message)
+
+
+@dataclass(frozen=True, slots=True)
+class Update:
+    row: type[Base]
+    where: ColumnElement[bool]
+    values: Mapping[str, object]
 
 
 @dataclass(frozen=True, slots=True, eq=False)

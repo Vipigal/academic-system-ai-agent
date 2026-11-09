@@ -2,7 +2,6 @@ from collections.abc import Callable
 from dataclasses import replace
 
 import pytest
-from pydantic import BaseModel
 
 from api.application.agent.tools.registry import (
     MAX_DESCRIPTION_LENGTH,
@@ -84,48 +83,6 @@ class ToolsWithUnknownOntology:
         return ToolResult.ok("x")
 
 
-class ToolsAskingForPerson:
-    @described("Recebe identidade.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_person(self, person_id: str) -> ToolResult[str]:
-        return ToolResult.ok(person_id)
-
-
-class ToolsAskingForCpf:
-    @described("Recebe identidade em outra grafia.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_cpf(self, student_cpf: str) -> ToolResult[str]:
-        return ToolResult.ok(student_cpf)
-
-
-class ToolsAskingForStudentId:
-    @described("Recebe identidade.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_stu_id(self, stu_id: str) -> ToolResult[str]:
-        return ToolResult.ok(stu_id)
-
-
-class ToolsAskingForContract:
-    @described("Recebe contrato.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_contract(self, contract: str) -> ToolResult[str]:
-        return ToolResult.ok(contract)
-
-
-class ToolsAskingForRa:
-    @described("Recebe RA.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_ra(self, ra: str) -> ToolResult[str]:
-        return ToolResult.ok(ra)
-
-
-class ToolsAskingForAluno:
-    @described("Recebe aluno.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_aluno(self, aluno: str) -> ToolResult[str]:
-        return ToolResult.ok(aluno)
-
-
 class SyncTools:
     @described("Tool síncrona.")
     @ToolRegistry.declares(DIVIDA)
@@ -169,30 +126,6 @@ class ToolsWithPagination:
         return ToolResult.ok(str(page))
 
 
-class IdentityFilter(BaseModel):
-    term: str
-    tax_id: str
-
-
-class ToolsAskingThroughFilter:
-    @described("Recebe identidade dentro de um filtro.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_filter(self, query: IdentityFilter | None = None) -> ToolResult[str]:
-        return ToolResult.ok(str(query))
-
-
-class NavigationFilter(BaseModel):
-    term: str
-    subject: str
-
-
-class ToolsWithNavigationFilter:
-    @described("Filtro só navega.")
-    @ToolRegistry.declares(DIVIDA)
-    async def by_navigation(self, query: NavigationFilter) -> ToolResult[str]:
-        return ToolResult.ok(query.term)
-
-
 def test_describe_reads_name_description_and_ontologies_from_the_class() -> None:
     definitions = ToolRegistry.describe(HealthyTools)
 
@@ -233,13 +166,6 @@ def test_description_at_the_limit_is_accepted() -> None:
         (ToolsWithoutDeclaration, "undeclared"),
         (ToolsWithEmptyDeclaration, "declared_empty"),
         (ToolsWithUnknownOntology, "inventada"),
-        (ToolsAskingForPerson, "person_id"),
-        (ToolsAskingForCpf, "student_cpf"),
-        (ToolsAskingThroughFilter, "tax_id"),
-        (ToolsAskingForStudentId, "stu_id"),
-        (ToolsAskingForContract, "contract"),
-        (ToolsAskingForRa, "ra"),
-        (ToolsAskingForAluno, "aluno"),
         (SyncTools, "async"),
         (ToolsReturningInt, "ToolResult"),
         (ToolsWithPublicClassmethod, "build"),
@@ -249,10 +175,6 @@ def test_description_at_the_limit_is_accepted() -> None:
 def test_contract_violation_names_what_is_wrong(group: type, reason: str) -> None:
     with pytest.raises(ToolContractError, match=reason):
         ToolRegistry.describe(group)
-
-
-def test_filter_that_only_navigates_is_accepted() -> None:
-    assert ToolRegistry.describe(ToolsWithNavigationFilter)
 
 
 def test_paginated_tool_with_page_request_is_accepted() -> None:

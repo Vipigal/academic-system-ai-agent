@@ -28,7 +28,7 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 
 - **Chave:** `matricula`
 - **Sinônimos:** vínculo, estou matriculado, RA
-- **Definição:** Vínculo do aluno com um curso em uma instituição, identificado por marca e RA. Uma pessoa pode ter mais de uma matrícula, e a resposta precisa cobrir todas.
+- **Definição:** Vínculo do aluno com um curso em uma instituição, identificado por marca e RA. Uma pessoa pode ter mais de uma matrícula, e a resposta precisa cobrir todas. O aluno também chama de matrícula a inscrição numa disciplina: confira de qual das duas ele fala.
 - **Sistema:** SAG
 - **Origem:** `CONFIRMED`
 - **Evidência:** 37 CPFs têm mais de uma matrícula, em 1.037 matrículas.
@@ -52,8 +52,8 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 ### Trancamento
 
 - **Chave:** `trancamento`
-- **Sinônimos:** trancar, matrícula trancada, parar o curso
-- **Definição:** Interrupção do curso a pedido do aluno, que deixa a matrícula trancada. É uma ação de alto impacto e pede confirmação explícita.
+- **Sinônimos:** trancar o curso, trancar a matrícula do curso, parar o curso, matrícula trancada
+- **Definição:** Interrupção do curso inteiro a pedido do aluno, que deixa a matrícula trancada. Vale sempre para o curso inteiro, nunca para uma disciplina. É uma ação de alto impacto e pede confirmação explícita.
 - **Sistema:** SAG
 - **Origem:** `CONFIRMED`
 - **Evidência:** Os 87 pedidos de trancamento foram atendidos; 29 matrículas estão trancadas, 24 delas com contrato suspenso.
@@ -61,6 +61,19 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 - **Aviso:** nenhum
 - **Nunca fazer:** Garantir o que acontece com as cobranças futuras de quem trancou
 - **Relação:** não implica `quitacao`. Trancar não quita o que já se deve. Evidência: 5 matrículas trancadas têm contrato em cobrança.
+
+### Matrícula em disciplina
+
+- **Chave:** `matricula_em_disciplina`
+- **Sinônimos:** trancar a disciplina, trancar minha matrícula em uma disciplina, cancelar a disciplina
+- **Definição:** Inscrição do aluno numa disciplina do semestre, que ele também chama de matrícula. Não é um serviço: nenhum pedido tranca ou cancela uma disciplina, e trancamento e cancelamento valem para o curso inteiro.
+- **Sistema:** Secretaria
+- **Origem:** `POLICY`
+- **Evidência:** Nenhum dos 18 serviços da secretaria trata de uma disciplina, e nenhuma mensagem de pedido pede trancamento de disciplina.
+- **Tabelas:** `secretary.demand_type`, `secretary.protocol_interaction`
+- **Aviso:** nenhum
+- **Nunca fazer:** Oferecer o trancamento ou o cancelamento de uma disciplina como serviço; Propor trancar ou cancelar o curso sem o aluno dizer que quer o curso inteiro
+- **Relação:** não é o mesmo que `trancamento`. Trancar uma disciplina não é trancar o curso, e não há pedido para isso.
 
 ### Matriz curricular
 
@@ -128,10 +141,10 @@ medidos no banco.[^banco] Evidência e tabelas ficam só aqui e nunca chegam ao 
 
 - **Chave:** `data_de_referencia`
 - **Sinônimos:** hoje, agora, neste semestre
-- **Definição:** O que o aluno chama de hoje é a data de referência do sistema. Vencimentos, atrasos e prazos são calculados a partir dela.
+- **Definição:** O que o aluno chama de hoje é a data de hoje, informada pelo sistema. Vencimentos, atrasos e prazos são calculados a partir dela.
 - **Sistema:** nenhum
 - **Origem:** `POLICY`
-- **Evidência:** Decisão do catálogo: hoje é 31/10/2026, a data da posição financeira mais recente.
+- **Evidência:** Decisão do dono (D39): produção usa a data de hoje; testes e eval usam 31/10/2026, a data da foto dos dados.
 - **Tabelas:** `finance.invoice`
 - **Aviso:** nenhum
 - **Nunca fazer:** Calcular atraso ou prazo a partir de outra data

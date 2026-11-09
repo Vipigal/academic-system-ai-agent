@@ -13,9 +13,12 @@ from api.persistence.sag.student_repository import SagStudentAcademicRepository
 
 
 class StudentServices:
-    def __init__(self, adapter: RepositoryAdapter, clock: Clock) -> None:
+    def __init__(
+        self, adapter: RepositoryAdapter, clock: Clock, protocols: ProtocolProviders
+    ) -> None:
         self._adapter = adapter
         self._clock = clock
+        self._protocols = protocols
 
     def academic(self) -> AcademicService:
         return AcademicService(
@@ -28,7 +31,7 @@ class StudentServices:
         return FinancialService(SqlFinanceRepository(self._adapter), self._clock)
 
     def protocol(self) -> ProtocolService:
-        return ProtocolProviders(self._adapter, self._clock).service()
+        return self._protocols.service()
 
     def lms(self) -> LmsService:
         return LmsService(

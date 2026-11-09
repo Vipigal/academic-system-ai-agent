@@ -35,6 +35,9 @@ Um `StudentAgent` que recebe as tools de um aluno e responde, testável sem rede
 6. **Concorrência:** limite de chamadas simultâneas ao provedor e timeout por execução, de settings.
 7. **Erro ensino (D22 do spec-mãe):**
    - `ToolStatus` ganha `invalid` e `error`, e `ToolResult` ganha `explanation`.
+   - `ToolResult` ganha também `client_only` (D26): o conversor o retira do JSON que vai ao modelo e entrega o resultado completo
+     ao stream, por `response_format="content_and_artifact"` ou mecanismo equivalente. Os eventos de resultado de tool da
+     application carregam os dois: o que o modelo viu e o completo.
    - O conversor trata o erro de validação do schema e devolve `invalid` com uma frase por parâmetro errado: o que veio, o
      que é aceito e um exemplo válido. Os valores aceitos saem do próprio tipo (membros do enum, faixa de `limit`, formato de
      `period`), para o texto não desatualizar.

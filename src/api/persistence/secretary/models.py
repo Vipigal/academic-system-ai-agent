@@ -12,15 +12,20 @@ class ProtocolRow(Base):
 
     id: Mapped[str] = mapped_column(PROTOCOL_COLUMN, primary_key=True)
     student_id: Mapped[str | None] = mapped_column("stu_id")
+    requester_cpf: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
+    requester_name: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     requester_type: Mapped[str]
     unit_code: Mapped[str]
     course_label: Mapped[str]
     demand: Mapped[str]
     status: Mapped[str] = mapped_column("demand_status")
+    channel: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
+    priority: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     opened_at: Mapped[str]
     first_response_at: Mapped[str | None]
     due_at: Mapped[str] = mapped_column("sla_due_at")
     closed_at: Mapped[str | None]
+    sla_breached: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     resolution: Mapped[str | None]
 
 
@@ -44,6 +49,7 @@ class ProtocolHistoryRow(Base):
     seq: Mapped[str] = mapped_column(primary_key=True)
     to_status: Mapped[str]
     changed_at: Mapped[str]
+    changed_by: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
 
 
 class ProtocolInteractionRow(Base):
@@ -53,6 +59,7 @@ class ProtocolInteractionRow(Base):
     id: Mapped[str] = mapped_column("interaction_id", primary_key=True)
     protocol_id: Mapped[str] = mapped_column(PROTOCOL_COLUMN)
     author_type: Mapped[str]
+    author: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     message: Mapped[str]
     is_internal_note: Mapped[str]
     created_at: Mapped[str]

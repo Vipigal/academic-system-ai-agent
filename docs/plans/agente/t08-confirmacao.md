@@ -19,8 +19,8 @@ O aluno aprova com um clique e a API grava, sem o LLM (B26, B40; spec-mãe, §6.
 
 1. `infrastructure/proposal_signer.py`: assina e confere o token da proposta (HMAC-SHA256, segredo e validade de settings),
    atrás de um port.
-2. `ProtocolProposer` passa a devolver o `token` junto da proposta. É a única mudança no schema visível ao modelo; o snapshot
-   das descrições continua igual.
+2. `ProtocolProposer` passa a devolver o `token` em `ToolResult.client_only` (D26). Nada muda no que o modelo vê; o snapshot das
+   descrições continua igual. Teste: o JSON que vai ao modelo não contém o token.
 3. Domínio: abertura do protocolo com as regras e efeitos em memória (arquitetura, 5.6): situação aberta, prazo pelo SLA do
    serviço, histórico inicial e mensagem do requerente. Número de protocolo e de mensagem vêm das sequências do schema `agent`.
 4. `persistence/secretary/protocol_writer.py`: grava as 3 linhas numa transação, com `flush` entre o protocolo e as filhas.

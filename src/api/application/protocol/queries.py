@@ -3,7 +3,6 @@ from api.application.protocol.dto.detail import ProtocolDetailDto
 from api.application.protocol.dto.request import ProtocolDto
 from api.application.protocol.scope import ProtocolCandidates
 from api.application.protocol.source import ProtocolSource
-from api.application.shared.name_search import NameSearch
 from api.application.shared.page import PageRequest
 from api.application.shared.period_filter import PeriodFilter
 from api.application.shared.tool_result import ToolResult
@@ -30,9 +29,7 @@ class ProtocolQueries:
         page: PageRequest,
     ) -> ToolResult[list[ProtocolDto]]:
         snapshot = await self._source.snapshot()
-        search = NameSearch.search(
-            service, ProtocolCandidates.of_protocol_services(snapshot.protocols)
-        )
+        search = ProtocolCandidates.search_protocol_services(service, snapshot.protocols)
         if search.missed:
             return ToolResult.not_found(search.candidates)
         matched = [

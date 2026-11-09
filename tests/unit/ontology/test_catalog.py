@@ -2,15 +2,24 @@ from dataclasses import replace
 
 import pytest
 
+from api.domain.ontology.academic_enrollment import (
+    DATA_DE_REFERENCIA,
+    MATRICULA,
+    MATRICULA_EM_DISCIPLINA,
+    TRANCAMENTO,
+)
 from api.domain.ontology.catalog import ONTOLOGIES
 from api.domain.ontology.model import Area, Ontology, Origin, Relation, RelationKind, System
 from api.domain.ontology.validator import OntologyValidator
+from api.domain.protocol.action import ProtocolAction
+from api.domain.protocol.action_catalog import SERVICE_ACTIONS
 
 KEYS_BY_AREA = {
     Area.ACADEMIC_ENROLLMENT: {
         "matricula",
         "rematricula",
         "trancamento",
+        "matricula_em_disciplina",
         "matriz",
         "pre_requisito",
         "oferta",
@@ -80,6 +89,7 @@ KEYS_BY_ORIGIN = {
     },
     Origin.POLICY: {
         "data_de_referencia",
+        "matricula_em_disciplina",
         "registro_oficial",
         "pagador",
         "cobranca",
@@ -117,6 +127,7 @@ RELATIONS = {
     (RelationKind.NOT_SAME_AS, "nota_do_ava", "registro_oficial"),
     (RelationKind.NOT_SAME_AS, "parcela_de_acordo", "mensalidade"),
     (RelationKind.NOT_SAME_AS, "tcc_e_estagio", "projeto_integrador"),
+    (RelationKind.NOT_SAME_AS, "matricula_em_disciplina", "trancamento"),
     (RelationKind.NOT_SAME_AS, "estorno", "pagamento"),
     (RelationKind.NOT_SAME_AS, "prazo_de_atendimento", "regras_de_trancamento"),
 }
@@ -156,8 +167,8 @@ def test_each_origin_has_the_keys_of_the_spec(origin: Origin) -> None:
     assert keys == KEYS_BY_ORIGIN[origin]
 
 
-def test_catalog_has_54_concepts() -> None:
-    assert len(ONTOLOGIES) == 54
+def test_catalog_has_55_concepts() -> None:
+    assert len(ONTOLOGIES) == 55
 
 
 def test_catalog_declares_exactly_the_relations_of_the_spec() -> None:
@@ -227,3 +238,28 @@ def test_not_implies_with_evidence_and_note_is_valid() -> None:
     relation = Relation(RelationKind.NOT_IMPLIES, "destino", note="nota", evidence="medido")
 
     assert OntologyValidator.errors((concept("origem", relation), concept("destino"))) == []
+
+
+def test_lock_synonyms_name_the_whole_course() -> None:
+    assert "trancar" not in TRANCAMENTO.synonyms
+    assert {"trancar o curso", "trancar a matrícula do curso", "parar o curso"} <= set(
+        TRANCAMENTO.synonyms
+    )
+    assert "curso inteiro" in TRANCAMENTO.definition
+
+
+def test_enrollment_says_the_student_also_calls_a_subject_an_enrollment() -> None:
+    assert "inscrição numa disciplina" in MATRICULA.definition
+
+
+def test_subject_enrollment_only_explains_and_is_never_offered() -> None:
+    offered = {action.value for action in ProtocolAction} | {item.title for item in SERVICE_ACTIONS}
+
+    assert MATRICULA_EM_DISCIPLINA.name not in offered
+    assert any("Oferecer" in item for item in MATRICULA_EM_DISCIPLINA.never_say)
+    assert "Não é um serviço" in MATRICULA_EM_DISCIPLINA.definition
+
+
+def test_reference_date_is_today_with_no_fixed_date() -> None:
+    assert "data de hoje" in DATA_DE_REFERENCIA.definition
+    assert "2026" not in DATA_DE_REFERENCIA.definition

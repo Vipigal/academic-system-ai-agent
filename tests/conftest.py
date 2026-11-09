@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 TESTS_ROOT = Path(__file__).parent
-FOLDER_MARKERS = {"unit": "unit", "integration": "integration"}
+FOLDER_MARKERS = {"unit": "unit", "integration": "integration", "e2e": "integration"}
 LIVE_OPTION = "--live"
 SKIP_LIVE = pytest.mark.skip(reason="chama o provedor de LLM: rode com --live")
 

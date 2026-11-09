@@ -1,0 +1,9 @@
+[models."gpt-6-luna"]
+input_usd_per_million = "0.10"
+output_usd_per_million = "0.50"
+source = "Página de preços da OpenAI, lida em 2026-11-05 (spec-mãe, nota openai)"
+
+[models."fake"]
+input_usd_per_million = "0"
+output_usd_per_million = "0"
+source = "Modelo de teste, sem provedor"

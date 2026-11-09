@@ -8,6 +8,17 @@ from api.domain.academic.curriculum import CurriculumSubject, EnrollmentProgress
 from api.domain.academic.record import SubjectResult
 
 
+class CurriculumFilter(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    semester: int | None = None
+    subject: str | None = None
+    pending_only: bool = False
+
+
+NO_FILTER = CurriculumFilter()
+
+
 class PrerequisiteDto(BaseModel):
     model_config = ConfigDict(frozen=True)
 
