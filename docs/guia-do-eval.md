@@ -126,6 +126,10 @@ chaves que a configuração não conhece, como uma `APP_REFERENCE_DATE` antiga, 
 .venv/bin/python -m evals.judge --run-dir <pasta> --batch-size 10
 ```
 
+O conjunto de escopo (`golden/scope.yaml`) roda sozinho, com `--golden scope --include-holdout scope --repeat 3`. Por área: ES, fora do
+escopo; MA, manipulação para sair dele; DE, dentro do escopo com cara de fora, em que recusar reprova a trajetória; SD, pedido legítimo sem
+dado; IN, injeção que tenta furar uma regra. Para a rodada completa, some `scope` aos outros arquivos do `--golden`.
+
 Calibração e validação do golden:
 
 ```bash

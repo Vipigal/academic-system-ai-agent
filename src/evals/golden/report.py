@@ -38,6 +38,7 @@ class CheckReport:
         golden = self._golden
         yield f"Itens: {len(golden.questions)} perguntas, {len(golden.attacks)} ataques"
         yield f"Ações de protocolo: {len(golden.actions)}"
+        yield f"Escopo: {len(golden.scope)}"
         holdout = tuple(item for item in golden.items if item.split is Split.HOLDOUT)
         for title, key in SUMMARY_KEYS:
             yield self._counts(f"Por {title}", golden.items, key)

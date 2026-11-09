@@ -12,7 +12,11 @@ from evals.selection import (
     SelectionError,
 )
 
-BASELINE_FILES = frozenset(GoldenSource)
+BASELINE_FILES = frozenset(
+    {GoldenSource.QUESTIONS, GoldenSource.REDTEAM, GoldenSource.PROTOCOL_ACTIONS}
+)
+SCOPE = frozenset({GoldenSource.SCOPE})
+SCOPE_AREAS = {"ES", "MA", "DE", "SD", "IN"}
 ACTIONS = frozenset({GoldenSource.PROTOCOL_ACTIONS})
 
 
@@ -25,12 +29,19 @@ def test_the_default_runs_only_the_questions_of_dev(golden: GoldenSet) -> None:
     items = ItemSelection().pick(golden)
     assert items
     assert all(item.split is Split.DEV for item in items)
-    assert {item.area for item in items}.isdisjoint({"AT", "TR", "SV", "ES"})
+    assert {item.area for item in items}.isdisjoint({"AT", "TR", "SV", *SCOPE_AREAS})
 
 
 def test_the_red_team_needs_its_file(golden: GoldenSet) -> None:
     items = ItemSelection(frozenset({GoldenSource.REDTEAM})).pick(golden)
     assert {item.area for item in items} == {"AT"}
+
+
+def test_the_scope_set_runs_alone_with_its_holdout(golden: GoldenSet) -> None:
+    items = ItemSelection(SCOPE, holdout_from=SCOPE).pick(golden)
+    splits = {item.split for item in items}
+    assert {item.area for item in items} == SCOPE_AREAS
+    assert splits == {Split.DEV, Split.HOLDOUT}
 
 
 def test_the_holdout_never_runs_without_an_explicit_option(golden: GoldenSet) -> None:
@@ -78,14 +89,16 @@ def test_without_critical_repeat_every_item_follows_the_repeat(golden: GoldenSet
     assert set(Counter(planned.item.id for planned in plan).values()) == {3}
 
 
-def test_the_final_round_composition_has_156_executions(golden: GoldenSet) -> None:
+def test_the_final_round_files_without_the_scope_set_have_154_executions(
+    golden: GoldenSet,
+) -> None:
     items = ItemSelection(BASELINE_FILES, holdout_from=ACTIONS).pick(golden)
     plan = RunPlan.of(items, Repetitions(default=1, critical=5))
     by_area = Counter(planned.item.area for planned in plan)
     critical = Counter(planned.item.id for planned in plan if planned.item.critical)
 
-    assert len(plan) == 156
+    assert len(plan) == 154
     assert set(critical.values()) == {5}
     assert len(critical) == 15
     assert "PR-08" in critical
-    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 18, 2, 21)
+    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 18, 0, 21)

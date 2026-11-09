@@ -11,6 +11,7 @@ BASELINE = (
     "--include-holdout protocol_actions --repeat 1 --critical-repeat 5 "
     "--output src/evals/results/baseline-trancamento"
 )
+SCOPE_ROUND = "--model gpt-6-luna --golden scope --include-holdout scope --repeat 3"
 
 
 def planned_by(command: str) -> int:
@@ -19,8 +20,12 @@ def planned_by(command: str) -> int:
     return len(RunPlan.of(items, request.repetitions))
 
 
-def test_the_final_round_command_plans_156_executions() -> None:
-    assert planned_by(BASELINE) == 156
+def test_the_final_round_command_plans_154_executions_once_the_scope_set_left() -> None:
+    assert planned_by(BASELINE) == 154
+
+
+def test_the_scope_round_plans_three_repetitions_of_every_scope_item() -> None:
+    assert planned_by(SCOPE_ROUND) == 41 * 3
 
 
 def test_the_command_of_the_spec_runs_dev_questions_with_repetitions() -> None:
