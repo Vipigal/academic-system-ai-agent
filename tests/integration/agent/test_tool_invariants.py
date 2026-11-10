@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import Iterator
 from typing import cast
 
@@ -14,6 +13,7 @@ from tests.integration.agent import (
     invariant_sample,
     invariant_support,
 )
+from tests.integration.support.bounded import bounded
 from tests.integration.support.sql_oracle import PROTOCOL_OWNERS, SqlOracle
 from tests.integration.support.tools import tools_factory
 
@@ -62,7 +62,7 @@ async def build_sample(scope: str) -> list[Person]:
     connected = application_database()
     builder = invariant_sample.SampleBuilder(connected, tools_factory(connected))
     people = sorted(await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope=scope))
-    sampled = list(await asyncio.gather(*(builder.person(person_id) for person_id in people)))
+    sampled = await bounded(builder.person(person_id) for person_id in people)
     await connected.dispose()
     return sampled
 

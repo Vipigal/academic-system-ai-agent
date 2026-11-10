@@ -20,6 +20,7 @@ APPLICATION = "api"
 MAINTENANCE = "postgres"
 STARTUP_SECONDS = 180
 SERVER_VARIABLE = "TESTS_DATABASE_SERVER"
+LOOPBACK_BY_NAME = {"localhost": "127.0.0.1"}
 UNREACHABLE = "postgresql+asyncpg://nobody:nothing@127.0.0.1:1/nothing"
 LOADED = (
     "psql",
@@ -68,11 +69,15 @@ class EphemeralPostgres:
             "postgresql+asyncpg",
             username=ADMIN,
             password=ADMIN,
-            host=self._container.get_container_host_ip(),
+            host=self._host(),
             port=self._container.get_exposed_port(PORT),
             database=TEMPLATE,
         )
         return server.render_as_string(hide_password=False)
+
+    def _host(self) -> str:
+        host = self._container.get_container_host_ip()
+        return LOOPBACK_BY_NAME.get(host, host)
 
     def stop(self) -> None:
         self._container.stop()

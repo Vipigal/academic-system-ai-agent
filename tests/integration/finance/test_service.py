@@ -1,4 +1,3 @@
-import asyncio
 from datetime import date
 from decimal import Decimal
 
@@ -9,6 +8,7 @@ from api.persistence.core.database import Database
 from api.persistence.core.repository_adapter import RepositoryAdapter
 from api.persistence.finance.repositories import SqlFinanceRepository
 from api.persistence.identity.student_session_repository import StudentSessionRepository
+from tests.integration.support.bounded import bounded
 from tests.integration.support.sql_oracle import SqlOracle
 from tests.integration.support.tools import SLOW, SWEEP, all_pages, tools_factory
 
@@ -88,7 +88,7 @@ async def test_other_person_never_sees_the_invoice(database: Database) -> None:
 
 
 async def invoices_seen_by_each_person(services: list[FinancialService]) -> list[str]:
-    per_person = await asyncio.gather(*(all_invoices_of(service) for service in services))
+    per_person = await bounded(all_invoices_of(service) for service in services)
     return [invoice.id for invoices in per_person for invoice in invoices]
 
 
@@ -148,7 +148,7 @@ async def test_partial_invoice_not_yet_due_is_not_debt(database: Database) -> No
 
 
 async def debts_of_everyone(services: list[FinancialService]) -> list[InvoiceDto]:
-    per_person = await asyncio.gather(*(debts_of(service) for service in services))
+    per_person = await bounded(debts_of(service) for service in services)
     return [debt for debts in per_person for debt in debts]
 
 
