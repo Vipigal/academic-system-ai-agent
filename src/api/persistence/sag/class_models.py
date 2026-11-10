@@ -6,8 +6,7 @@ from api.domain.academic.enrollment import Shift
 from api.domain.academic.record import Delivery, SubjectResult
 from api.persistence.core.base import Base
 from api.persistence.core.column_types import TextDecimal
-from api.persistence.core.source_enum import SourceEnum
-from api.persistence.sag.column_types import SHIFT, YES_NO
+from api.persistence.sag.column_types import DELIVERY, SHIFT, SUBJECT_RESULT, YES_NO
 from api.persistence.sag.models import SAG_SCHEMA
 
 
@@ -22,7 +21,7 @@ class ClassSectionRow(Base):
     unit_id: Mapped[str | None]
     section: Mapped[str]
     shift: Mapped[Shift] = mapped_column(SHIFT)
-    delivery: Mapped[Delivery] = mapped_column(SourceEnum.by_name(Delivery))
+    delivery: Mapped[Delivery] = mapped_column(DELIVERY)
     professor_id: Mapped[str]
 
 
@@ -39,7 +38,7 @@ class StudentClassRow(Base):
     grade_av3: Mapped[Decimal | None] = mapped_column(TextDecimal())
     final_grade: Mapped[Decimal | None] = mapped_column(TextDecimal())
     attendance_pct: Mapped[Decimal | None] = mapped_column(TextDecimal())
-    result: Mapped[SubjectResult] = mapped_column(SourceEnum.by_name(SubjectResult))
+    result: Mapped[SubjectResult] = mapped_column(SUBJECT_RESULT)
 
 
 class ProfessorRow(Base):

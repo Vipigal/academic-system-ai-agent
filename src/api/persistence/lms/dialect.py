@@ -32,5 +32,9 @@ class LmsDialect:
         return tenant, f"{prefix}_{enrollment.student_number}"
 
     @staticmethod
+    def user_key(user: LmsUserRow) -> tuple[str, str]:
+        return user.tenant_id, (user.student_id or "").strip().upper()
+
+    @staticmethod
     def _student_key() -> ColumnElement[str]:
         return func.upper(func.trim(LmsUserRow.student_id))

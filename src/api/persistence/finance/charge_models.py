@@ -13,8 +13,7 @@ from api.persistence.core.column_types import (
     TextDecimal,
     UtcMoment,
 )
-from api.persistence.core.source_enum import SourceEnum
-from api.persistence.finance.column_types import BlankableIsoDate
+from api.persistence.finance.column_types import AGREEMENT_STATUS, BlankableIsoDate
 from api.persistence.finance.models import FINANCE_SCHEMA
 
 
@@ -52,4 +51,4 @@ class AgreementRow(Base):
     original_debt: Mapped[Money] = mapped_column("originaldebtcents", TextCents())
     waived: Mapped[Money] = mapped_column("waivedcents", TextCents())
     agreed: Mapped[Money] = mapped_column("agreedamountcents", TextCents())
-    status: Mapped[AgreementStatus] = mapped_column(SourceEnum.by_name(AgreementStatus))
+    status: Mapped[AgreementStatus] = mapped_column(AGREEMENT_STATUS)

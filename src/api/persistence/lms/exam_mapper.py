@@ -44,10 +44,9 @@ class ExamMapper:
 
     @classmethod
     def _index(cls, sources: ExamSources) -> ExamIndex:
-        labeled = {row.id: CourseLabel.of(row.shortname) for row in sources.courses}
         return ExamIndex(
-            labels={key: label for key, label in labeled.items() if label is not None},
-            brands={row.id: TENANT_BRAND.member_of(row.tenant_id) for row in sources.courses},
+            labels=CourseLabel.by_course(sources.courses),
+            brands={row.id: TENANT_BRAND.from_source(row.tenant_id) for row in sources.courses},
             names={subject.code: subject.name for subject in sources.subjects},
             attempts=cls._attempts_by_quiz(sources.attempts),
         )

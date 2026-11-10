@@ -23,14 +23,13 @@ class SourceEnum[MemberT: Enum](SourceText[MemberT]):
     def by_value(cls, members: type[MemberT]) -> Self:
         return cls({member.value: member for member in members})
 
+    @classmethod
+    def inverse_of(cls, sources: Mapping[MemberT, str]) -> Self:
+        return cls({source: member for member, source in sources.items()})
+
     @property
     def sources(self) -> tuple[str, ...]:
         return tuple(self._members)
-
-    def member_of(self, source: str) -> MemberT:
-        if source not in self._members:
-            raise UnknownDialectValueError(self._name, source)
-        return self._members[source]
 
     @override
     def to_source(self, value: MemberT) -> str:
@@ -38,4 +37,6 @@ class SourceEnum[MemberT: Enum](SourceText[MemberT]):
 
     @override
     def from_source(self, text: str) -> MemberT:
-        return self.member_of(text)
+        if text not in self._members:
+            raise UnknownDialectValueError(self._name, text)
+        return self._members[text]

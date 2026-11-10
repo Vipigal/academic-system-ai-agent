@@ -43,9 +43,8 @@ class MaterialMapper:
 
     @classmethod
     def _index(cls, sources: MaterialSources) -> MaterialIndex:
-        labeled = {row.id: CourseLabel.of(row.shortname) for row in sources.courses}
         return MaterialIndex(
-            labels={key: label for key, label in labeled.items() if label is not None},
+            labels=CourseLabel.by_course(sources.courses),
             names={subject.code: subject.name for subject in sources.subjects},
             views=cls._views_by_module(sources.views),
         )

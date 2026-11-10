@@ -18,7 +18,7 @@ EXAM_KIND = SourceEnum(
 )
 ATTEMPT_STATE = SourceEnum.by_value(AttemptState)
 MATERIAL_KIND = SourceEnum.by_value(MaterialKind)
-SUSPENDED = TextFlag("1", "0")
+ONE_ZERO = TextFlag("1", "0")
 
 
 class EpochMoment(SourceText[datetime]):

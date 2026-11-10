@@ -11,7 +11,7 @@ from api.persistence.lms.column_types import (
     ATTEMPT_STATE,
     EXAM_KIND,
     MATERIAL_KIND,
-    SUSPENDED,
+    ONE_ZERO,
     EpochMoment,
     OptionalEpochMoment,
 )
@@ -26,7 +26,7 @@ class LmsUserRow(Base):
     id: Mapped[str] = mapped_column("student_lms_id", primary_key=True)
     tenant_id: Mapped[str]
     student_id: Mapped[str | None]
-    suspended: Mapped[bool] = mapped_column(SUSPENDED)
+    suspended: Mapped[bool] = mapped_column(ONE_ZERO)
     last_access: Mapped[datetime | None] = mapped_column("lastaccess", OptionalEpochMoment())
 
 

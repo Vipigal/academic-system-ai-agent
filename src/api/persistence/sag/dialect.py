@@ -15,7 +15,7 @@ SOURCE_BY_BRAND = {
     Brand.ATLANTICO: "UniAtlantico",
     Brand.ARAUCARIA: "UniAraucaria",
 }
-SOURCE_BRAND = SourceEnum({source: brand for brand, source in SOURCE_BY_BRAND.items()})
+SOURCE_BRAND = SourceEnum.inverse_of(SOURCE_BY_BRAND)
 ONLINE_SUFFIX = "_EAD"
 NOT_A_DIGIT = r"\D"
 REFERENCE_SEPARATOR = ":"
@@ -25,12 +25,8 @@ class SagDialect:
     @staticmethod
     def enrollment_ref(brand: str, student_id: str) -> EnrollmentRef:
         modality = Modality.ONLINE if brand.endswith(ONLINE_SUFFIX) else Modality.IN_PERSON
-        canonical_brand = SOURCE_BRAND.member_of(brand.removesuffix(ONLINE_SUFFIX))
+        canonical_brand = SOURCE_BRAND.from_source(brand.removesuffix(ONLINE_SUFFIX))
         return EnrollmentRef(canonical_brand, modality, student_id[:STUDENT_NUMBER_LENGTH])
-
-    @classmethod
-    def enrollment_key(cls, brand: str, student_id: str) -> EnrollmentKey:
-        return EnrollmentKey(brand, student_id, cls.enrollment_ref(brand, student_id))
 
     @staticmethod
     def source_keys(keys: Collection[EnrollmentKey]) -> list[tuple[str, str]]:
@@ -46,10 +42,19 @@ class SagDialect:
             return false()
         return func.regexp_replace(PERSON_CPF.c.cpf, NOT_A_DIGIT, "", "g") == cpf
 
+    @classmethod
+    def source_brands(cls, brands: Collection[Brand]) -> list[str]:
+        return [
+            cls.source_brand(brand, modality)
+            for modality in (Modality.IN_PERSON, Modality.ONLINE)
+            for brand in SOURCE_BY_BRAND
+            if brand in brands
+        ]
+
     @staticmethod
-    def source_brands(brands: Collection[Brand]) -> list[str]:
-        sources = [source for brand, source in SOURCE_BY_BRAND.items() if brand in brands]
-        return [*sources, *(f"{source}{ONLINE_SUFFIX}" for source in sources)]
+    def source_brand(brand: Brand, modality: Modality) -> str:
+        suffix = ONLINE_SUFFIX if modality is Modality.ONLINE else ""
+        return f"{SOURCE_BY_BRAND[brand]}{suffix}"
 
     @staticmethod
     def reference(brand: str, student_id: str) -> str:

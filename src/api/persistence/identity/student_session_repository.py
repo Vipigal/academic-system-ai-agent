@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.domain.identity.dev_student import DevStudent
-from api.domain.identity.session import StudentSession
+from api.domain.identity.session import EnrollmentKey, StudentSession
 from api.persistence.core.database import Database
 from api.persistence.core.ownership_criteria import SKIP_OWNERSHIP
 from api.persistence.identity.queries import IdentityQueries
@@ -49,7 +49,7 @@ class StudentSessionRepository:
             person_ids=frozenset(person_id for person_id, _, _ in rows),
             cpf=cpf,
             enrollment_keys=frozenset(
-                SagDialect.enrollment_key(brand, student_id)
+                EnrollmentKey(brand, student_id, SagDialect.enrollment_ref(brand, student_id))
                 for _, brand, student_id in rows
                 if brand and student_id
             ),
