@@ -12,20 +12,6 @@ class Area(Enum):
     LIMITS = "limits"
 
 
-class System(Enum):
-    SAG = "sag"
-    FINANCE = "finance"
-    SECRETARY = "secretary"
-    LMS = "lms"
-
-
-class Origin(Enum):
-    CONFIRMED = "confirmed"
-    INFERRED = "inferred"
-    POLICY = "policy"
-    ABSENT = "absent"
-
-
 class RelationKind(Enum):
     COMPOSED_OF = "composed_of"
     LEADS_TO = "leads_to"
@@ -38,7 +24,6 @@ class Relation:
     kind: RelationKind
     target: str
     note: str
-    evidence: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -48,10 +33,6 @@ class Ontology:
     area: Area
     synonyms: tuple[str, ...]
     definition: str
-    source: System | None
-    origin: Origin
-    evidence: str
-    data: tuple[str, ...]
     caveat: str | None = None
     never_say: tuple[str, ...]
     relations: tuple[Relation, ...] = ()

@@ -5,10 +5,8 @@ import pytest
 
 from api.application.agent.events import ToolResultReceived
 from api.application.agent.langchain_tools import UNEXPECTED_FAILURE
-from api.application.agent.tools.registry import ToolRegistry
 from api.application.shared.tool_input_error import ToolInputError
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology.finance_charges import DIVIDA
 from tests.unit.agent import agent_support as support
 
 
@@ -17,14 +15,12 @@ class ExplodingTools:
         self._error = error
 
     @support.described("Sempre falha.")
-    @ToolRegistry.declares(DIVIDA)
     async def explode(self) -> ToolResult[str]:
         raise self._error
 
 
 class WrongReturnTools:
     @support.described("Devolve outra coisa em tempo de execução.")
-    @ToolRegistry.declares(DIVIDA)
     async def misbehave(self) -> ToolResult[str]:
         return MagicMock()
 

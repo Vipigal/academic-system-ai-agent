@@ -1,10 +1,8 @@
 import secrets
 from pathlib import Path
 
-from dishka import AsyncContainer
 from pydantic import SecretStr
 
-from api.bootstrap.containers import Given
 from api.bootstrap.settings import Settings
 from api.infrastructure.logging import JsonLogging
 from evals.eval_container import EvalContainer
@@ -23,10 +21,6 @@ class DriverFactory:
                 "proposal_secret": SecretStr(secrets.token_hex()),
             }
         )
-
-    @staticmethod
-    def container_for(settings: Settings, given: Given | None = None) -> AsyncContainer:
-        return EvalContainer.create(settings, given)
 
     @staticmethod
     def create(settings: Settings) -> StudentDriver:

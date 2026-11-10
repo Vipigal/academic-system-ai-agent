@@ -25,13 +25,12 @@ class PoolConfig:
 
 
 class Database:
-    def __init__(self, url: str, pool: PoolConfig | None = None) -> None:
-        options = pool.engine_options() if pool else {}
+    def __init__(self, url: str, pool: PoolConfig) -> None:
         self._engine = create_async_engine(
             url,
             connect_args={"timeout": CONNECT_TIMEOUT_SECONDS},
             hide_parameters=True,
-            **options,
+            **pool.engine_options(),
         )
         self.db_session_factory = async_sessionmaker(self._engine, expire_on_commit=False)
 

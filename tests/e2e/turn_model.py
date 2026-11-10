@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from pydantic import Field
 
-from api.application.agent.scripted_model import ScriptedChatModel
+from tests.doubles.scripted_model import ScriptedChatModel
 
 
 class TurnModel(ScriptedChatModel):

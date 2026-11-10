@@ -15,6 +15,9 @@ from tests.integration.support.sql_oracle import SqlOracle
 
 SAO_PAULO = "UniSaoPaulo:181722"
 LOCKED = "UniSaoPaulo:180882"
+FREE_ACTIVE_SERVICES = (
+    "SELECT count(*) FROM secretary.demand_type WHERE active = 'True' AND service_fee = 'R$ 0,00'"
+)
 
 
 async def test_the_four_tools_are_in_the_registry(tools: ProtocolTools) -> None:
@@ -34,8 +37,10 @@ async def test_du06_eighteen_services_fourteen_without_fee(tools: ProtocolTools)
 
     services = support.rows(await tools.list_services())
 
-    assert len(services) == await oracle.count("SELECT count(*) FROM secretary.demand_type")
-    assert (len(services), sum(item.agent_can_open for item in services)) == (18, 14)
+    assert (len(services), sum(item.agent_can_open for item in services)) == (
+        await oracle.count("SELECT count(*) FROM secretary.demand_type"),
+        await oracle.count(FREE_ACTIVE_SERVICES),
+    )
     assert {item.code for item in services if item.fee_reais} == {
         "ACA-021",
         "DOC-002",

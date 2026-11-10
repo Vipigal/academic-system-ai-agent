@@ -2,13 +2,13 @@ import pytest
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.bootstrap.settings import Settings
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
 from api.persistence.finance.column_types import INVOICE_STATUS
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 from api.persistence.sag.dialect import SagDialect
+from tests.doubles.database import application_database
 from tests.integration.support.owned import Owned, owned_by
 from tests.integration.support.sql_oracle import SqlOracle
 
@@ -73,7 +73,7 @@ async def test_enrollment_keys_keep_the_spelling_of_the_source(database: Databas
 
 
 async def test_loading_the_session_takes_at_most_three_queries() -> None:
-    connected = Database(Settings.from_environment().database_url.get_secret_value())
+    connected = application_database()
     repository = StudentSessionRepository(connected)
     engine = connected.db_session_factory.kw["bind"]
     statements: list[object] = []

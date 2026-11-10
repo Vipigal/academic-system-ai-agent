@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from api.application.agent.scripted_model import ScriptedChatModel
 from api.infrastructure.tracing import Tracing
 from api.persistence.core.database import Database
 from evals.graders.verdict import GraderName
@@ -8,6 +7,7 @@ from evals.records import ExecutionRecord
 from evals.run_session import RunSession
 from evals.selection import Epochs, ItemSelection, RunRequest
 from evals.student_driver import StudentDriver
+from tests.doubles.scripted_model import ScriptedChatModel
 from tests.integration.evals.run_helpers import PROTOCOL_SUITE, VERSIONS, scripted_container
 from tests.unit.agent.agent_support import answer, call
 

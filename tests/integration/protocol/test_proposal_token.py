@@ -2,10 +2,10 @@ import pytest
 
 from api.application.protocol.dto.proposal import Proposal
 from api.application.shared.tool_result import ToolResult, ToolStatus
-from api.bootstrap.containers import Containers
 from api.domain.ports.protocol import ProposalSigner
 from api.domain.protocol.action import ProtocolAction
 from api.persistence.core.database import Database
+from tests.doubles.doubles import DoubleContainers
 from tests.integration.protocol.confirmation_app import ConfirmationApp
 from tests.integration.protocol.confirmation_settings import settings_with
 
@@ -56,7 +56,7 @@ async def test_refusals_and_candidates_carry_no_token(database: Database) -> Non
 
 
 async def test_a_missing_proposal_secret_fails_closed() -> None:
-    container = Containers.students(settings_with(proposal_secret=None))
+    container = DoubleContainers.students(settings_with(proposal_secret=None), {})
     with pytest.raises(ValueError, match="secret"):
         await container.get(ProposalSigner)
     await container.close()

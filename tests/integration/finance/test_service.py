@@ -1,4 +1,3 @@
-import asyncio
 from datetime import date
 from decimal import Decimal
 
@@ -9,6 +8,7 @@ from api.persistence.core.database import Database
 from api.persistence.core.repository_adapter import RepositoryAdapter
 from api.persistence.finance.repositories import SqlFinanceRepository
 from api.persistence.identity.student_session_repository import StudentSessionRepository
+from tests.integration.support.bounded import bounded
 from tests.integration.support.sql_oracle import SqlOracle
 from tests.integration.support.tools import SLOW, SWEEP, all_pages, tools_factory
 
@@ -20,6 +20,10 @@ PARTIAL_INVOICE = "7067951"
 PARTIAL_PERSON = "3003422"
 NOT_YET_DUE_PERSON = "3003610"
 NOT_YET_DUE_CONTRACT = "CT00013240"
+SNAPSHOT_CONTRACTS = (
+    "SELECT count(DISTINCT contractid) FROM finance.receivable_snapshot "
+    "WHERE snapshotdate = '2026-10-31'"
+)
 
 
 async def service_for(database: Database, person_id: str) -> FinancialService:
@@ -84,7 +88,7 @@ async def test_other_person_never_sees_the_invoice(database: Database) -> None:
 
 
 async def invoices_seen_by_each_person(services: list[FinancialService]) -> list[str]:
-    per_person = await asyncio.gather(*(all_invoices_of(service) for service in services))
+    per_person = await bounded(all_invoices_of(service) for service in services)
     return [invoice.id for invoices in per_person for invoice in invoices]
 
 
@@ -144,7 +148,7 @@ async def test_partial_invoice_not_yet_due_is_not_debt(database: Database) -> No
 
 
 async def debts_of_everyone(services: list[FinancialService]) -> list[InvoiceDto]:
-    per_person = await asyncio.gather(*(debts_of(service) for service in services))
+    per_person = await bounded(debts_of(service) for service in services)
     return [debt for debts in per_person for debt in debts]
 
 
@@ -176,7 +180,7 @@ async def test_debt_matches_the_receivable_snapshot_contract_by_contract(
     financial_services: list[FinancialService],
 ) -> None:
     expected = await snapshot_by_contract()
-    assert len(expected) == 273
+    assert len(expected) == await SqlOracle().count(SNAPSHOT_CONTRACTS)
     assert principal_and_count(await debt_cents_by_contract(financial_services)) == expected
 
 

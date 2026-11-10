@@ -11,10 +11,9 @@ from api.application.agent.tool_arguments import (
     PageArgument,
     ToolArguments,
 )
-from api.application.agent.tools.registry import ToolContractError, ToolRegistry
+from api.application.agent.tools.registry import ToolContractError
 from api.application.shared.tool_parameters import Teaching
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology.finance_charges import DIVIDA
 from tests.unit.agent import agent_support as support
 
 NOTE_TEACHING = Teaching("um recado curto, em texto", "recado-de-exemplo")
@@ -22,7 +21,6 @@ NOTE_TEACHING = Teaching("um recado curto, em texto", "recado-de-exemplo")
 
 class TaughtTools:
     @support.described("Recebe um recado e uma página.")
-    @ToolRegistry.declares(DIVIDA)
     async def taught(
         self, note: Annotated[str, NOTE_TEACHING], page: PageArgument = FIRST_PAGE_ARGUMENT
     ) -> ToolResult[str]:
@@ -31,7 +29,6 @@ class TaughtTools:
 
 class UntaughtTools:
     @support.described("Recebe um recado sem texto de ensino.")
-    @ToolRegistry.declares(DIVIDA)
     async def untaught(self, note: str) -> ToolResult[str]:
         return ToolResult.ok(note)
 

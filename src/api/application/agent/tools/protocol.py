@@ -3,7 +3,6 @@ from typing import Annotated
 from pydantic import Field
 
 from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
-from api.application.agent.tools.registry import ToolRegistry
 from api.application.protocol.dto import catalog, detail, proposal, request
 from api.application.protocol.service import ProtocolService
 from api.application.shared.tool_parameters import (
@@ -13,7 +12,6 @@ from api.application.shared.tool_parameters import (
     Teaching,
 )
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology import academic_enrollment, limits, protocols
 from api.domain.protocol.action import ProtocolAction
 from api.domain.protocol.catalog import ServiceArea
 from api.domain.protocol.status import ProtocolStage
@@ -23,9 +21,6 @@ class ProtocolTools:
     def __init__(self, service: ProtocolService) -> None:
         self._service = service
 
-    @ToolRegistry.declares(
-        protocols.SERVICO, protocols.TAXA_DE_SERVICO, protocols.PRAZO_DE_ATENDIMENTO
-    )
     async def list_services(
         self, area: ServiceArea | None = None
     ) -> ToolResult[list[catalog.ServiceDto]]:
@@ -35,12 +30,6 @@ class ProtocolTools:
         """
         return await self._service.list_services(area)
 
-    @ToolRegistry.declares(
-        protocols.PROTOCOLO,
-        protocols.DOCUMENTO_EMITIDO,
-        protocols.PRAZO_DE_ATENDIMENTO,
-        protocols.PEDIDO_DE_TERCEIRO,
-    )
     async def list_protocols(
         self,
         status: ProtocolStage | None = None,
@@ -54,12 +43,6 @@ class ProtocolTools:
         """
         return await self._service.list_protocols(status, service, period, page)
 
-    @ToolRegistry.declares(
-        protocols.PROTOCOLO,
-        protocols.DOCUMENTO_EMITIDO,
-        protocols.TAXA_DE_SERVICO,
-        limits.DADOS_INTERNOS,
-    )
     async def get_protocol(
         self, number: Annotated[str, Teaching("o número do protocolo, em texto", "20260024630")]
     ) -> ToolResult[detail.ProtocolDetailDto]:
@@ -69,14 +52,6 @@ class ProtocolTools:
         """
         return await self._service.get_protocol(number)
 
-    @ToolRegistry.declares(
-        protocols.SERVICO,
-        protocols.TAXA_DE_SERVICO,
-        protocols.PRAZO_DE_ATENDIMENTO,
-        academic_enrollment.TRANCAMENTO,
-        academic_enrollment.MATRICULA_EM_DISCIPLINA,
-        academic_enrollment.REGRAS_DE_TRANCAMENTO,
-    )
     async def propose_protocol(
         self,
         action: Annotated[

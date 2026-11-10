@@ -2,6 +2,7 @@ import pytest
 
 from api.bootstrap.settings import Settings
 from api.persistence.core.database import Database
+from tests.doubles.scripted_model import ScriptedChatModel
 from tests.integration.agent.agent_of import agent_for
 from tests.integration.support.sql_oracle import SqlOracle
 from tests.integration.support.tools import student_tools
@@ -33,8 +34,8 @@ async def test_fi_01_calls_the_summary_and_answers_the_debt(database: Database) 
 
 async def test_fi_01_with_the_scripted_model_reads_the_real_tool_output(database: Database) -> None:
     tools = await student_tools(database, await person_of_fi_01())
-    settings = Settings.from_environment().model_copy(update={"agent_model": "fake"})
-    agent = await agent_for(settings, tools, "fake-fi-01")
+    model = ScriptedChatModel.standard()
+    agent = await agent_for(Settings.from_environment(), tools, "fake-fi-01", model)
 
     run = await agent.run("Quanto estou devendo hoje?")
 

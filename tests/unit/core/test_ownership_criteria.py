@@ -6,10 +6,10 @@ from sqlalchemy.orm import ORMExecuteState, Session
 
 from api.domain.identity.session import StudentSession
 from api.persistence.agent.models import ConversationRow
-from api.persistence.core.database import Database
 from api.persistence.core.ownership import OwnershipError
 from api.persistence.core.ownership_criteria import STUDENT, OwnershipCriteria
 from api.persistence.finance.models import ContractRow, InvoiceRow, PaymentRow, ProductRow
+from tests.doubles.database import database_at
 
 PERSON = "3000178"
 STUDENT_SESSION = StudentSession(
@@ -52,7 +52,7 @@ def owned() -> CapturedSql:
 
 
 def test_the_sessions_of_the_database_carry_the_listener() -> None:
-    session_class = Database(UNUSED_URL).db_session_factory.class_.sync_session_class
+    session_class = database_at(UNUSED_URL).db_session_factory.class_.sync_session_class
     assert event.contains(session_class, "do_orm_execute", OwnershipCriteria.apply)
 
 

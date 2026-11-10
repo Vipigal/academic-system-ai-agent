@@ -8,9 +8,9 @@ from fastapi import FastAPI
 from pydantic import SecretStr
 
 from api.application.identity.service import IdentityService
-from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
 from api.persistence.core.database import Database
+from tests.doubles.doubles import DoubleContainers
 from tests.integration.identity.whoami_app import build_app
 
 SECRET = secrets.token_urlsafe(32)
@@ -124,7 +124,7 @@ async def test_login_route_does_not_exist_with_dev_login_off(database: Database)
 
 
 async def test_a_missing_secret_fails_closed(database: Database) -> None:
-    container = Containers.http(settings_with(jwt_secret=None), {Database: database})
+    container = DoubleContainers.http(settings_with(jwt_secret=None), {Database: database})
     with pytest.raises(ValueError, match="secret"):
         await container.get(IdentityService)
     await container.close()

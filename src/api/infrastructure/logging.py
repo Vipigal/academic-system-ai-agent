@@ -12,10 +12,10 @@ request_trace_var: ContextVar[list[str] | None] = ContextVar("request_trace", de
 
 class LogContext:
     @staticmethod
-    def bind(request_id: str, trace_id: str = "") -> None:
+    def bind(request_id: str) -> None:
         request_id_var.set(request_id)
-        trace_id_var.set(trace_id)
-        request_trace_var.set([trace_id])
+        trace_id_var.set("")
+        request_trace_var.set([""])
 
     @staticmethod
     def bind_trace(trace_id: str) -> None:
@@ -46,9 +46,9 @@ class JsonFormatter(logging.Formatter):
 
 class JsonLogging:
     @staticmethod
-    def configure(level: int = logging.INFO) -> None:
+    def configure() -> None:
         handler = logging.StreamHandler()
         handler.setFormatter(JsonFormatter())
         root = logging.getLogger()
         root.handlers = [handler]
-        root.setLevel(level)
+        root.setLevel(logging.INFO)

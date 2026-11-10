@@ -21,7 +21,7 @@ async def simultaneous_turns(app: ChatApp) -> list[httpx.Response]:
 
 
 async def test_simultaneous_turns_do_not_queue_in_lots(database: Database) -> None:
-    model = SlowModel(responses=[answer()])
+    model = SlowModel(responses=[answer()], expected=TURNS)
 
     responses = await simultaneous_turns(ChatApp(database, model, settings_with()))
 

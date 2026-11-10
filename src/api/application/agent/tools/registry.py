@@ -7,11 +7,8 @@ from typing import Self, get_origin, get_type_hints
 from pydantic import BaseModel
 
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology.catalog import ONTOLOGIES
-from api.domain.ontology.model import Ontology
 
 MAX_DESCRIPTION_LENGTH = 200
-DECLARED_ONTOLOGIES = "declared_ontologies"
 
 
 class ToolContractError(ValueError):
@@ -22,17 +19,14 @@ class ToolContractError(ValueError):
 class ToolDefinition:
     name: str
     description: str
-    ontologies: tuple[Ontology, ...]
 
     @classmethod
     def from_function(cls, function: FunctionType) -> Self:
         definition = cls(
             name=function.__name__,
             description=inspect.getdoc(function) or "",
-            ontologies=getattr(function, DECLARED_ONTOLOGIES, ()),
         )
         definition._check_description()
-        definition._check_ontologies()
         definition._check_async(function)
         definition._check_return(function)
         return definition
@@ -44,13 +38,6 @@ class ToolDefinition:
                 f"A descrição de {self.name} tem {size} caracteres; "
                 f"use a docstring, com até {MAX_DESCRIPTION_LENGTH}"
             )
-
-    def _check_ontologies(self) -> None:
-        if not self.ontologies:
-            raise ToolContractError(f"{self.name} não declara nenhuma ontologia")
-        for ontology in self.ontologies:
-            if ontology not in ONTOLOGIES:
-                raise ToolContractError(f"{self.name} declara {ontology.key}, fora do catálogo")
 
     def _check_async(self, function: FunctionType) -> None:
         if not inspect.iscoroutinefunction(function):
@@ -80,14 +67,6 @@ class ToolRegistry:
     @property
     def tools(self) -> tuple[RegisteredTool, ...]:
         return self._tools
-
-    @staticmethod
-    def declares[F: Callable[..., object]](*ontologies: Ontology) -> Callable[[F], F]:
-        def declare(function: F) -> F:
-            setattr(function, DECLARED_ONTOLOGIES, ontologies)
-            return function
-
-        return declare
 
     @staticmethod
     def describe(group_class: type) -> tuple[ToolDefinition, ...]:

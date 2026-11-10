@@ -3,6 +3,7 @@ import secrets
 import httpx
 
 from api.bootstrap.app import ApiFactory
+from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
 
 FRONT = "http://localhost:5173"
@@ -19,7 +20,7 @@ async def test_the_front_can_read_the_rate_limit_headers() -> None:
             "proposal_secret": secrets.token_urlsafe(32),
         }
     )
-    transport = httpx.ASGITransport(app=ApiFactory.create(settings))
+    transport = httpx.ASGITransport(app=ApiFactory.assemble(settings, Containers.http(settings)))
     async with httpx.AsyncClient(transport=transport, base_url="http://api") as client:
         response = await client.get("/health/live", headers={"Origin": FRONT})
 

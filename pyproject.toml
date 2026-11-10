@@ -36,8 +36,10 @@ dev = [
     "pytest-cov==7.1.0",
     "pytest-xdist==3.8.0",
     "pyyaml==6.0.3",
+    "types-docker==7.2.0.20261102",
     "types-pyyaml==6.0.12.20261103",
     "ruff==0.17.3",
+    "testcontainers[postgres]==4.15.0",
     "wemake-python-styleguide==1.8.1",
 ]
 

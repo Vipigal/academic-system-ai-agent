@@ -6,17 +6,14 @@ from api.application.agent.agent_errors import AgentTimeoutError
 from api.application.agent.agent_stream import NO_ANSWER_TEXT
 from api.application.agent.events import StopReason, TextDelta
 from api.application.agent.tools import finance as finance_tools
-from api.application.agent.tools.registry import ToolRegistry
 from api.application.finance.service import FinancialService
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology.finance_charges import DIVIDA
 from tests.unit.agent import agent_support as support
 from tests.unit.agent.student_stubs import stub_service
 
 
 class SlowTools:
     @support.described("Nunca termina a tempo.")
-    @ToolRegistry.declares(DIVIDA)
     async def wait_forever(self) -> ToolResult[str]:
         await asyncio.sleep(5)
         return ToolResult.ok("tarde")

@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import Iterator
 from typing import cast
 
@@ -6,15 +5,15 @@ import pytest
 import pytest_asyncio
 
 from api.application.agent.tools.registry import ToolRegistry
-from api.bootstrap.settings import Settings
-from api.domain.ontology.catalog import ONTOLOGIES
 from api.persistence.core.database import Database
+from tests.doubles.database import application_database
 from tests.integration.agent import (
     invariant_json,
     invariant_queries,
     invariant_sample,
     invariant_support,
 )
+from tests.integration.support.bounded import bounded
 from tests.integration.support.sql_oracle import PROTOCOL_OWNERS, SqlOracle
 from tests.integration.support.tools import tools_factory
 
@@ -60,10 +59,10 @@ Exposure = invariant_json.Exposure
 
 
 async def build_sample(scope: str) -> list[Person]:
-    connected = Database(Settings.from_environment().database_url.get_secret_value())
+    connected = application_database()
     builder = invariant_sample.SampleBuilder(connected, tools_factory(connected))
     people = sorted(await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope=scope))
-    sampled = list(await asyncio.gather(*(builder.person(person_id) for person_id in people)))
+    sampled = await bounded(builder.person(person_id) for person_id in people)
     await connected.dispose()
     return sampled
 
@@ -130,10 +129,9 @@ def test_no_tool_receives_identity(registry: ToolRegistry) -> None:
     assert received & IDENTITY_PARAMETERS == set()
 
 
-def test_every_registered_tool_has_description_and_ontology(registry: ToolRegistry) -> None:
+def test_every_registered_tool_has_a_description(registry: ToolRegistry) -> None:
     assert len(registry.tools) == TOOL_COUNT
     assert all(tool.definition.description for tool in registry.tools)
-    assert all(tool.definition.ontologies for tool in registry.tools)
 
 
 @pytest.mark.sweep
@@ -228,20 +226,6 @@ async def test_no_cpf_internal_note_analyst_payer_or_collection_stage_appears(
     ]
     assert notes
     assert exposed == []
-
-
-@pytest.mark.sweep
-def test_no_ontology_evidence_or_data_reaches_a_tool_result(full_sample: list[Person]) -> None:
-    hidden = {ontology.evidence for ontology in ONTOLOGIES}
-    hidden |= {table for ontology in ONTOLOGIES for table in ontology.data}
-    hidden |= {
-        relation.evidence
-        for ontology in ONTOLOGIES
-        for relation in ontology.relations
-        if relation.evidence
-    }
-    dumped = "\n".join(JsonLeaves.text(call.output) for call in all_calls(full_sample))
-    assert {text for text in hidden if text in dumped} == set()
 
 
 def totals_of(person: Person, tool: str) -> set[str]:

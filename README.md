@@ -57,8 +57,7 @@ leitura, `/tmp` em memória, sem capabilities e com `no-new-privileges`. Os dois
 | Comando | O que faz |
 |---|---|
 | `make setup` | `uv sync` com o grupo dev: cria `.venv` com Python 3.14 e as versões travadas no `uv.lock` |
-| `docker compose up -d --wait db` | Sobe só o banco, que os testes exigem |
-| `make check` | Formatação, lint, contratos de camada, tipos (mypy e Pyright) e testes com coverage |
+| `make check` | Formatação, lint, contratos de camada, tipos (mypy e Pyright) e testes com coverage. Exige Docker: o próprio teste sobe um Postgres efêmero |
 | `make check-fast` | O mesmo, sem as varreduras longas, para o loop de desenvolvimento |
 
 ## Arquitetura em alto nível
