@@ -3,14 +3,13 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict
 
-from api.application.protocol.dto.catalog import ServiceDto
+from api.application.protocol.dto.catalog import STATUS_SEPARATOR, ServiceDto
 from api.domain.academic.course import CourseNames
 from api.domain.academic.enrollment import Enrollment, EnrollmentStatus
 from api.domain.protocol.action import ServiceAction
 from api.domain.protocol.catalog import Service
 from api.domain.protocol.proposal import RefusalReason
 
-STATUS_SEPARATOR = ", "
 SUBJECT_NOT_SUPPORTED = (
     "{title} vale para a matrícula no curso, e não existe pedido deste serviço para uma "
     "disciplina. Diga ao aluno que o serviço para a disciplina não existe e pergunte se ele quer o "

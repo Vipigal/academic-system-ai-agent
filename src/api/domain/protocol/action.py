@@ -4,6 +4,9 @@ from enum import Enum
 from api.domain.academic.enrollment import EnrollmentStatus
 
 ANY_STATUS = frozenset(EnrollmentStatus)
+ONLY_ACTIVE = frozenset({EnrollmentStatus.ACTIVE})
+ACTIVE_OR_LOCKED = frozenset({EnrollmentStatus.ACTIVE, EnrollmentStatus.LOCKED})
+ONLY_GRADUATED = frozenset({EnrollmentStatus.GRADUATED})
 
 
 class ProtocolAction(Enum):

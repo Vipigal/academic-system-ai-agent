@@ -11,7 +11,7 @@ from api.persistence.core.repository_adapter import RepositoryAdapter
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 
 INFORMATION = ProtocolAction.INFORMACOES_GERAIS
-DECLARATION = ServiceActions.of_action(ProtocolAction.DECLARACAO_DE_MATRICULA)
+SLIP_REISSUE = ServiceActions.of_action(ProtocolAction.SEGUNDA_VIA_DE_BOLETO)
 TYPED = "Quero saber quando sai a nota da AV2."
 WRITTEN = {"message": TYPED}
 WINDOW = 20

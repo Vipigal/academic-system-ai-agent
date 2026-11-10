@@ -61,13 +61,13 @@ def test_a_gated_item_runs_its_pass_k_epochs_and_the_rest_follow_the_epochs(
     assert (totals["TR-01"], totals["SV-01"]) == (5, 2)
 
 
-def test_the_delivery_round_has_154_executions(dataset: Dataset) -> None:
+def test_the_delivery_round_has_155_executions(dataset: Dataset) -> None:
     plan = RunPlan.of(ItemSelection(DELIVERY_SUITES).pick(dataset), Epochs())
     by_area = Counter(planned.item.area for planned in plan)
     gated = Counter(planned.item.id for planned in plan if planned.item.gated)
 
-    assert len(plan) == 154
+    assert len(plan) == 155
     assert set(gated.values()) == {5}
     assert len(gated) == 15
     assert "PR-08" in gated
-    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 18, 0, 21)
+    assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 19, 0, 21)

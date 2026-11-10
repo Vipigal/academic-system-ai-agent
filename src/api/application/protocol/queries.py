@@ -1,4 +1,4 @@
-from api.application.protocol.dto.catalog import ServiceDto
+from api.application.protocol.dto.catalog import ServiceOfferDto
 from api.application.protocol.dto.detail import ProtocolDetailDto
 from api.application.protocol.dto.request import ProtocolDto
 from api.application.protocol.scope import ProtocolCandidates
@@ -15,10 +15,14 @@ class ProtocolQueries:
     def __init__(self, source: ProtocolSource) -> None:
         self._source = source
 
-    async def list_services(self, area: ServiceArea | None) -> ToolResult[list[ServiceDto]]:
-        services = await self._source.services()
+    async def list_services(self, area: ServiceArea | None) -> ToolResult[list[ServiceOfferDto]]:
+        services, enrollments = await self._source.services()
         return ToolResult.items(
-            [ServiceDto.from_entity(item) for item in services if area in {None, item.area}]
+            [
+                ServiceOfferDto.of(item, enrollments)
+                for item in services
+                if area in {None, item.area}
+            ]
         )
 
     async def list_protocols(

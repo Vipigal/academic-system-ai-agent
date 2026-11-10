@@ -19,8 +19,8 @@ def planned_by(command: str) -> int:
     return len(RunPlan.of(items, request.epochs))
 
 
-def test_the_delivery_round_command_plans_154_executions() -> None:
-    assert planned_by(DELIVERY_ROUND) == 154
+def test_the_delivery_round_command_plans_155_executions() -> None:
+    assert planned_by(DELIVERY_ROUND) == 155
 
 
 def test_the_scope_round_plans_three_epochs_of_every_scope_item() -> None:

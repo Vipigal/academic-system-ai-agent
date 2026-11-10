@@ -29,20 +29,22 @@ STREAM_MODES: Sequence[StreamMode] = ("messages", "updates")
 class StreamTranslator:
     def __init__(self) -> None:
         self._final_text = ""
+        self._streamed = False
         self._tokens_in = 0
         self._tokens_out = 0
 
     def translate(self, mode: str, payload: object) -> Iterator[AgentEvent]:
         if mode == MESSAGES_KEY:
-            yield from self._from_token(payload)
+            for delta in self._from_token(payload):
+                self._streamed = True
+                yield delta
         elif isinstance(payload, Mapping):
             for update in payload.values():
                 yield from self._from_update(update)
 
     def closing(self, stop_reason: StopReason) -> Iterator[AgentEvent]:
-        text = self._final_text
-        if not text:
-            text = NO_ANSWER_TEXT
+        text = self._final_text or NO_ANSWER_TEXT
+        if not (self._final_text and self._streamed):
             yield TextDelta(text)
         yield AgentFinished(text, stop_reason, TokenUsage(self._tokens_in, self._tokens_out))
 

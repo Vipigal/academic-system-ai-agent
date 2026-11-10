@@ -39,7 +39,9 @@ def test_a_subject_is_refused_only_by_the_actions_that_do_not_take_one() -> None
         (ProtocolAction.TRANCAR_CURSO_INTEIRO, EnrollmentStatus.LOCKED, STATUS_REFUSED),
         (ProtocolAction.REATIVAR_MATRICULA, EnrollmentStatus.ACTIVE, STATUS_REFUSED),
         (ProtocolAction.REATIVAR_MATRICULA, EnrollmentStatus.LOCKED, None),
-        (ProtocolAction.DECLARACAO_DE_MATRICULA, EnrollmentStatus.GRADUATED, None),
+        (ProtocolAction.DECLARACAO_DE_MATRICULA, EnrollmentStatus.GRADUATED, STATUS_REFUSED),
+        (ProtocolAction.EMITIR_DIPLOMA, EnrollmentStatus.GRADUATED, None),
+        (ProtocolAction.INFORMACOES_GERAIS, EnrollmentStatus.CANCELLED, None),
     ],
 )
 def test_the_enrollment_status_must_be_one_the_action_accepts(

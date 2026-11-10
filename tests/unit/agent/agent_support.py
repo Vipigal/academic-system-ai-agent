@@ -9,7 +9,7 @@ from api.application.agent.agent_runtime import AgentLimits, AgentRuntime
 from api.application.agent.events import AgentEvent, ToolResultReceived
 from api.application.agent.student_agent import StudentAgent
 from api.application.agent.tools.registry import RegisteredTool, ToolRegistry
-from evals.fixed_clock import FixedClock
+from tests.doubles.decisions import guarded_runtime
 from tests.doubles.scripted_model import ScriptedChatModel
 from tests.unit.agent.student_stubs import stub_student
 
@@ -63,7 +63,7 @@ def limits_with(
 
 
 def runtime_with(model: ScriptedChatModel, limits: AgentLimits = DEFAULT_LIMITS) -> AgentRuntime:
-    return AgentRuntime.create(model, limits, FixedClock())
+    return guarded_runtime(model, limits)
 
 
 def agent_with(

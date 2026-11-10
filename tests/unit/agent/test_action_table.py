@@ -17,13 +17,14 @@ EXPECTED_ROWS = {
     "disciplina. | `active` | recusa | texto fixo da ação; o aluno digita a palavra de "
     "confirmação |",
     "revisar_nota": "| `revisar_nota` | ACA-020, Revisão de nota | Pede à secretaria a revisão de "
-    "uma nota. Não garante a mudança da nota. | qualquer | aceita | o aluno escreve a mensagem |",
+    "uma nota. Não garante a mudança da nota. | `active`, `locked` | aceita | o aluno escreve a "
+    "mensagem |",
     "migrar_matriz_curricular": "| `migrar_matriz_curricular` | ACA-014, Migração de matriz "
     "curricular | Muda a matriz curricular da matrícula; a situação da matrícula não muda. "
     "Não muda de curso. | `active`, `locked` | recusa | texto fixo da ação; o aluno digita a "
     "palavra de confirmação |",
     "declaracao_de_matricula": "| `declaracao_de_matricula` | DOC-001, Declaração de matrícula | "
-    "Emite uma declaração de matrícula, com código de validação. | qualquer | recusa | texto fixo "
+    "Emite uma declaração de matrícula, com código de validação. | `active` | recusa | texto fixo "
     "da ação |",
 }
 

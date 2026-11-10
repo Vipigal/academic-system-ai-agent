@@ -17,7 +17,7 @@ def test_expected_tools_come_from_the_question_map() -> None:
 def test_the_protocol_suite_covers_every_service_and_gates_the_lock_items() -> None:
     dataset = DatasetLoader.load()
     protocol = dataset.suites[Suite.PROTOCOL]
-    assert Counter(item.area for item in protocol) == {"TR": 14, "SV": 18}
+    assert Counter(item.area for item in protocol) == {"TR": 14, "SV": 19}
     anchors = {item.id for item in protocol if item.area == "TR"}
     assert {item.id for item in dataset.items if item.gated} == {"PR-08", *anchors}
 

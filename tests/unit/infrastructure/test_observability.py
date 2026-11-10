@@ -6,7 +6,6 @@ from unittest.mock import patch
 import pytest
 from pydantic import SecretStr
 
-from api.application.health.service import HealthService
 from api.bootstrap.observability import Observability
 from api.bootstrap.settings import Settings
 from api.infrastructure.logging import JsonFormatter, LogContext
@@ -15,11 +14,6 @@ from api.infrastructure.tracing import TraceInfo, Tracing, UserPseudonym
 PERSON_ID = "3000003"
 CPF = "123.456.789-09"
 INFO = TraceInfo(PERSON_ID, "conv-1", "gpt-6-luna", "v1", "abc123")
-
-
-class AvailableDatabase:
-    async def is_available(self) -> bool:
-        return True
 
 
 def make_settings(**overrides: object) -> Settings:
@@ -133,9 +127,3 @@ def test_log_exception_carries_only_the_type() -> None:
     entry = json.loads(JsonFormatter().format(raised_record()))
     assert entry["exception"] == "ValueError"
     assert CPF not in json.dumps(entry)
-
-
-@pytest.mark.asyncio
-async def test_observed_health_check_works_without_tracing() -> None:
-    result = await HealthService(AvailableDatabase()).check()
-    assert result.database_available

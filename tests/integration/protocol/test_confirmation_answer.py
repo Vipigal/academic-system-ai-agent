@@ -8,7 +8,7 @@ from api.domain.conversation.message import MessageRole
 from api.domain.protocol.proposal import SignedProposal
 from tests.integration.protocol.confirmation_app import ConfirmationApp, confirmed_on
 from tests.integration.protocol.information_request import (
-    DECLARATION,
+    SLIP_REISSUE,
     TYPED,
     WRITTEN,
     history_for,
@@ -41,10 +41,10 @@ def app(bank: RolledBackBank) -> ConfirmationApp:
 async def test_a_simple_service_records_the_fixed_text_and_not_the_message(
     app: ConfirmationApp, bank: RolledBackBank
 ) -> None:
-    token = app.signer.sign(SignedProposal(PERSON, STUDENT, DECLARATION.code))
+    token = app.signer.sign(SignedProposal(PERSON, STUDENT, SLIP_REISSUE.code))
     response, _ = await app.confirmed_by(STUDENT, PERSON, token, WRITTEN)
     number = response.json()["protocol_number"]
-    assert await bank.as_admin(INTERACTION_MESSAGE, number=number) == [(DECLARATION.request_text,)]
+    assert await bank.as_admin(INTERACTION_MESSAGE, number=number) == [(SLIP_REISSUE.request_text,)]
 
 
 async def test_the_confirmation_event_joins_the_conversation_without_the_typed_text(

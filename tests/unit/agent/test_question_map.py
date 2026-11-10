@@ -9,7 +9,21 @@ from tests.agent_map import QUESTIONS
 CATALOG = Path(__file__).parents[3] / "docs" / "question-catalog.md"
 QUESTION_HEADING = re.compile(r"^### ([A-Z]{2}-\d{2})\.", re.MULTILINE)
 MAX_TOOLS_PER_QUESTION = 3
-WITHOUT_TOOL = frozenset({"SR-02", "RE-01", "RE-02", "RE-03", "RE-06", "RE-07", "RE-09"})
+WITHOUT_TOOL = frozenset(
+    {
+        "CR-04",
+        "SR-01",
+        "SR-02",
+        "RE-01",
+        "RE-02",
+        "RE-03",
+        "RE-05",
+        "RE-06",
+        "RE-07",
+        "RE-08",
+        "RE-09",
+    }
+)
 
 
 def catalog_codes() -> list[str]:

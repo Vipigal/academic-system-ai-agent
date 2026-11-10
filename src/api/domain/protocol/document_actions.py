@@ -1,10 +1,11 @@
-from api.domain.protocol.action import ProtocolAction, ServiceAction
+from api.domain.protocol.action import ONLY_ACTIVE, ONLY_GRADUATED, ProtocolAction, ServiceAction
 
 DECLARACAO_DE_MATRICULA = ServiceAction(
     code="DOC-001",
     action=ProtocolAction.DECLARACAO_DE_MATRICULA,
     title="Declaração de matrícula",
     effect="Emite uma declaração de matrícula, com código de validação.",
+    accepted_statuses=ONLY_ACTIVE,
     confirmation_question="Confirma o pedido de declaração de matrícula no curso {course}?",
     request_text="Solicito uma declaração de matrícula.",
 )
@@ -30,6 +31,7 @@ EMISSAO_DE_DIPLOMA = ServiceAction(
     action=ProtocolAction.EMITIR_DIPLOMA,
     title="Emissão de diploma",
     effect="Emite o diploma e o certificado de conclusão.",
+    accepted_statuses=ONLY_GRADUATED,
     confirmation_question="Confirma o pedido de emissão do diploma do curso {course}?",
     request_text="Solicito a emissão do meu diploma.",
 )
