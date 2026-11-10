@@ -4,8 +4,8 @@ import pytest
 from pydantic import SecretStr, ValidationError
 
 from api.bootstrap.settings import Settings
+from evals.dataset.oracle_settings import OracleSettings
 from evals.driver_factory import DriverFactory
-from evals.golden.oracle_settings import OracleSettings
 from evals.run import RunCli
 from evals.settings_sources import MissingEnvFileError, SettingsSources
 

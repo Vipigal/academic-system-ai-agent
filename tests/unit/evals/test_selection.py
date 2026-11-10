@@ -2,103 +2,72 @@ from collections import Counter
 
 import pytest
 
-from evals.golden.loader import GoldenLoader, GoldenSet
-from evals.golden.vocabulary import Split
-from evals.selection import (
-    GoldenSource,
-    ItemSelection,
-    Repetitions,
-    RunPlan,
-    SelectionError,
-)
+from evals.dataset.loader import Dataset, DatasetLoader
+from evals.dataset.vocabulary import Split, Suite
+from evals.selection import Epochs, ItemSelection, RunPlan, SelectionError
 
-BASELINE_FILES = frozenset(
-    {GoldenSource.QUESTIONS, GoldenSource.REDTEAM, GoldenSource.PROTOCOL_ACTIONS}
-)
-SCOPE = frozenset({GoldenSource.SCOPE})
+DELIVERY_SUITES = frozenset({Suite.QUALITY, Suite.SECURITY, Suite.PROTOCOL})
+SCOPE = frozenset({Suite.SCOPE})
 SCOPE_AREAS = {"ES", "MA", "DE", "SD", "IN"}
-ACTIONS = frozenset({GoldenSource.PROTOCOL_ACTIONS})
+PROTOCOL = frozenset({Suite.PROTOCOL})
+BOTH_SPLITS = frozenset({Split.DEV, Split.TEST})
 
 
 @pytest.fixture(scope="module")
-def golden() -> GoldenSet:
-    return GoldenLoader.load()
+def dataset() -> Dataset:
+    return DatasetLoader.load()
 
 
-def test_the_default_runs_only_the_questions_of_dev(golden: GoldenSet) -> None:
-    items = ItemSelection().pick(golden)
+def test_the_default_runs_only_the_quality_suite_of_dev(dataset: Dataset) -> None:
+    items = ItemSelection().pick(dataset)
     assert items
     assert all(item.split is Split.DEV for item in items)
     assert {item.area for item in items}.isdisjoint({"AT", "TR", "SV", *SCOPE_AREAS})
 
 
-def test_the_red_team_needs_its_file(golden: GoldenSet) -> None:
-    items = ItemSelection(frozenset({GoldenSource.REDTEAM})).pick(golden)
+def test_the_security_suite_holds_the_attacks(dataset: Dataset) -> None:
+    items = ItemSelection(frozenset({Suite.SECURITY})).pick(dataset)
     assert {item.area for item in items} == {"AT"}
 
 
-def test_the_scope_set_runs_alone_with_its_holdout(golden: GoldenSet) -> None:
-    items = ItemSelection(SCOPE, holdout_from=SCOPE).pick(golden)
-    splits = {item.split for item in items}
+def test_the_scope_suite_runs_alone_with_both_splits(dataset: Dataset) -> None:
+    items = ItemSelection(SCOPE, BOTH_SPLITS).pick(dataset)
     assert {item.area for item in items} == SCOPE_AREAS
-    assert splits == {Split.DEV, Split.HOLDOUT}
+    assert {item.split for item in items} == BOTH_SPLITS
 
 
-def test_the_holdout_never_runs_without_an_explicit_option(golden: GoldenSet) -> None:
-    items = ItemSelection(BASELINE_FILES).pick(golden)
-    assert all(item.split is Split.DEV for item in items)
+def test_the_test_split_never_runs_without_asking(dataset: Dataset) -> None:
+    items = ItemSelection(DELIVERY_SUITES).pick(dataset)
+    assert {item.id for item in items if item.split is Split.TEST} == {"TR-10", "TR-11", "TR-12"}
+    assert all(item.gated for item in items if item.split is Split.TEST)
 
 
-def test_the_holdout_comes_only_from_the_named_file(golden: GoldenSet) -> None:
-    items = ItemSelection(BASELINE_FILES, holdout_from=ACTIONS).pick(golden)
-    holdout = {item.id for item in items if item.split is Split.HOLDOUT}
-    assert holdout == {"TR-10", "TR-11", "TR-12"}
+def test_naming_a_test_item_does_not_bypass_the_split(dataset: Dataset) -> None:
+    test_attack = next(i for i in dataset.suites[Suite.SECURITY] if i.split is Split.TEST)
+    with pytest.raises(SelectionError, match=test_attack.id):
+        ItemSelection(frozenset({Suite.SECURITY}), only=frozenset({test_attack.id})).pick(dataset)
 
 
-def test_naming_a_holdout_item_does_not_bypass_the_split(golden: GoldenSet) -> None:
-    with pytest.raises(SelectionError, match="TR-10"):
-        ItemSelection(ACTIONS, only=frozenset({"TR-10"})).pick(golden)
-
-
-def test_the_holdout_option_needs_its_file_selected(golden: GoldenSet) -> None:
-    with pytest.raises(SelectionError, match="protocol_actions"):
-        ItemSelection(holdout_from=ACTIONS).pick(golden)
-
-
-def test_the_split_holdout_is_an_explicit_choice(golden: GoldenSet) -> None:
-    items = ItemSelection(split=Split.HOLDOUT).pick(golden)
-    assert items
-    assert all(item.split is Split.HOLDOUT for item in items)
-
-
-def test_only_narrows_the_selection(golden: GoldenSet) -> None:
-    items = ItemSelection(only=frozenset({"FI-01", "PR-08"})).pick(golden)
+def test_only_narrows_the_selection(dataset: Dataset) -> None:
+    items = ItemSelection(only=frozenset({"FI-01", "PR-08"})).pick(dataset)
     assert {item.id for item in items} == {"FI-01", "PR-08"}
 
 
-def test_the_critical_repeat_changes_only_the_critical_items(golden: GoldenSet) -> None:
-    items = ItemSelection(ACTIONS).pick(golden)
-    plan = RunPlan.of(items, Repetitions(default=2, critical=5))
-    totals = Counter(planned.item.id for planned in plan)
-    assert totals["TR-01"] == 5
-    assert totals["SV-01"] == 2
-
-
-def test_without_critical_repeat_every_item_follows_the_repeat(golden: GoldenSet) -> None:
-    plan = RunPlan.of(ItemSelection(ACTIONS).pick(golden), Repetitions(default=3))
-    assert set(Counter(planned.item.id for planned in plan).values()) == {3}
-
-
-def test_the_final_round_files_without_the_scope_set_have_154_executions(
-    golden: GoldenSet,
+def test_a_gated_item_runs_its_pass_k_epochs_and_the_rest_follow_the_epochs(
+    dataset: Dataset,
 ) -> None:
-    items = ItemSelection(BASELINE_FILES, holdout_from=ACTIONS).pick(golden)
-    plan = RunPlan.of(items, Repetitions(default=1, critical=5))
+    plan = RunPlan.of(ItemSelection(PROTOCOL).pick(dataset), Epochs(default=2))
+    totals = Counter(planned.item.id for planned in plan)
+    assert (totals["TR-01"], totals["SV-01"]) == (5, 2)
+
+
+def test_the_delivery_round_has_154_executions(dataset: Dataset) -> None:
+    plan = RunPlan.of(ItemSelection(DELIVERY_SUITES).pick(dataset), Epochs())
     by_area = Counter(planned.item.area for planned in plan)
-    critical = Counter(planned.item.id for planned in plan if planned.item.critical)
+    gated = Counter(planned.item.id for planned in plan if planned.item.gated)
 
     assert len(plan) == 154
-    assert set(critical.values()) == {5}
-    assert len(critical) == 15
-    assert "PR-08" in critical
+    assert set(gated.values()) == {5}
+    assert len(gated) == 15
+    assert "PR-08" in gated
     assert (by_area["TR"], by_area["SV"], by_area["ES"], by_area["AT"]) == (70, 18, 0, 21)

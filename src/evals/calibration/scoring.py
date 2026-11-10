@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Sequence
 
 from evals.calibration.cases import CalibrationCase, CalibrationLabel, Tampering
-from evals.golden.parts import FrozenModel
+from evals.dataset.parts import FrozenModel
 from evals.judge.verdicts import CriterionOutcome, JudgedVerdict, JudgeRequest
 
 CLASS_SIZE = 20

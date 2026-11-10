@@ -2,7 +2,7 @@ from enum import StrEnum
 
 from pydantic import Field
 
-from evals.golden.parts import FrozenModel
+from evals.dataset.parts import FrozenModel
 
 
 class CriterionOutcome(StrEnum):

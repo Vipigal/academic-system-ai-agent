@@ -63,8 +63,8 @@ class SpentUsage:
 
 
 class ExecutionRecorder:
-    def __init__(self, item_id: str, repetition: int, question: str) -> None:
-        self._identity = (item_id, repetition, question)
+    def __init__(self, item_id: str, epoch: int, question: str) -> None:
+        self._identity = (item_id, epoch, question)
         self._clock = TurnClock()
         self._spent = SpentUsage()
         self._arguments: dict[str, Mapping[str, object]] = {}
@@ -94,11 +94,11 @@ class ExecutionRecorder:
                 self._finished = event
 
     def finish(self, error: str | None = None) -> Execution:
-        item_id, repetition, question = self._identity
+        item_id, epoch, question = self._identity
         finished = self._finished
         return Execution(
             item_id,
-            repetition,
+            epoch,
             question,
             finished.text if finished else "",
             tuple(self._steps),

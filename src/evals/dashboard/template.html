@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evals do agente</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e4e4df;
+  --ok: #1f7a4d; --ok-bg: #e3f3ea; --bad: #b42318; --bad-bg: #fdecea;
+  --warn: #9a6700; --warn-bg: #fff4d6; --accent: #3355cc; --bar: #d9dde8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151514; --panel: #1f1f1d; --ink: #ecece8; --muted: #a3a39c; --line: #33332f;
+    --ok: #5cc98f; --ok-bg: #173826; --bad: #ff8a7a; --bad-bg: #3d1a16;
+    --warn: #f0c050; --warn-bg: #3a2f10; --accent: #8aa2ff; --bar: #3a3f4d;
+  }
+}
+* { box-sizing: border-box; }
+html { overflow-anchor: none; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, sans-serif; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 32px 0 12px; }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 600; color: var(--muted); font-size: 12px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tr:last-child td { border-bottom: 0; }
+.runs tr { cursor: pointer; }
+.runs tr.selected td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.APROVADA { color: var(--ok); background: var(--ok-bg); }
+.REPROVADA { color: var(--bad); background: var(--bad-bg); }
+.INCOMPLETA, .PARCIAL { color: var(--warn); background: var(--warn-bg); }
+.SEM-GATE { color: var(--muted); background: var(--bar); }
+.PENDENTE { color: var(--warn); background: var(--warn-bg); }
+.run-cell { min-width: 250px; }
+.suites { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.suite { font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--bar); color: var(--ink); white-space: nowrap; }
+.reason { color: var(--bad); font-size: 12px; margin-top: 4px; }
+.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 20px; margin: 4px 0 16px; color: var(--muted); font-size: 13px; }
+.legend b { color: var(--ink); font-weight: 600; }
+.gate-detail { color: var(--muted); font-size: 12px; margin-top: 4px; max-width: 220px; }
+.gate-detail.bad { color: var(--bad); }
+.rate { display: flex; align-items: center; gap: 8px; min-width: 190px; }
+.rate b { min-width: 46px; font-variant-numeric: tabular-nums; }
+.ci { position: relative; flex: 1; height: 8px; background: var(--bar); border-radius: 4px; min-width: 70px; }
+.ci .range { position: absolute; top: 0; height: 8px; background: color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 4px; }
+.ci .point { position: absolute; top: -3px; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; }
+.ci-text { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { padding: 14px; }
+.tile .label { color: var(--muted); font-size: 12px; }
+.tile .value { font-size: 22px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile .note { color: var(--muted); font-size: 12px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0 12px; }
+.chip { border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 99px; padding: 4px 12px; font: inherit; cursor: pointer; }
+.chip.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.chip .n { color: var(--muted); margin-left: 4px; font-weight: 400; }
+select, input[type=search] { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+input[type=search] { flex: 1; min-width: 160px; }
+.icon { display: inline-flex; width: 22px; height: 22px; border-radius: 6px; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+.icon.pass { color: var(--ok); background: var(--ok-bg); }
+.icon.fail { color: var(--bad); background: var(--bad-bg); }
+.icon.none { color: var(--muted); }
+.items td.q { max-width: 380px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.items tr.row { cursor: pointer; }
+.items tr.row:hover td { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.gate { font-size: 11px; color: var(--accent); font-weight: 600; margin-left: 4px; }
+.detail td { background: var(--bg); padding: 16px; }
+.detail h3 { font-size: 13px; margin: 14px 0 6px; color: var(--muted); }
+.detail h3:first-child { margin-top: 0; }
+.answer { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.problem { color: var(--bad); margin: 2px 0; }
+.criterion { display: grid; grid-template-columns: 26px 1fr; gap: 8px; margin: 6px 0; }
+.criterion .why { color: var(--muted); font-size: 13px; }
+.tools { color: var(--muted); font-family: ui-monospace, monospace; font-size: 12px; }
+a { color: var(--accent); }
+.scroll { overflow-x: auto; }
+.empty { padding: 24px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Evals do agente</h1>
+  <p class="sub">Histórico das rodadas. Clique numa rodada para ver os itens dela.</p>
+  <div class="legend">
+    <div><b>Resultado</b>: aprovada quando nenhum item de gate falha e graders e juiz ficam a partir de 85%.</div>
+    <div><b>Suítes</b>: qualidade, segurança, protocolo e escopo. Compare só rodadas com as mesmas suítes.</div>
+    <div><b>Graders</b>: checagens em código sobre o que o agente fez: tools chamadas, recusa, vazamento de dado de outro aluno e protocolo proposto.</div>
+    <div><b>Juiz</b>: um LLM confere cada critério da rubrica com os dados das tools. Fica ao lado do gate, porque varia entre execuções.</div>
+    <div><b>Gate</b>: os itens de trancamento e o PR-08 rodam 5 vezes; proposta e trajetória precisam passar em todas (pass^5).</div>
+    <div><b>Barra</b>: acerto com intervalo de confiança de 95% (Wilson). Quanto menor o n, mais larga.</div>
+  </div>
+  <div class="panel scroll"><table class="runs" id="runs"></table></div>
+  <h2 id="run-title"></h2>
+  <div class="tiles" id="tiles"></div>
+  <div class="filters" id="filters"></div>
+  <div class="panel scroll"><table class="items" id="items"></table></div>
+</main>
+<script id="data" type="application/json">__DASHBOARD_DATA__</script>
+<script>
+const DATA = JSON.parse(document.getElementById("data").textContent);
+const GRADERS = [["trajectory", "Trajetória"], ["refusal", "Recusa"], ["leak", "Vazamento"], ["proposal", "Proposta"]];
+const NAMES = Object.fromEntries(GRADERS);
+const state = { run: DATA.runs.length - 1, failure: "all", area: "", search: "", open: null };
+const pct = v => (v * 100).toFixed(1).replace(".", ",") + "%";
+const ms = v => v == null ? "—" : (v / 1000).toFixed(1).replace(".", ",") + " s";
+const usd = v => v == null ? "—" : "US$ " + v.toFixed(2).replace(".", ",");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const date = s => new Date(s).toLocaleString("pt-BR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
+const badge = s => `<span class="badge ${s.replace(" ", "-")}">${s}</span>`;
+const SUITES = { quality: "qualidade", security: "segurança", protocol: "protocolo", scope: "escopo" };
+const suites = run => `<div class="suites">${Object.entries(run.suites).map(([s, n]) => `<span class="suite">${SUITES[s] || s} ${n}</span>`).join("")}</div>`;
+const reasons = run => run.approval_reasons.map(r => `<div class="reason">${esc(r)}</div>`).join("");
+const graderNames = text => text.replace(/[a-z]+/g, name => (NAMES[name] || name).toLowerCase());
+
+function rate(r) {
+  if (!r.total) return '<span class="ci-text">sem dados</span>';
+  const share = r.passed / r.total;
+  return `<div class="rate"><b>${pct(share)}</b><div class="ci" title="IC 95%: ${pct(r.low)} a ${pct(r.high)}">` +
+    `<div class="range" style="left:${r.low * 100}%;width:${(r.high - r.low) * 100}%"></div>` +
+    `<div class="point" style="left:calc(${share * 100}% - 1px)"></div></div>` +
+    `<span class="ci-text">${r.passed}/${r.total}</span></div>`;
+}
+
+const passK = p => p.items ? `${p.label}: ${p.passing} de ${p.items}` : "—";
+
+function gateDetail(run, limit) {
+  const failures = run.gate_failures;
+  if (run.state === "SEM GATE") return "sem itens de gate nesta rodada";
+  if (run.state === "PARCIAL") return "só parte dos itens de gate rodou";
+  if (!failures.length) return `${run.gated_executions} execuções de gate sem falha`;
+  const count = `${failures.length} de ${run.gated_executions} execuções falharam`;
+  if (failures.length > limit) return count;
+  return `${count}: ${failures.map(graderNames).join("; ")}`;
+}
+
+function judgeOf(e) {
+  if (!e.criteria.length) return null;
+  return e.criteria.every(c => c.verdict === "pass");
+}
+
+function failsIn(e, grader) {
+  if (grader === "judge") return judgeOf(e) === false;
+  if (grader === "error") return e.error != null;
+  return Boolean(e.graders[grader]) && !e.graders[grader].passed;
+}
+
+function failed(e) {
+  return e.error != null || Object.values(e.graders).some(g => !g.passed) || judgeOf(e) === false;
+}
+
+function renderRuns() {
+  const rows = DATA.runs.map((run, i) => `<tr data-run="${i}" class="${i === state.run ? "selected" : ""}">
+    <td class="run-cell"><b>${esc(run.name)}</b><div class="ci-text">${date(run.started_at)} · ${esc(run.commit)} · ${esc(run.prompt_version)}</div>${suites(run)}</td>
+    <td>${badge(run.approval)}${reasons(run)}</td>
+    <td>${rate(run.graders)}</td><td>${rate(run.judge)}</td>
+    <td class="num">${passK(run.consistency)}</td><td class="num">${ms(run.p95_ms)}</td><td class="num">${usd(run.cost_usd)}</td></tr>`).reverse().join("");
+  document.getElementById("runs").innerHTML = `<tr><th>Rodada e suítes</th><th>Resultado</th>
+    <th>Graders</th><th>Juiz</th><th>Consistência</th><th>p95</th><th>Custo</th></tr>${rows}`;
+}
+
+function renderTiles(run) {
+  document.getElementById("run-title").textContent = `Rodada ${run.name}`;
+  const tile = (label, value, note) => `<div class="panel tile"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`;
+  const share = r => r.total ? pct(r.passed / r.total) : "—";
+  const ci = r => r.total ? `IC 95% ${pct(r.low)} a ${pct(r.high)} · n ${r.total}` : "sem dados";
+  document.getElementById("tiles").innerHTML = [
+    tile("Resultado", badge(run.approval), run.approval_reasons.length ? esc(run.approval_reasons.join("; ")) : "nenhum gate falhou; graders e juiz a partir de 85%"),
+    tile("Suítes", Object.keys(run.suites).length, Object.entries(run.suites).map(([s, n]) => `${SUITES[s] || s}: ${n} itens`).join(" · ")),
+    tile("Modelo", `<span class="num" style="font-size:16px">${esc(run.model)}</span>`, esc(run.prompt_version)),
+    tile("Gate", badge(run.state), `${esc(gateDetail(run, 3))}${run.gate.items ? ` · ${passK(run.gate)} itens` : ""}`),
+    tile("Graders", share(run.graders), ci(run.graders)),
+    tile("Juiz (rubrica)", share(run.judge), ci(run.judge)),
+    tile("Consistência", run.consistency.items ? `${run.consistency.passing} de ${run.consistency.items}` : "—",
+      run.consistency.items ? `${run.consistency.label}: itens que passaram em todas as epochs` : "cada item rodou uma vez"),
+    tile("Latência", `${ms(run.p50_ms)} <span class="ci-text">p50</span>`, `p95 ${ms(run.p95_ms)}`),
+    tile("Custo do agente", usd(run.cost_usd), `${run.executions.length} execuções`),
+  ].join("");
+}
+
+function renderFilters(run) {
+  const count = g => run.executions.filter(e => failsIn(e, g)).length;
+  const chips = [["all", "Todos", run.executions.length], ["failed", "Com falha", run.executions.filter(failed).length]]
+    .concat(GRADERS.map(([g, label]) => [g, "Falhou: " + label, count(g)]), [["judge", "Falhou: Juiz", count("judge")], ["error", "Erro", count("error")]]);
+  const areas = [...new Set(run.executions.map(e => e.area))].sort();
+  document.getElementById("filters").innerHTML = chips.filter(([key, , n]) => n || key === "all" || key === state.failure).map(([key, label, n]) =>
+    `<button class="chip ${state.failure === key ? "on" : ""}" data-failure="${key}">${label}<span class="n">${n}</span></button>`).join("") +
+    `<select id="area"><option value="">Todas as áreas</option>${areas.map(a => `<option ${a === state.area ? "selected" : ""}>${a}</option>`).join("")}</select>` +
+    `<input type="search" id="search" placeholder="Buscar item, pergunta ou resposta" value="${esc(state.search)}">`;
+}
+
+function icon(passed) {
+  if (passed == null) return '<span class="icon none" title="não se aplica">–</span>';
+  return passed ? '<span class="icon pass">✓</span>' : '<span class="icon fail">✕</span>';
+}
+
+function judgeCell(e) {
+  if (!e.criteria.length) return icon(null);
+  const ok = e.criteria.filter(c => c.verdict === "pass").length;
+  return `<span class="num">${icon(ok === e.criteria.length)} <span class="ci-text">${ok}/${e.criteria.length}</span></span>`;
+}
+
+function visible(run) {
+  const term = state.search.toLowerCase();
+  return run.executions.filter(e =>
+    (state.failure === "all" || (state.failure === "failed" ? failed(e) : failsIn(e, state.failure))) &&
+    (!state.area || e.area === state.area) &&
+    (!term || [e.key, e.question, e.answer].some(t => (t || "").toLowerCase().includes(term))));
+}
+
+function detail(e) {
+  const problems = Object.entries(e.graders).flatMap(([g, v]) => v.problems.map(p => `<div class="problem">${esc(NAMES[g] || g)}: ${esc(p)}</div>`));
+  if (e.error) problems.unshift(`<div class="problem">Erro: ${esc(e.error)}</div>`);
+  const criteria = e.criteria.map(c => `<div class="criterion">${icon(c.verdict === "pass" ? true : c.verdict === "fail" ? false : null)}
+    <div>${esc(c.text)}<div class="why">${esc(c.reasoning)}</div></div></div>`).join("");
+  return `<tr class="detail"><td colspan="9">
+    ${e.history.length ? `<h3>Conversa anterior</h3>${e.history.map(h => `<div class="ci-text">${esc(h)}</div>`).join("")}` : ""}
+    <h3>Pergunta</h3><div>${esc(e.question)}</div>
+    <h3>Resposta do agente</h3><div class="answer">${esc(e.answer) || "<i>sem resposta</i>"}</div>
+    ${problems.length ? `<h3>O que falhou nos graders</h3>${problems.join("")}` : ""}
+    ${criteria ? `<h3>Juiz, critério por critério</h3>${criteria}` : ""}
+    <h3>Tools chamadas</h3><div class="tools">${e.tools.map(esc).join(" → ") || "nenhuma"}</div>
+    ${e.trace_url ? `<h3>Trace</h3><a href="${esc(e.trace_url)}" target="_blank" rel="noopener">abrir no Langfuse</a>` : ""}
+  </td></tr>`;
+}
+
+function renderItems(run) {
+  const rows = visible(run).map(e => `<tr class="row" data-key="${esc(e.key)}">
+    <td class="num"><b>${esc(e.key)}</b>${e.gated ? '<span class="gate">gate</span>' : ""}<div class="ci-text">${esc(e.kind)} · ${esc(e.split)}</div></td>
+    <td class="q" title="${esc(e.question)}">${esc(e.question)}</td>
+    ${GRADERS.map(([g]) => `<td>${icon(e.graders[g] ? e.graders[g].passed : null)}</td>`).join("")}
+    <td>${judgeCell(e)}</td><td>${e.error ? icon(false) : ""}</td><td class="num">${ms(e.total_ms)}</td></tr>
+    ${state.open === e.key ? detail(e) : ""}`).join("");
+  document.getElementById("items").innerHTML = `<tr><th>Item</th><th>Pergunta</th>${GRADERS.map(([, l]) => `<th>${l}</th>`).join("")}
+    <th>Juiz</th><th>Erro</th><th>Tempo</th></tr>${rows || '<tr><td colspan="9" class="empty">Nenhum item com esse filtro.</td></tr>'}`;
+}
+
+function renderRun() {
+  const run = DATA.runs[state.run];
+  renderTiles(run); renderFilters(run); renderItems(run);
+}
+
+function keepingScroll(action) {
+  const top = window.scrollY;
+  action();
+  window.scrollTo(0, top);
+}
+
+function selectRun(index) {
+  Object.assign(state, { run: index, failure: "all", area: "", search: "", open: null });
+  document.querySelectorAll("[data-run]").forEach(row => row.classList.toggle("selected", Number(row.dataset.run) === index));
+  keepingScroll(renderRun);
+}
+
+document.addEventListener("click", event => {
+  const runRow = event.target.closest("[data-run]");
+  if (runRow) { selectRun(Number(runRow.dataset.run)); return; }
+  const chip = event.target.closest("[data-failure]");
+  if (chip) { state.failure = chip.dataset.failure; state.open = null; keepingScroll(renderRun); return; }
+  const row = event.target.closest("tr.row");
+  if (row) { state.open = state.open === row.dataset.key ? null : row.dataset.key; keepingScroll(() => renderItems(DATA.runs[state.run])); }
+});
+document.addEventListener("change", event => {
+  if (event.target.id === "area") { state.area = event.target.value; keepingScroll(() => renderItems(DATA.runs[state.run])); }
+});
+document.addEventListener("input", event => {
+  if (event.target.id === "search") { state.search = event.target.value; renderItems(DATA.runs[state.run]); }
+});
+if (DATA.runs.length) { renderRuns(); renderRun(); }
+else { document.getElementById("runs").innerHTML = '<tr><td class="empty">Nenhuma rodada.</td></tr>'; }
+</script>
+</body>
+</html>

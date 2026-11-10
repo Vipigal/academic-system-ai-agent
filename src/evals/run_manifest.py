@@ -3,7 +3,7 @@ import time
 from collections.abc import Iterable, Sequence
 from datetime import UTC, datetime
 
-from evals.golden.items import GoldenItem
+from evals.dataset.items import DatasetItem
 from evals.records import PlannedRound, RunManifest, RunVersions
 from evals.run_files import RunFiles
 from evals.selection import PlannedExecution
@@ -21,14 +21,14 @@ class RunManifests:
     def planned_round(
         versions: RunVersions,
         planned: Sequence[PlannedExecution],
-        items: Iterable[GoldenItem],
+        items: Iterable[DatasetItem],
         trace_url_prefix: str | None,
     ) -> PlannedRound:
         return PlannedRound(
             versions=versions,
             planned_keys=tuple(run.key for run in planned),
-            critical_keys=tuple(run.key for run in planned if run.item.critical),
-            golden_critical_items=tuple(item.id for item in items if item.critical),
+            gated_keys=tuple(run.key for run in planned if run.item.gated),
+            gated_items=tuple(item.id for item in items if item.gated),
             trace_url_prefix=trace_url_prefix,
         )
 

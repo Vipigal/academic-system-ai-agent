@@ -4,6 +4,14 @@ from pathlib import Path
 from pydantic import BaseModel
 
 
+class LegacyNames:
+    @staticmethod
+    def renamed(data: object, names: dict[str, str]) -> object:
+        if not isinstance(data, dict):
+            return data
+        return {names.get(key, key): value for key, value in data.items()}
+
+
 class JsonLines:
     @staticmethod
     def append(path: Path, line: BaseModel) -> None:
@@ -37,11 +45,3 @@ class RunFiles:
     @property
     def judge_verdicts(self) -> Path:
         return self.directory / "judge_verdicts.jsonl"
-
-    @property
-    def report(self) -> Path:
-        return self.directory / "report.md"
-
-    @property
-    def page(self) -> Path:
-        return self.directory / "report.html"

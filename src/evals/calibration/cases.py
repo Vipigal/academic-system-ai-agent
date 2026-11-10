@@ -6,12 +6,12 @@ from typing import Self
 import yaml
 from pydantic import TypeAdapter, model_validator
 
-from evals.golden.items import GoldenItem
-from evals.golden.loader import GOLDEN_DIRECTORY
-from evals.golden.parts import FrozenModel
+from evals.dataset.items import DatasetItem
+from evals.dataset.loader import DATASET_DIRECTORY
+from evals.dataset.parts import FrozenModel
 from evals.judge.verdicts import JudgeRequest
 
-CALIBRATION_FILE = GOLDEN_DIRECTORY / "calibration.yaml"
+CALIBRATION_FILE = DATASET_DIRECTORY / "calibration.yaml"
 
 
 class CalibrationLabel(StrEnum):
@@ -48,7 +48,7 @@ class CalibrationCases:
 
     @staticmethod
     def requests_of(
-        cases: Iterable[CalibrationCase], items: Iterable[GoldenItem]
+        cases: Iterable[CalibrationCase], items: Iterable[DatasetItem]
     ) -> Iterator[JudgeRequest]:
         by_id = {item.id: item for item in items}
         for case in cases:

@@ -2,8 +2,8 @@ from collections.abc import Mapping
 
 import pytest
 
+from evals.dataset.items import DatasetItem
 from evals.execution import ToolStep
-from evals.golden.items import GoldenItem
 from evals.graders.proposal import ConfirmationGuardrail, ProposalGrader
 from evals.graders.trajectory import TrajectoryGrader
 from evals.graders.verdict import GraderName, Verdict
@@ -34,7 +34,7 @@ def proposal(code: str, block: Mapping[str, object] | None = BLOCK) -> ToolStep:
     )
 
 
-def grade(item: GoldenItem, *steps: ToolStep) -> Verdict:
+def grade(item: DatasetItem, *steps: ToolStep) -> Verdict:
     verdict = ProposalGrader.grade(context_of(item), execution_of("Resposta", *steps))
     assert verdict is not None
     assert verdict.grader is GraderName.PROPOSAL

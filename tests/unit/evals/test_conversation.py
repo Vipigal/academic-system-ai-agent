@@ -4,6 +4,7 @@ from pathlib import Path
 from api.application.agent import events as agent_events
 from api.application.agent.agent_errors import AgentTimeoutError
 from api.application.agent.history import PastAssistantMessage, PastToolCall, PastUserMessage
+from evals.dashboard.page import DashboardPage
 from evals.graders.verdict import GraderName
 from tests.unit.evals import agent_script
 from tests.unit.evals import run_support as support
@@ -15,20 +16,18 @@ SEEN = "visto pelo modelo"
 ANSWER = "Não existe trancamento de disciplina."
 WITH_HISTORY = question(
     id="TR-13",
-    critical=True,
+    pass_k=5,
     proposal="none",
     question=LATER,
     history=[EARLIER],
     tools={"expected": [], "forbidden": []},
-    facts=[],
 )
 WITHOUT_HISTORY = question(
     id="TR-01",
-    critical=True,
+    pass_k=5,
     proposal="none",
     question=LATER,
     tools={"expected": [], "forbidden": []},
-    facts=[],
 )
 
 
@@ -127,22 +126,13 @@ async def test_the_judge_request_carries_only_the_earlier_questions(tmp_path: Pa
     assert "gpt-6-luna" not in line
 
 
-async def test_the_page_and_the_report_show_the_context_without_client_only(
-    tmp_path: Path,
-) -> None:
-    await support.run_items(tmp_path, conversation(grades_turn()), [(WITH_HISTORY, 1)])
-    page = (tmp_path / "report.html").read_text(encoding="utf-8")
-    report = (tmp_path / "report.md").read_text(encoding="utf-8")
+async def test_the_dashboard_shows_the_context_without_client_only(tmp_path: Path) -> None:
+    await support.run_items(tmp_path / "rodada", conversation(grades_turn()), [(WITH_HISTORY, 1)])
+    page = DashboardPage.render(tmp_path)
 
     assert EARLIER in page
     assert "client_only" not in page
     assert agent_script.SIGNED_VALUE not in page
-    assert "client_only" not in (tmp_path / "executions.jsonl").read_text(encoding="utf-8")
-    assert f"- TR-13, contexto: {EARLIER}. Avaliada: {LATER}" in report
-
-
-async def test_a_report_without_history_has_no_context_section(tmp_path: Path) -> None:
-    await support.run_items(tmp_path, conversation(grades_turn()), [(WITHOUT_HISTORY, 1)])
-    report = (tmp_path / "report.md").read_text(encoding="utf-8")
-
-    assert "conversa anterior" not in report
+    assert "client_only" not in (tmp_path / "rodada" / "executions.jsonl").read_text(
+        encoding="utf-8"
+    )

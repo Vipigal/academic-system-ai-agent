@@ -1,7 +1,7 @@
 from collections.abc import Iterator, Mapping
 
+from evals.dataset.items import DatasetItem
 from evals.execution import Execution, ToolStep
-from evals.golden.items import GoldenItem
 from evals.graders.verdict import GraderName, Verdict
 from evals.item_context import ItemContext
 
@@ -65,7 +65,7 @@ class ProposalGrader:
         return Verdict.of(GraderName.PROPOSAL, problems)
 
     @staticmethod
-    def _outcome_problems(item: GoldenItem, proposals: list[ToolStep]) -> Iterator[str]:
+    def _outcome_problems(item: DatasetItem, proposals: list[ToolStep]) -> Iterator[str]:
         expected = item.proposal
         if not expected.is_set:
             return

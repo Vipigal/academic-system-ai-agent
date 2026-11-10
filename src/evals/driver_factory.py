@@ -7,7 +7,7 @@ from api.bootstrap.observability import Observability
 from api.bootstrap.settings import Settings
 from api.bootstrap.singletons import Singletons
 from api.infrastructure.clock import FixedClock
-from evals.golden.tool_names import ToolNames
+from evals.dataset.tool_names import ToolNames
 from evals.records import RunVersions
 from evals.settings_sources import SettingsSources
 from evals.student_driver import StudentDriver

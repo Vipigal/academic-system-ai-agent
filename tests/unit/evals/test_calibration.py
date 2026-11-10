@@ -8,8 +8,8 @@ import pytest
 from evals.calibration.__main__ import CalibrateCli
 from evals.calibration.cases import CalibrationCase, CalibrationCases, CalibrationLabel, Tampering
 from evals.calibration.run import CalibrationRun
-from evals.golden.loader import GoldenLoader
-from evals.golden.vocabulary import Split
+from evals.dataset.loader import DatasetLoader
+from evals.dataset.vocabulary import Split
 from evals.judge.port import JudgeAnswer
 from evals.judge.verdicts import CriterionOutcome, CriterionVerdict, ItemVerdict, JudgeRequest
 
@@ -25,13 +25,13 @@ def test_the_set_has_twenty_of_each_class_with_every_kind_of_tampering() -> None
 
 
 def test_the_cases_use_only_dev_items_outside_the_declared_divergences() -> None:
-    items = {item.id: item for item in GoldenLoader.load().items}
+    items = {item.id: item for item in DatasetLoader.load().items}
     assert all(items[case.item].split is Split.DEV for case in CASES)
     assert {case.item for case in CASES}.isdisjoint({"FI-03", "SR-05"})
 
 
 def test_a_correct_case_is_the_reference_and_a_tampered_case_is_not() -> None:
-    items = {item.id: item for item in GoldenLoader.load().items}
+    items = {item.id: item for item in DatasetLoader.load().items}
     for case in CASES:
         is_reference = case.answer == items[case.item].reference
         assert is_reference is (case.label is CalibrationLabel.CORRECT), case.id
