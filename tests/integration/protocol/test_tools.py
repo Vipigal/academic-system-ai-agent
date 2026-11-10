@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from api.application.shared.page import PageRequest
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.shared.tool_result import ToolStatus
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.protocol.status import DeadlineSituation, ProtocolStage, ProtocolStatus, Resolution
@@ -233,8 +233,8 @@ async def test_list_unknown_service_is_not_found_with_the_students_services(
 async def test_list_is_paginated_newest_first(database: Database) -> None:
     tools = await harness.tools_for(database, support.ONLINE_SAO_PAULO_PERSON)
 
-    first = await tools.list_protocols(page=PageRequest(limit=1))
-    everything = support.rows(await tools.list_protocols(page=PageRequest(limit=100)))
+    first = await tools.list_protocols(page=BoundedPage(limit=1))
+    everything = support.rows(await tools.list_protocols(page=BoundedPage(limit=100)))
 
     assert first.page is not None
     assert first.page.total == len(everything)

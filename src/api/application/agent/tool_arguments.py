@@ -36,6 +36,7 @@ class BoundedPage(PageRequest):
 PageArgument = Annotated[
     BoundedPage, Teaching("um objeto com offset e limit", '{"offset": 0, "limit": 20}')
 ]
+FIRST_PAGE_ARGUMENT = BoundedPage()
 
 
 class ToolArguments:
@@ -53,9 +54,8 @@ class ToolArguments:
             hint = fields.get(parameter.name)
             if hint is None:
                 continue
-            kind = PageArgument if hint is PageRequest else hint
             required = parameter.default is inspect.Parameter.empty
-            fields[parameter.name] = (kind, ... if required else parameter.default)
+            fields[parameter.name] = (hint, ... if required else parameter.default)
         return create_model(
             f"{function.__name__}_arguments", __config__=ConfigDict(extra="forbid"), **fields
         )

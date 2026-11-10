@@ -1,7 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from api.application.shared.page import PageRequest
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.shared.tool_result import StatedValue, ToolStatus
 from api.domain.academic.record import Delivery
 from api.domain.lms.exam import AttemptState, ExamKind, ExamWindow
@@ -160,7 +160,7 @@ async def test_pagination_walks_every_exam_of_the_student(database: Database) ->
     )
 
     exams = await all_pages(lambda page: tools.list_online_exams(page=page), limit=7)
-    one_page = await tools.list_online_exams(page=PageRequest(limit=100))
+    one_page = await tools.list_online_exams(page=BoundedPage(limit=100))
 
     assert len(exams) == expected
     assert exams == support.rows(one_page)

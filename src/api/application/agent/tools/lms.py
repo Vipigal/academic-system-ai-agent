@@ -1,12 +1,12 @@
 from typing import Annotated
 
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
 from api.application.lms.dto.account import LmsAccountDto
 from api.application.lms.dto.exam import OnlineExamDto
 from api.application.lms.dto.material import MaterialViewDto
 from api.application.lms.service import LmsService
-from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_parameters import (
     FlagArgument,
     SubjectArgument,
@@ -34,7 +34,7 @@ class LmsTools:
         self,
         subject: SubjectArgument | None = None,
         term: TermArgument | None = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
         *,
         show_ui: FlagArgument = False,
     ) -> ToolResult[list[OnlineExamDto]]:
@@ -61,7 +61,7 @@ class LmsTools:
         query: Annotated[
             str | None, Teaching("um trecho do título do material", "Semana 2")
         ] = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[MaterialViewDto]]:
         """Lista os materiais de uma disciplina no AVA com os acessos do aluno, sem o conteúdo.
 

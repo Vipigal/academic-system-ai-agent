@@ -4,11 +4,9 @@ from collections.abc import Sequence
 from pydantic import BaseModel, ValidationError
 from pydantic_core import ErrorDetails
 
-from api.application.agent.tool_arguments import ToolArguments
+from api.application.agent.tool_arguments import LIST_SEPARATOR, PATH_SEPARATOR, ToolArguments
 
 MAX_ECHOED_INPUT = 80
-LIST_SEPARATOR = ", "
-PATH_SEPARATOR = "."
 MISSING = "missing"
 UNKNOWN_PARAMETER = "extra_forbidden"
 

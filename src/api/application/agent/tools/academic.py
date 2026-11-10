@@ -8,9 +8,9 @@ from api.application.academic.dto.curriculum import (
 )
 from api.application.academic.dto.enrollment import EnrollmentDto
 from api.application.academic.service import AcademicService
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
-from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_parameters import (
     EnrollmentArgument,
     FlagArgument,
@@ -51,7 +51,7 @@ class AcademicTools:
         unit: Annotated[
             str | None, Teaching("o nome da unidade, em texto", "Campus Paulista")
         ] = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[catalog.CourseOfferDto]]:
         """Lista os cursos oferecidos na instituição do aluno, por unidade e turno.
 
@@ -91,7 +91,7 @@ class AcademicTools:
             ),
         ] = NO_FILTER,
         *,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
         show_ui: FlagArgument = False,
     ) -> ToolResult[list[CurriculumSubjectDto]]:
         """Mostra a matriz do aluno com a situação em cada disciplina.
@@ -121,7 +121,7 @@ class AcademicTools:
         enrollment: EnrollmentArgument | None = None,
         term: TermArgument | None = None,
         subject: SubjectArgument | None = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[record.SubjectRecordDto]]:
         """Lista as disciplinas cursadas com notas, frequência e resultado.
 

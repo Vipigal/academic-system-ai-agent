@@ -2,10 +2,10 @@ from typing import Annotated
 
 from pydantic import Field
 
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.protocol.dto import catalog, detail, proposal, request
 from api.application.protocol.service import ProtocolService
-from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_parameters import (
     EnrollmentArgument,
     PeriodArgument,
@@ -46,7 +46,7 @@ class ProtocolTools:
         status: ProtocolStage | None = None,
         service: Annotated[str | None, Teaching("o código do serviço, em texto", "DOC-001")] = None,
         period: PeriodArgument | None = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[request.ProtocolDto]]:
         """Lista os protocolos do aluno com situação de prazo, taxa e documentos.
 

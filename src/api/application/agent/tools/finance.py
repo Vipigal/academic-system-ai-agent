@@ -1,12 +1,12 @@
 from typing import Annotated
 
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
 from api.application.finance.dto import agreement, payment, tuition
 from api.application.finance.dto.invoice import InvoiceDto
 from api.application.finance.dto.summary import ContractSummaryDto
 from api.application.finance.service import FinancialService
-from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_parameters import FlagArgument, PeriodArgument, Teaching
 from api.application.shared.tool_result import ToolResult
 from api.domain.finance.invoice import InvoiceKind, InvoiceStatus
@@ -49,7 +49,7 @@ class FinanceTools:
         status: InvoiceStatus | None = None,
         kind: InvoiceKind | None = None,
         period: PeriodArgument | None = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[InvoiceDto]]:
         """Lista faturas com pagamentos e saldo. Use para explicar uma fatura. period: AAAA-MM."""
         return await self._service.list_invoices(status, kind, period, page)
@@ -58,7 +58,7 @@ class FinanceTools:
     async def list_payments(
         self,
         year: Annotated[int | None, Teaching("o ano com quatro dígitos, inteiro", "2026")] = None,
-        page: PageRequest = FIRST_PAGE,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[payment.PaymentDto]]:
         """Lista os pagamentos confirmados do aluno. Use para saber o que já foi pago."""
         return await self._service.list_payments(year, page)

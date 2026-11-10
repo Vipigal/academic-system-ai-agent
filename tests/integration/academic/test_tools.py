@@ -1,8 +1,8 @@
 from datetime import date
 
 from api.application.academic.dto.curriculum import CurriculumFilter
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.agent.tools.registry import ToolRegistry
-from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import DataState, ToolStatus
 from api.domain.academic.enrollment import EnrollmentStatus, Shift, TermStatus
 from api.domain.academic.record import SubjectResult
@@ -12,7 +12,7 @@ from api.persistence.core.database import Database
 from tests.integration.academic import support
 from tests.integration.support.sql_oracle import SqlOracle
 
-ALL_ROWS = PageRequest(limit=100)
+ALL_ROWS = BoundedPage(limit=100)
 ADS_2024_SUBJECTS = (
     "SELECT subject_code FROM sag.curriculum_subject WHERE curriculum_id = 'ADS-2024'"
 )

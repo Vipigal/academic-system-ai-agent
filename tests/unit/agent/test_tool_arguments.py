@@ -5,9 +5,13 @@ import pytest
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from api.application.agent.langchain_tools import LangchainTools
-from api.application.agent.tool_arguments import BoundedPage, ToolArguments
+from api.application.agent.tool_arguments import (
+    FIRST_PAGE_ARGUMENT,
+    BoundedPage,
+    PageArgument,
+    ToolArguments,
+)
 from api.application.agent.tools.registry import ToolContractError, ToolRegistry
-from api.application.shared.page import FIRST_PAGE, PageRequest
 from api.application.shared.tool_parameters import Teaching
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology.finance_charges import DIVIDA
@@ -20,7 +24,7 @@ class TaughtTools:
     @support.described("Recebe um recado e uma página.")
     @ToolRegistry.declares(DIVIDA)
     async def taught(
-        self, note: Annotated[str, NOTE_TEACHING], page: PageRequest = FIRST_PAGE
+        self, note: Annotated[str, NOTE_TEACHING], page: PageArgument = FIRST_PAGE_ARGUMENT
     ) -> ToolResult[str]:
         return ToolResult.ok(f"{note}:{page.limit}")
 
