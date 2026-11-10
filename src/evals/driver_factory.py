@@ -1,14 +1,13 @@
 import secrets
 from pathlib import Path
 
+from dishka import AsyncContainer
 from pydantic import SecretStr
 
-from api.bootstrap.observability import Observability
+from api.bootstrap.containers import Given
 from api.bootstrap.settings import Settings
-from api.bootstrap.singletons import Singletons
-from api.infrastructure.clock import FixedClock
-from evals.dataset.tool_names import ToolNames
-from evals.records import RunVersions
+from api.infrastructure.logging import JsonLogging
+from evals.eval_container import EvalContainer
 from evals.settings_sources import SettingsSources
 from evals.student_driver import StudentDriver
 
@@ -26,18 +25,11 @@ class DriverFactory:
         )
 
     @staticmethod
-    def singletons_for(settings: Settings) -> Singletons:
-        return Singletons.create(settings, FixedClock())
+    def container_for(settings: Settings, given: Given | None = None) -> AsyncContainer:
+        return EvalContainer.create(settings, given)
 
     @staticmethod
     def create(settings: Settings) -> StudentDriver:
-        singletons = DriverFactory.singletons_for(settings)
-        runtime = singletons.agent.runtime
-        versions = RunVersions(
-            model=settings.agent_model,
-            effort=settings.agent_effort,
-            prompt_version=runtime.prompt.version,
-            skills_hash=runtime.skills.fingerprint(),
-            tools_hash=ToolNames.fingerprint(),
-        )
-        return StudentDriver(singletons, Observability.start(settings), versions)
+        JsonLogging.configure()
+        container = EvalContainer.create(settings)
+        return StudentDriver(container, EvalContainer.versions_of(container, settings))

@@ -1,12 +1,12 @@
 import pytest
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.bootstrap.settings import Settings
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
-from api.persistence.finance.dialect import FinanceDialect
+from api.persistence.finance.column_types import INVOICE_STATUS
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 from api.persistence.sag.dialect import SagDialect
 from tests.integration.support.owned import Owned, owned_by
@@ -16,7 +16,7 @@ MAX_SESSION_QUERIES = 3
 
 
 def repository_for(database: Database) -> StudentSessionRepository:
-    return StudentSessionRepository(database.db_session_factory)
+    return StudentSessionRepository(database)
 
 
 async def owned_of(database: Database, person_id: str) -> Owned:
@@ -73,8 +73,9 @@ async def test_enrollment_keys_keep_the_spelling_of_the_source(database: Databas
 
 
 async def test_loading_the_session_takes_at_most_three_queries() -> None:
-    engine = create_async_engine(Settings.from_environment().database_url.get_secret_value())
-    repository = StudentSessionRepository(async_sessionmaker(engine))
+    connected = Database(Settings.from_environment().database_url.get_secret_value())
+    repository = StudentSessionRepository(connected)
+    engine = connected.db_session_factory.kw["bind"]
     statements: list[object] = []
 
     def record(*arguments: object) -> None:
@@ -83,7 +84,7 @@ async def test_loading_the_session_takes_at_most_three_queries() -> None:
     await repository.load("3000071")
     event.listen(engine.sync_engine, "before_cursor_execute", record)
     session = await repository.load("3000071")
-    await engine.dispose()
+    await connected.dispose()
     assert session.enrollment_keys
     assert 1 <= len(statements) <= MAX_SESSION_QUERIES
 
@@ -98,7 +99,7 @@ async def test_every_contract_belongs_to_exactly_one_person(owned_by_everyone: l
 
 async def test_every_invoice_status_in_the_database_has_translation() -> None:
     statuses = await SqlOracle().values("SELECT DISTINCT status FROM finance.invoice")
-    translated = {FinanceDialect.invoice_status(status) for status in statuses}
+    translated = {INVOICE_STATUS.from_source(status) for status in statuses}
     assert translated == set(InvoiceStatus)
 
 

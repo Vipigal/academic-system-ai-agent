@@ -1,9 +1,15 @@
+from dishka import AsyncContainer
+from langchain_core.language_models import BaseChatModel
 from pydantic import SecretStr
 
 from api.bootstrap.settings import Settings
+from api.infrastructure.tracing import Tracing
+from api.persistence.core.database import Database
 from evals.dataset.vocabulary import Suite
+from evals.driver_factory import DriverFactory
 from evals.records import RunVersions
 from evals.selection import ItemSelection
+from tests.integration.chat.scripted_given import given_with
 
 SECRET = SecretStr("segredo-de-teste-com-tamanho-suficiente-para-o-hmac")
 VERSIONS = RunVersions(
@@ -19,3 +25,9 @@ SELECTION = ItemSelection(
 def fake_settings() -> Settings:
     settings = Settings.from_environment()
     return settings.model_copy(update={"agent_model": "fake", "proposal_secret": SECRET})
+
+
+def scripted_container(
+    database: Database, model: BaseChatModel, tracing: Tracing
+) -> AsyncContainer:
+    return DriverFactory.container_for(fake_settings(), given_with(database, model, tracing))

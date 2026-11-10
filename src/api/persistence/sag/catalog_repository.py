@@ -26,9 +26,7 @@ class SagAcademicCatalogRepository:
 
     async def list_course_offers(self) -> Sequence[CourseOffer]:
         rows, courses, units = await asyncio.gather(
-            self._adapter.fetch(
-                select(CourseOfferRow).join(UnitRow, CourseOfferRow.unit_id == UnitRow.id)
-            ),
+            self._adapter.fetch(select(CourseOfferRow)),
             self._adapter.fetch(select(CourseRow)),
             self._adapter.fetch(select(UnitRow)),
         )

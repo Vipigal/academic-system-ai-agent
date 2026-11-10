@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
+from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
-from api.bootstrap.singletons import Singletons
 from api.persistence.core import database
 from api.persistence.core.database import Database
 
@@ -36,13 +36,14 @@ async def test_the_engine_pool_comes_from_the_settings(engine_spy: EngineSpy) ->
         }
     )
 
-    singletons = Singletons.create(settings)
+    container = Containers.http(settings)
+    await container.get(Database)
 
     assert engine_spy.options["pool_size"] == 7
     assert engine_spy.options["max_overflow"] == 3
     assert engine_spy.options["pool_timeout"] == 2.5
     assert engine_spy.options["pool_pre_ping"] is True
-    await singletons.dispose()
+    await container.close()
 
 
 async def test_without_a_pool_the_engine_keeps_the_sqlalchemy_defaults(

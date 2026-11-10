@@ -1,48 +1,26 @@
 import secrets
 from http import HTTPStatus
-from typing import Annotated
 
 import httpx
 import jwt
 import pytest
-from fastapi import Depends, FastAPI
-from pydantic import BaseModel, SecretStr
+from fastapi import FastAPI
+from pydantic import SecretStr
 
-from api.bootstrap.identity_providers import IdentityProviders
+from api.application.identity.service import IdentityService
+from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
-from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
+from tests.integration.identity.whoami_app import build_app
 
 SECRET = secrets.token_urlsafe(32)
 FIRST_STUDENT = "UniSaoPaulo:180017"
 SECOND_STUDENT = "UniMontanhas:070017"
 
 
-class WhoAmIRequest(BaseModel):
-    person_id: str
-
-
 def settings_with(**overrides: object) -> Settings:
     base = Settings.from_environment()
     return base.model_copy(update={"jwt_secret": SecretStr(SECRET), "dev_login": True, **overrides})
-
-
-def build_app(database: Database, settings: Settings) -> FastAPI:
-    providers = IdentityProviders(settings, database)
-    application = FastAPI()
-    router = providers.auth_router()
-    if router is not None:
-        application.include_router(router)
-    session_dependency = providers.session_dependency()
-
-    @application.post("/whoami")
-    async def whoami(
-        request: WhoAmIRequest,
-        session: Annotated[StudentSession, Depends(session_dependency)],
-    ) -> dict[str, list[str]]:
-        return {"person_ids": sorted(session.person_ids), "claimed": [request.person_id]}
-
-    return application
 
 
 def client_of(application: FastAPI) -> httpx.AsyncClient:
@@ -145,9 +123,11 @@ async def test_login_route_does_not_exist_with_dev_login_off(database: Database)
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_a_missing_secret_fails_closed(database: Database) -> None:
+async def test_a_missing_secret_fails_closed(database: Database) -> None:
+    container = Containers.http(settings_with(jwt_secret=None), {Database: database})
     with pytest.raises(ValueError, match="secret"):
-        IdentityProviders(settings_with(jwt_secret=None), database)
+        await container.get(IdentityService)
+    await container.close()
 
 
 async def test_dev_students_lists_one_row_per_enrollment_ordered_by_name(

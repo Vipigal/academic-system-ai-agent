@@ -1,9 +1,10 @@
 from collections.abc import Iterable
 from decimal import Decimal
-from typing import Self
+from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict
 
+from api.application.shared.tool_parameters import FlagArgument, SubjectArgument, Teaching
 from api.domain.academic.curriculum import CurriculumSubject, EnrollmentProgress
 from api.domain.academic.record import SubjectResult
 
@@ -11,9 +12,9 @@ from api.domain.academic.record import SubjectResult
 class CurriculumFilter(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    semester: int | None = None
-    subject: str | None = None
-    pending_only: bool = False
+    semester: Annotated[int | None, Teaching("o número do semestre da matriz, inteiro", "3")] = None
+    subject: SubjectArgument | None = None
+    pending_only: FlagArgument = False
 
 
 NO_FILTER = CurriculumFilter()

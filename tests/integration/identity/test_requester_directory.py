@@ -11,9 +11,8 @@ FULL_NAME = "SELECT full_name FROM sag.person WHERE person_id = :id"
 
 
 async def directory_of(database: Database, person_id: str) -> SqlRequesterDirectory:
-    factory = database.db_session_factory
-    session = await StudentSessionRepository(factory).load(person_id)
-    return SqlRequesterDirectory(RepositoryAdapter(factory, session))
+    session = await StudentSessionRepository(database).load(person_id)
+    return SqlRequesterDirectory(RepositoryAdapter(database, session))
 
 
 async def test_the_session_reads_the_name_of_its_own_person(database: Database) -> None:

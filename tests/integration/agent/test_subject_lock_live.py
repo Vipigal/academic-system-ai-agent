@@ -1,10 +1,9 @@
 import pytest
 
-from api.bootstrap.agent_providers import AgentProviders
 from api.bootstrap.settings import Settings
-from api.infrastructure.clock import FixedClock
 from api.persistence.core.database import Database
 from evals.graders.proposal import ProposalOutput
+from tests.integration.agent.agent_of import agent_for
 from tests.integration.support.sql_oracle import SqlOracle
 from tests.integration.support.tools import student_tools
 from tests.unit.agent.agent_support import tool_results
@@ -28,9 +27,9 @@ async def test_a_subject_lock_request_never_yields_a_course_lock_proposal(
     database: Database, repetition: int
 ) -> None:
     tools = await student_tools(database, await person_of_the_anchor_student())
-    providers = AgentProviders(Settings.from_environment(), FixedClock())
+    agent = await agent_for(Settings.from_environment(), tools, f"live-subject-lock-{repetition}")
 
-    run = await providers.agent_for(tools, f"live-subject-lock-{repetition}").run(BUG_REQUEST)
+    run = await agent.run(BUG_REQUEST)
 
     accepted = [
         ProposalOutput.service_code(result.complete)

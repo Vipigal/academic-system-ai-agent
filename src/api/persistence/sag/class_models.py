@@ -1,6 +1,12 @@
+from decimal import Decimal
+
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.academic.enrollment import Shift
+from api.domain.academic.record import Delivery, SubjectResult
 from api.persistence.core.base import Base
+from api.persistence.core.column_types import TextDecimal
+from api.persistence.sag.column_types import DELIVERY, SHIFT, SUBJECT_RESULT, YES_NO
 from api.persistence.sag.models import SAG_SCHEMA
 
 
@@ -14,8 +20,8 @@ class ClassSectionRow(Base):
     brand: Mapped[str]
     unit_id: Mapped[str | None]
     section: Mapped[str]
-    shift: Mapped[str]
-    delivery: Mapped[str]
+    shift: Mapped[Shift] = mapped_column(SHIFT)
+    delivery: Mapped[Delivery] = mapped_column(DELIVERY)
     professor_id: Mapped[str]
 
 
@@ -26,13 +32,13 @@ class StudentClassRow(Base):
     class_id: Mapped[str] = mapped_column(primary_key=True)
     brand: Mapped[str] = mapped_column(primary_key=True)
     student_id: Mapped[str] = mapped_column(primary_key=True)
-    is_retake: Mapped[str]
-    grade_av1: Mapped[str | None]
-    grade_av2: Mapped[str | None]
-    grade_av3: Mapped[str | None]
-    final_grade: Mapped[str | None]
-    attendance_pct: Mapped[str | None]
-    result: Mapped[str]
+    is_retake: Mapped[bool] = mapped_column(YES_NO)
+    grade_av1: Mapped[Decimal | None] = mapped_column(TextDecimal())
+    grade_av2: Mapped[Decimal | None] = mapped_column(TextDecimal())
+    grade_av3: Mapped[Decimal | None] = mapped_column(TextDecimal())
+    final_grade: Mapped[Decimal | None] = mapped_column(TextDecimal())
+    attendance_pct: Mapped[Decimal | None] = mapped_column(TextDecimal())
+    result: Mapped[SubjectResult] = mapped_column(SUBJECT_RESULT)
 
 
 class ProfessorRow(Base):

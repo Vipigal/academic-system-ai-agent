@@ -6,7 +6,7 @@ from api.domain.finance.debt import DebtPosition
 from api.domain.finance.invoice import Invoice, InvoiceKind, InvoiceStatus
 from api.domain.finance.tuition import TuitionChange, TuitionChangeCause
 from api.domain.shared.money import Money
-from api.persistence.core.brasilia import BrasiliaTime
+from api.persistence.core.column_types import UtcMoment
 
 REFERENCE = date(2026, 10, 31)
 CONTRACT = "CT00000001"
@@ -26,11 +26,11 @@ def tuition(
         kind=kind,
         competence=competence,
         due_date=date.fromisoformat(f"{competence}-10"),
-        gross=Money.from_cents(gross),
-        net=Money.from_cents(net),
+        gross=Money(gross),
+        net=Money(net),
         status=status,
         payments=(),
-        late_charge=Money.from_cents(0),
+        late_charge=Money(0),
     )
 
 
@@ -108,16 +108,16 @@ def test_debt_position_keeps_only_the_debts() -> None:
         [overdue, tuition("2026-11", 100, 100, status=InvoiceStatus.OPEN)], REFERENCE
     )
     assert position.invoices == (overdue,)
-    assert position.total == Money.from_cents(100)
+    assert position.total == Money(100)
     assert position.max_days_overdue == 51
 
 
 def test_empty_debt_position_is_zero() -> None:
     position = DebtPosition.of([], REFERENCE)
-    assert position.total == Money.from_cents(0)
+    assert position.total == Money(0)
     assert position.max_days_overdue == 0
 
 
 def test_utc_time_turns_into_brasilia_time() -> None:
-    converted = BrasiliaTime.from_utc("2024-12-08 00:29:12+00:00")
+    converted = UtcMoment().from_source("2024-12-08 00:29:12+00:00")
     assert converted.isoformat() == "2024-12-07T21:29:12-03:00"

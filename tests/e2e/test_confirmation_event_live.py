@@ -18,7 +18,7 @@ FOLLOW_UP = "Meu pedido foi aberto?"
 async def test_after_the_confirmation_the_model_knows_the_request_is_open(
     bank: RolledBackBank,
 ) -> None:
-    with running_api(bank, live_settings()) as api:
+    async with running_api(bank, live_settings()) as api:
         result = await StudentFlow(api.client, DECLARATION_REQUEST, FOLLOW_UP).run()
 
     assert PROPOSE_TOOL in tools_called(result.proposal)

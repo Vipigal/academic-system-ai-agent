@@ -1,6 +1,16 @@
+from datetime import datetime
+
 from sqlalchemy.orm import Mapped, mapped_column
 
+from api.domain.protocol.catalog import ServiceArea
+from api.domain.protocol.document import DocumentDelivery, DocumentType
+from api.domain.protocol.message import MessageSender
+from api.domain.protocol.request import Requester
+from api.domain.protocol.status import ProtocolStatus, Resolution
+from api.domain.shared.money import Money
 from api.persistence.core.base import Base
+from api.persistence.core.column_types import TRUE_FALSE, UtcMoment
+from api.persistence.secretary import column_types
 
 SECRETARY_SCHEMA = {"schema": "secretary"}
 PROTOCOL_COLUMN = "protocol"
@@ -14,19 +24,19 @@ class ProtocolRow(Base):
     student_id: Mapped[str | None] = mapped_column("stu_id")
     requester_cpf: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     requester_name: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
-    requester_type: Mapped[str]
+    requester_type: Mapped[Requester] = mapped_column(column_types.REQUESTER)
     unit_code: Mapped[str]
     course_label: Mapped[str]
     demand: Mapped[str]
-    status: Mapped[str] = mapped_column("demand_status")
+    status: Mapped[ProtocolStatus] = mapped_column("demand_status", column_types.PROTOCOL_STATUS)
     channel: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     priority: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
-    opened_at: Mapped[str]
-    first_response_at: Mapped[str | None]
-    due_at: Mapped[str] = mapped_column("sla_due_at")
-    closed_at: Mapped[str | None]
-    sla_breached: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
-    resolution: Mapped[str | None]
+    opened_at: Mapped[datetime] = mapped_column(UtcMoment())
+    first_response_at: Mapped[datetime | None] = mapped_column(UtcMoment())
+    due_at: Mapped[datetime] = mapped_column("sla_due_at", UtcMoment())
+    closed_at: Mapped[datetime | None] = mapped_column(UtcMoment())
+    sla_breached: Mapped[bool] = mapped_column(TRUE_FALSE, deferred=True, deferred_raiseload=True)
+    resolution: Mapped[Resolution | None] = mapped_column(column_types.RESOLUTION)
 
 
 class DemandTypeRow(Base):
@@ -35,10 +45,10 @@ class DemandTypeRow(Base):
 
     code: Mapped[str] = mapped_column("demand_code", primary_key=True)
     name: Mapped[str] = mapped_column("demand_name")
-    area: Mapped[str]
+    area: Mapped[ServiceArea] = mapped_column(column_types.SERVICE_AREA)
     sla_hours: Mapped[str]
-    fee: Mapped[str] = mapped_column("service_fee")
-    active: Mapped[str]
+    fee: Mapped[Money] = mapped_column("service_fee", column_types.ServiceFee())
+    active: Mapped[bool] = mapped_column(TRUE_FALSE)
 
 
 class ProtocolHistoryRow(Base):
@@ -47,8 +57,8 @@ class ProtocolHistoryRow(Base):
 
     protocol_id: Mapped[str] = mapped_column(PROTOCOL_COLUMN, primary_key=True)
     seq: Mapped[str] = mapped_column(primary_key=True)
-    to_status: Mapped[str]
-    changed_at: Mapped[str]
+    to_status: Mapped[ProtocolStatus] = mapped_column(column_types.PROTOCOL_STATUS)
+    changed_at: Mapped[datetime] = mapped_column(UtcMoment())
     changed_by: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
 
 
@@ -58,11 +68,11 @@ class ProtocolInteractionRow(Base):
 
     id: Mapped[str] = mapped_column("interaction_id", primary_key=True)
     protocol_id: Mapped[str] = mapped_column(PROTOCOL_COLUMN)
-    author_type: Mapped[str]
+    author_type: Mapped[MessageSender] = mapped_column(column_types.SENDER)
     author: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     message: Mapped[str]
-    is_internal_note: Mapped[str]
-    created_at: Mapped[str]
+    is_internal_note: Mapped[bool] = mapped_column(TRUE_FALSE)
+    created_at: Mapped[datetime] = mapped_column(UtcMoment())
 
 
 class IssuedDocumentRow(Base):
@@ -71,7 +81,7 @@ class IssuedDocumentRow(Base):
 
     id: Mapped[str] = mapped_column("document_id", primary_key=True)
     protocol_id: Mapped[str] = mapped_column(PROTOCOL_COLUMN)
-    document_type: Mapped[str]
-    issued_at: Mapped[str]
+    document_type: Mapped[DocumentType] = mapped_column(column_types.DOCUMENT_TYPE)
+    issued_at: Mapped[datetime] = mapped_column(UtcMoment())
     validation_code: Mapped[str]
-    delivery: Mapped[str]
+    delivery: Mapped[DocumentDelivery] = mapped_column(column_types.DOCUMENT_DELIVERY)

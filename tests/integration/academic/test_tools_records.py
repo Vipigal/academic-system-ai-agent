@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from api.application.academic.dto.curriculum import CurriculumFilter
 from api.application.academic.dto.record import SubjectRecordDto
-from api.application.shared.page import PageRequest
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.shared.tool_result import DataState, ToolResult, ToolStatus
 from api.domain.academic.enrollment import Shift
 from api.domain.academic.record import SubjectResult
@@ -17,7 +17,7 @@ RETAKE_PERSON = "3000889"
 ONLINE_FAILED_PERSON = "3002501"
 PERSON_WITHOUT_GPA = "3000414"
 UNKNOWN_PERSON = "does-not-exist"
-ALL_ROWS = PageRequest(limit=100)
+ALL_ROWS = BoundedPage(limit=100)
 RECORDS_OF_ENROLLMENT = (
     "SELECT sc.class_id FROM sag.student_class sc "
     "JOIN sag.class_section cs USING (class_id) "
@@ -145,7 +145,7 @@ async def test_hours_summary_does_not_change_with_filters_or_page(database: Data
     tools = await support.tools_for(database, support.MIGRATED_ADS_PERSON)
 
     filtered = await tools.get_curriculum(
-        filters=CurriculumFilter(semester=1), page=PageRequest(limit=1)
+        filters=CurriculumFilter(semester=1), page=BoundedPage(limit=1)
     )
     complete = await tools.get_curriculum()
 
@@ -264,7 +264,7 @@ async def test_paginating_records_returns_the_oracle_set_once(database: Database
     offset: int | None = 0
 
     while offset is not None:
-        result = await tools.list_subject_records(page=PageRequest(offset=offset, limit=7))
+        result = await tools.list_subject_records(page=BoundedPage(offset=offset, limit=7))
         collected.extend(record.class_id for record in support.rows(result))
         assert result.page is not None
         offset = result.page.next_offset

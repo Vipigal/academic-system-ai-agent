@@ -6,9 +6,10 @@ from pydantic import ValidationError
 from redis.asyncio import Redis
 from redis.asyncio.retry import Retry
 
-from api.bootstrap.rate_limit_providers import REDIS_TIMEOUT_SECONDS, RateLimitProviders
+from api.bootstrap.containers import Containers
+from api.bootstrap.rate_limit_providers import REDIS_TIMEOUT_SECONDS, RateLimitProvider
 from api.bootstrap.settings import Settings
-from api.bootstrap.singletons import Singletons
+from api.domain.ports.rate_limit import RateLimiter
 from api.infrastructure.rate_limiter import RedisRateLimiter, UnlimitedRateLimiter
 
 DATABASE_URL = "postgresql+asyncpg://api:api@127.0.0.1:5432/nada"
@@ -26,22 +27,24 @@ async def test_without_a_redis_url_the_chat_is_unlimited_and_the_startup_warns(
     redis_url: str | None, caplog: pytest.LogCaptureFixture
 ) -> None:
     with caplog.at_level(logging.WARNING, logger="api.bootstrap.rate_limit_providers"):
-        singletons = Singletons.create(settings_with(redis_url=redis_url))
+        container = Containers.http(settings_with(redis_url=redis_url))
+        limiter = await container.get(RateLimiter)
 
-    assert isinstance(singletons.rate_limit.limiter, UnlimitedRateLimiter)
+    assert isinstance(limiter, UnlimitedRateLimiter)
     assert ["APP_REDIS_URL" in record.getMessage() for record in caplog.records] == [True]
-    await singletons.dispose()
+    await container.close()
 
 
 async def test_with_a_redis_url_the_chat_counts_in_redis() -> None:
-    singletons = Singletons.create(settings_with(redis_url=REDIS_URL))
+    container = Containers.http(settings_with(redis_url=REDIS_URL))
+    limiter = await container.get(RateLimiter)
 
-    assert isinstance(singletons.rate_limit.limiter, RedisRateLimiter)
-    await singletons.dispose()
+    assert isinstance(limiter, RedisRateLimiter)
+    await container.close()
 
 
 async def test_the_redis_client_fails_fast_with_short_timeouts_and_no_retry() -> None:
-    client = RateLimitProviders.client_of(settings_with(redis_url=REDIS_URL))
+    client = RateLimitProvider.client_of(settings_with(redis_url=REDIS_URL))
 
     assert client is not None
     options = client.connection_pool.connection_kwargs
@@ -54,8 +57,9 @@ async def test_the_redis_client_fails_fast_with_short_timeouts_and_no_retry() ->
 
 async def test_the_redis_client_closes_with_the_singletons() -> None:
     with patch.object(Redis, "aclose", new_callable=AsyncMock) as closed:
-        singletons = Singletons.create(settings_with(redis_url=REDIS_URL))
-        await singletons.dispose()
+        container = Containers.http(settings_with(redis_url=REDIS_URL))
+        await container.get(RateLimiter)
+        await container.close()
 
     closed.assert_awaited_once()
 

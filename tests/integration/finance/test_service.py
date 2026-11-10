@@ -23,7 +23,7 @@ NOT_YET_DUE_CONTRACT = "CT00013240"
 
 
 async def service_for(database: Database, person_id: str) -> FinancialService:
-    return (await tools_factory(database).services_of(person_id)).financial()
+    return await tools_factory(database).of_person(person_id, FinancialService)
 
 
 async def all_invoices_of(service: FinancialService) -> list[InvoiceDto]:
@@ -181,9 +181,7 @@ async def test_debt_matches_the_receivable_snapshot_contract_by_contract(
 
 
 async def test_invoices_come_in_a_total_order(database: Database) -> None:
-    session = await StudentSessionRepository(database.db_session_factory).load(
-        PERSON_WITH_OVERDUE_INVOICE
-    )
-    adapter = RepositoryAdapter(database.db_session_factory, session)
+    session = await StudentSessionRepository(database).load(PERSON_WITH_OVERDUE_INVOICE)
+    adapter = RepositoryAdapter(database, session)
     invoices = await SqlFinanceRepository(adapter).list_invoices()
     assert invoices == sorted(invoices, key=lambda invoice: (invoice.due_date, invoice.id))

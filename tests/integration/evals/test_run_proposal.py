@@ -8,8 +8,7 @@ from evals.records import ExecutionRecord
 from evals.run_session import RunSession
 from evals.selection import Epochs, ItemSelection, RunRequest
 from evals.student_driver import StudentDriver
-from tests.integration.chat.scripted_singletons import singletons_with
-from tests.integration.evals.run_helpers import PROTOCOL_SUITE, VERSIONS, fake_settings
+from tests.integration.evals.run_helpers import PROTOCOL_SUITE, VERSIONS, scripted_container
 from tests.unit.agent.agent_support import answer, call
 
 SELECTION = ItemSelection(PROTOCOL_SUITE, only=frozenset({"TR-07"}))
@@ -37,9 +36,7 @@ def assert_without_client_only(content: str) -> None:
 async def test_a_real_proposal_passes_the_guardrail_and_keeps_client_only_out(
     tmp_path: Path, database: Database, tracing: Tracing
 ) -> None:
-    driver = StudentDriver(
-        singletons_with(database, SCRIPTED_MODEL, fake_settings()), tracing, VERSIONS
-    )
+    driver = StudentDriver(scripted_container(database, SCRIPTED_MODEL, tracing), VERSIONS)
     request = RunRequest(SELECTION, Epochs(), tmp_path)
 
     data = await RunSession(driver, request).run()

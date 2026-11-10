@@ -1,10 +1,18 @@
+from typing import Annotated
+
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
 from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
 from api.application.lms.dto.account import LmsAccountDto
 from api.application.lms.dto.exam import OnlineExamDto
 from api.application.lms.dto.material import MaterialViewDto
 from api.application.lms.service import LmsService
-from api.application.shared.page import FIRST_PAGE, PageRequest
+from api.application.shared.tool_parameters import (
+    FlagArgument,
+    SubjectArgument,
+    Teaching,
+    TermArgument,
+)
 from api.application.shared.tool_result import ToolResult
 from api.domain.ontology import lms, overview
 
@@ -24,11 +32,11 @@ class LmsTools:
     )
     async def list_online_exams(
         self,
-        subject: str | None = None,
-        term: str | None = None,
-        page: PageRequest = FIRST_PAGE,
+        subject: SubjectArgument | None = None,
+        term: TermArgument | None = None,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
         *,
-        show_ui: bool = False,
+        show_ui: FlagArgument = False,
     ) -> ToolResult[list[OnlineExamDto]]:
         """Lista as provas online com janela, tentativas e nota do AVA e do histórico.
 
@@ -48,7 +56,12 @@ class LmsTools:
 
     @ToolRegistry.declares(lms.VISUALIZACAO_DE_MATERIAL)
     async def list_material_views(
-        self, subject: str, query: str | None = None, page: PageRequest = FIRST_PAGE
+        self,
+        subject: SubjectArgument,
+        query: Annotated[
+            str | None, Teaching("um trecho do título do material", "Semana 2")
+        ] = None,
+        page: PageArgument = FIRST_PAGE_ARGUMENT,
     ) -> ToolResult[list[MaterialViewDto]]:
         """Lista os materiais de uma disciplina no AVA com os acessos do aluno, sem o conteúdo.
 

@@ -1,6 +1,6 @@
 import pytest
 
-from api.persistence.core.dialect_lookup import UnknownDialectValueError
+from api.persistence.core.column_types import UnknownDialectValueError
 from api.persistence.secretary.dialect import SecretaryDialect
 from tests.integration.support.sql_oracle import SqlOracle
 

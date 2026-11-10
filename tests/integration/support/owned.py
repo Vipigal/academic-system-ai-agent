@@ -33,7 +33,7 @@ class Owned:
 
 
 async def owned_by(database: Database, session: StudentSession) -> Owned:
-    adapter = RepositoryAdapter(database.db_session_factory, session)
+    adapter = RepositoryAdapter(database, session)
     contracts = await SqlFinanceRepository(adapter).list_contracts()
     return Owned(
         session=session,

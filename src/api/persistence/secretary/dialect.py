@@ -4,7 +4,7 @@ from sqlalchemy import ColumnElement, Select, and_, func, or_, select, tuple_
 
 from api.domain.identity.session import EnrollmentKey
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
-from api.persistence.core.dialect_lookup import DialectLookup
+from api.persistence.core.column_types import UnknownDialectValueError
 from api.persistence.identity.tables import PROTOCOL_REQUESTER
 from api.persistence.sag.models import EnrollmentRow
 
@@ -15,6 +15,7 @@ UNIT_PREFIX_BY_BRAND = {
     Brand.ATLANTICO: "ATL",
     Brand.ARAUCARIA: "ARA",
 }
+ACADEMIC_UNIT = "unidade acadêmica"
 UNIT_CODE_BY_ACADEMIC_UNIT = {
     "CAMPUS PAULISTA": "SPA-PAU",
     "CAMPUS CAMPINAS": "SPA-CPS",
@@ -48,9 +49,11 @@ GUARDIAN = "Guardian"
 STUDENT_REQUESTERS = ("Student", "Alumni")
 STUDENT_ID_LENGTH = 6
 CPF_LENGTH = 11
+UNIT_SEPARATOR = "-"
+ONLINE_UNIT_SUFFIX = f"{UNIT_SEPARATOR}EAD"
 REQUESTER = PROTOCOL_REQUESTER.alias("requester")
-UNIT_PREFIX = func.split_part(REQUESTER.c.unit_code, "-", 1)
-ONLINE_UNIT = REQUESTER.c.unit_code.endswith("-EAD")
+UNIT_PREFIX = func.split_part(REQUESTER.c.unit_code, UNIT_SEPARATOR, 1)
+ONLINE_UNIT = REQUESTER.c.unit_code.endswith(ONLINE_UNIT_SUFFIX)
 STUDENT_ID = func.lpad(REQUESTER.c.stu_id, STUDENT_ID_LENGTH, "0")
 ASKED_BY_STUDENT = REQUESTER.c.requester_type.in_(STUDENT_REQUESTERS)
 ASKED_BY_GUARDIAN = REQUESTER.c.requester_type == GUARDIAN
@@ -62,13 +65,20 @@ ID_OF_NO_ENROLLMENT = OTHER_ENROLLMENT.c.student_id.is_(None)
 class SecretaryDialect:
     @staticmethod
     def unit_code(academic_unit_name: str) -> str:
-        return DialectLookup.find(UNIT_CODE_BY_ACADEMIC_UNIT, academic_unit_name, "unit_name")
+        unit_code = UNIT_CODE_BY_ACADEMIC_UNIT.get(academic_unit_name)
+        if unit_code is None:
+            raise UnknownDialectValueError(ACADEMIC_UNIT, academic_unit_name)
+        return unit_code
 
     @classmethod
     def protocols_of(cls, cpf: str, keys: Collection[EnrollmentKey]) -> Select[str]:
         student_ids = {key.ref: key.student_id for key in keys}
-        requested = select(REQUESTER.c.protocol).outerjoin(OTHER_ENROLLMENT, NAMED_ENROLLMENT)
-        return requested.where(cls._owned_by(cpf, student_ids))
+        requested = REQUESTER.outerjoin(OTHER_ENROLLMENT, NAMED_ENROLLMENT)
+        return (
+            select(REQUESTER.c.protocol)
+            .select_from(requested)
+            .where(cls._owned_by(cpf, student_ids))
+        )
 
     @classmethod
     def _owned_by(cls, cpf: str, student_ids: Mapping[EnrollmentRef, str]) -> ColumnElement[bool]:

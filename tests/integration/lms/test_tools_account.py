@@ -1,4 +1,4 @@
-from api.application.shared.page import PageRequest
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.shared.tool_result import ToolStatus
 from api.domain.lms.material import MaterialKind
 from api.persistence.core.database import Database
@@ -130,7 +130,7 @@ async def test_unknown_material_query_is_not_found_with_the_subject_materials(
 
 async def test_material_views_paginate_to_the_end(database: Database) -> None:
     tools = await support.tools_for(database, support.MONTANHAS_PERSON)
-    whole = await tools.list_material_views(subject="ADM0104", page=PageRequest(limit=100))
+    whole = await tools.list_material_views(subject="ADM0104", page=BoundedPage(limit=100))
 
     paged = await all_pages(lambda page: tools.list_material_views(subject="ADM0104", page=page), 2)
 

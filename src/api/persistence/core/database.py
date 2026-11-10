@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 
-from sqlalchemy import select
+from sqlalchemy import event, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+from api.persistence.core.ownership_criteria import SKIP_OWNERSHIP, OwnershipCriteria
 
 CONNECT_TIMEOUT_SECONDS = 5
 
@@ -36,10 +38,13 @@ class Database:
     async def is_available(self) -> bool:
         try:
             async with self.db_session_factory() as db:
-                await db.execute(select(1))
+                await db.execute(select(1), execution_options={SKIP_OWNERSHIP: True})
         except SQLAlchemyError, OSError:
             return False
         return True
 
     async def dispose(self) -> None:
         await self._engine.dispose()
+
+
+event.listen(AsyncSession.sync_session_class, "do_orm_execute", OwnershipCriteria.apply)

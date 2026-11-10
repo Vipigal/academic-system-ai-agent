@@ -99,14 +99,14 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | B26 | Abrir protocolo cria 3 linhas em 2 passos, com aprovação humana: a proposta aparece na interface, o aluno aprova com um clique e outro endpoint, fora do LLM, grava | O LLM não efetiva escrita sozinho |
 | B27 | O agente abre só os 14 serviços sem taxa. Nos 4 com taxa, orienta a procurar a secretaria | Evita protocolo pago sem fatura |
 | B28 | Protocolos abertos por terceiros e casos ambíguos: ninguém vê | *Fail closed* |
-| B29 | Adapter de repositório acrescenta o `AND` de ownership em toda consulta, a partir de um mapa estático por tabela e dos identificadores da sessão (5.2) | Mesma garantia com menos conceitos, sem depender de lembrar do filtro |
+| B29 | Um listener `do_orm_execute` acrescenta o `AND` de ownership em toda consulta com `with_loader_criteria`, a partir de um mapa estático por model e dos identificadores da sessão (5.2) | Mesma garantia com menos conceitos, sem depender de lembrar do filtro |
 | B30 | O aluno vê os 73 protocolos abertos por responsável com o ID dele, sem os dados do responsável | O protocolo é dele; os dados do responsável não |
-| B31 | Models não usam `relationship()`; toda relação é um `JOIN` explícito | O carregamento do relationship gera consulta que o adapter não vê. No teste, o pagador de um aluno devolveu 7 contratos, sendo só 1 dele |
-| B32 | O guard de consultas usa lista de permitidos | Com lista de proibidos, `suffix_with("OR true")` devolveu as faturas de todos os alunos |
-| B33 | `Via` declara a ligação com o pai, e o adapter a acrescenta com `AND` | `JOIN` com condição errada trouxe pagamentos de terceiros; a garantia não pode depender de quem escreve a consulta |
+| B31 | Models não usam `relationship()`; toda relação é um `JOIN` explícito | Era o carregamento do relationship que gerava consulta fora do adapter: o pagador de um aluno devolveu 7 contratos, sendo só 1 dele. O critério global agora o filtra também; o banimento fica por legibilidade e está no `ruff.toml` |
+| B32 | Não há guard de consultas: o critério global entra por fora do que o repositório escreve, e só passa consulta ORM sobre model declarado | Com lista de proibidos, `suffix_with("OR true")` devolveu as faturas de todos os alunos; o critério é acrescentado com `AND`, então não há construto a proibir |
+| B33 | Cada tabela se filtra sozinha: a filha declara `Filho.fk.in_(select(Pai.id))` e o próprio critério restringe o pai | `JOIN` com condição errada trouxe pagamentos de terceiros; com a regra por tabela, o `JOIN` errado continua sem vazar |
 | B34 | A API fica em `src/api/`; `src/app/` é reservada para o front-end | Separar os dois produtos no repositório |
 | B35 | O aluno vê nome e e-mail institucional dos professores da disciplina no semestre, na marca dele; CPF e demais dados de professor ficam fora | Decisão do dono do projeto; o contato com o professor não é dado sensível |
-| B36 | `bootstrap/` é o composition root: o único módulo que conhece todas as camadas. Monta os singletons na subida e o grafo por aluno a cada request, com providers `Depends` do FastAPI, sem container de DI | A montagem precisa conhecer a persistence e as camadas de cima; fora dele, nenhuma camada conhece a vizinha. É o papel do "Main" da Clean Architecture e do `bootstrap.py` do Cosmic Python |
+| B36 | `bootstrap/` é o composition root: o único módulo que conhece todas as camadas. Monta os singletons na subida (escopo `APP`) e o grafo por aluno a cada request (escopo `REQUEST`) com um container dishka; as rotas usam `DishkaRoute` e `FromDishka` | A montagem precisa conhecer a persistence e as camadas de cima; fora dele, nenhuma camada conhece a vizinha. É o papel do "Main" da Clean Architecture e do `bootstrap.py` do Cosmic Python |
 | B37 | A `StudentSession` é imutável e nasce numa dependência de escopo de request: JWT, depois `person_id`, depois a carga dos identificadores. Não existe sessão vazia preenchida depois | Uma sessão vazia lida antes de ser preenchida abriria a consulta; criada pronta, a falha é fechada. Equivale ao escopo `REQUEST` do NestJS |
 | B38 | `infrastructure/` guarda os adaptadores técnicos que não são banco (relógio, cliente do Langfuse, log) e é irmã de application e persistence. A instanciação fica no bootstrap | Se a montagem morasse em infrastructure, a camada subiria para o topo e a persistence poderia importar a application |
 | B39 | O agente e as tools ficam na application, em `application/agent/`; LangChain só ali e no bootstrap. A presentation só tem rotas HTTP | O agente é o caso de uso "atender o aluno"; o domain segue só com a biblioteca padrão, e um contrato do linter impede o framework de vazar para os services |
@@ -162,33 +162,32 @@ conhecem o port. O linter garante as fronteiras por contratos de importação, i
 
 ```text
 src/api/
-├── bootstrap/      ApiFactory, settings, singletons e providers por request
+├── bootstrap/      ApiFactory, settings, containers dishka e providers por escopo
 ├── presentation/   http/: health, chat, confirmação de protocolo, identidade
 ├── application/    services por área, dto/, chat/, agent/ (agente, tools, skills)
-├── domain/         brand.py  session.py  invoice.py  ontology/  ports/
+├── domain/         um pacote por área (shared/, identity/, finance/...)  ontology/  ports/
 ├── infrastructure/ relógio, Langfuse, log, rate limit
 └── persistence/
-    ├── repository_adapter.py     acrescenta o ownership em toda consulta
-    ├── query_guard.py            recusa o que não está na lista de permitidos
-    ├── student_session_repository.py
+    ├── core/           Database, RepositoryAdapter, ownership_criteria.py, column_types.py, source_enum.py
+    ├── identity/       student_session_repository.py, queries.py
     ├── sag/  lms/  secretary/
     └── finance/
-        ├── models.py        models do ORM: quais tabelas e colunas a API conhece
-        ├── dialect.py       como este sistema escreve nossas entidades
+        ├── models.py        models do ORM: quais tabelas e colunas a API conhece, com o tipo de coluna que traduz o valor
+        ├── dialect.py       chave de dono e mapas de escrita deste sistema
         ├── mappers.py       model → entidade de domínio
-        ├── ownership.py     mapa de ownership das tabelas do sistema
+        ├── ownership.py     mapa de ownership dos models do sistema
         └── repositories.py  consultas de navegação
 ```
 
 ### 5.2 Isolamento
 
-O padrão é um adapter de repositório que acrescenta `AND` em todas as consultas, como
+O padrão é um critério global que acrescenta `AND` em todas as consultas, como
 `AND company_id = session.company_id`. A diferença é que aqui não existe uma coluna comum a todas as tabelas (A3).
 
 **Passo 1: a sessão carrega só quem a pessoa é.** É montada a cada pedido e descartada ao final. Uma
 dependência de escopo de request lê o `person_id` do JWT e chama a carga; os services que precisam da sessão a recebem
 pronta, e a sessão nunca existe vazia (B37). O que pertence à pessoa (contratos, contas do AVA, protocolos) não fica na
-sessão: é resolvido em cada consulta pelo predicado do dialeto (D16 do spec do agente). A carga faz 2 consultas.
+sessão: é resolvido em cada consulta pelo mapa de ownership (D16 do spec do agente). A carga faz 2 consultas.
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -198,124 +197,144 @@ class StudentSession:
     enrollment_keys: frozenset[EnrollmentKey]  # grafia do SAG + EnrollmentRef canônico
 
     @property
+    def enrollments(self) -> frozenset[EnrollmentRef]: ...
+
+    @property
     def brands(self) -> frozenset[Brand]: ...
+
+
+BEFORE_THE_STUDENT = {SKIP_OWNERSHIP: True}
 
 
 class StudentSessionRepository:
     async def load(self, person_id: str) -> StudentSession:
-        cpf = await self._cpf_of(db, person_id)  # 1: CPF da pessoa
-        rows = await db.execute(IdentityQueries.identities_of(cpf))  # 2: person_ids e matrículas
-        return self._session_of(cpf, rows)
+        async with self._database.db_session_factory() as db:
+            cpf = await self._cpf_of(db, person_id)
+            if not cpf:
+                return self._empty_session()
+            identities = IdentityQueries.identities_of(cpf)
+            result = await db.execute(identities, execution_options=BEFORE_THE_STUDENT)
+            return self._session_of(cpf, result.all())
 ```
 
-**Passo 2: um mapa estático diz como cada tabela chega ao dono.** Cada sistema tem uma tabela-raiz cuja regra é o
-predicado do dialeto sobre as matrículas da sessão; as demais chegam à raiz por `Via`.
+**Passo 2: um mapa estático diz como cada model chega ao dono.** Cada sistema tem um model-raiz cuja regra é o
+predicado do dialeto sobre as matrículas da sessão; os demais filtram pela chave do pai (`in_(select(Pai.id))`), e o
+critério global restringe o próprio pai. `PUBLIC` marca a tabela sem dono. A carga da sessão roda com `skip_ownership`,
+porque é ela que cria o aluno.
 
 ```python
-FINANCE_OWNERSHIP = {
-    ContractRow: lambda s: FinanceDialect.contract_of(s.enrollments),  # raiz
-    InvoiceRow: Via(ContractRow, InvoiceRow.contract_id == ContractRow.id),
-    PaymentRow: Via(InvoiceRow, PaymentRow.invoice_id == InvoiceRow.id),  # exige fatura e contrato
-    ProductRow: Public(),  # sem dono: consulta livre
+FINANCE_OWNERSHIP: OwnershipMap = {
+    ContractRow: lambda session: FinanceDialect.contract_of(session.enrollments),
+    InvoiceRow: lambda _: InvoiceRow.contract_id.in_(select(ContractRow.id)),
+    PaymentRow: lambda _: PaymentRow.invoice_id.in_(select(InvoiceRow.id)),
+    ProductRow: PUBLIC,
 }
-LMS_OWNERSHIP = {
-    LmsUserRow: lambda s: LmsDialect.account_of(s.enrollments),  # raiz
-    LmsQuizAttemptRow: Via(LmsUserRow, LmsQuizAttemptRow.user_id == LmsUserRow.id),
+LMS_OWNERSHIP: OwnershipMap = {
+    LmsUserRow: lambda session: LmsDialect.account_of(session.enrollments),
+    LmsQuizAttemptRow: lambda _: LmsQuizAttemptRow.user_id.in_(select(LmsUserRow.id)),
 }
-SECRETARY_OWNERSHIP = {
-    # raiz: a cascata de A7 roda numa subconsulta sobre a tabela privada, que conhece o CPF do requerente
-    ProtocolRow: lambda s: ProtocolRow.id.in_(
-        SecretaryDialect.protocols_of(s.cpf, s.enrollment_keys)
+SECRETARY_OWNERSHIP: OwnershipMap = {
+    ProtocolRow: lambda session: ProtocolRow.id.in_(
+        SecretaryDialect.protocols_of(session.cpf, session.enrollment_keys)
     ),
-    InteractionRow: Via(
-        ProtocolRow,
-        (InteractionRow.protocol_id == ProtocolRow.id)
-        & (InteractionRow.is_internal_note == "False"),
+    ProtocolInteractionRow: lambda _: and_(
+        ProtocolInteractionRow.protocol_id.in_(select(ProtocolRow.id)),
+        ProtocolInteractionRow.is_internal_note == PUBLIC_MESSAGE,
     ),
 }
 ```
 
-O tipo de pagador do contrato (próprio, empresa, terceiro) sai de uma consulta privada declarada,
-`RepositoryAdapter.fetch_declared`: só aceita consultas do registro, exige a raiz no `FROM` e aplica o ownership de
-todas as tabelas do `FROM`. O CPF do pagador é comparado no banco e nunca é lido.
+O tipo de pagador do contrato sai de uma consulta privada, `PayerQueries.contracts_with_payer`, executada por
+`RepositoryAdapter.fetch_rows`: a raiz `ContractRow` recebe o ownership, e o CPF do pagador é comparado no banco e nunca
+é lido.
 
 O model descreve a tabela com nomes nossos e só com as colunas permitidas:
 
 ```python
 class InvoiceRow(Base):
     __tablename__ = "invoice"
-    __table_args__ = {"schema": "finance"}
+    __table_args__ = FINANCE_SCHEMA
 
     id: Mapped[str] = mapped_column("invoiceid", primary_key=True)
     contract_id: Mapped[str] = mapped_column("contractid")
-    due_date: Mapped[str] = mapped_column("duedate")
-    net_cents: Mapped[str] = mapped_column("netamountcents")
-    status: Mapped[str]
+    due_date: Mapped[date] = mapped_column("duedate", IsoDate())
+    net: Mapped[Money] = mapped_column("netamountcents", TextCents())
+    status: Mapped[InvoiceStatus] = mapped_column(SourceEnum.by_name(InvoiceStatus))
 ```
 
-**Passo 3: o adapter percorre as tabelas da consulta e acrescenta os `AND`.**
+**Passo 3: o listener acrescenta o critério de cada model em toda consulta.**
 
 ```python
-class RepositoryAdapter:
-    async def fetch(self, stmt: Select) -> Sequence[Any]:
-        async with self._db_session_factory() as db:  # sessão do ORM curta, por chamada
-            return (await db.scalars(self._with_ownership(stmt))).all()
+class OwnershipCriteria:
+    @classmethod
+    def apply(cls, state: ORMExecuteState) -> None:
+        if not cls._is_guarded(state):
+            return
+        student = cls._student_of(state)
+        cls._assert_declared(state)
+        state.statement = state.statement.options(*cls._criteria_of(student))
 
-    def _with_ownership(self, stmt: Select) -> Select:
-        reject_unsafe_constructs(stmt)  # só passa o que está na lista de permitidos
-        tables = tables_in(stmt)  # FROM e JOINs do nível principal
-        for table in tables:
-            rule = OWNERSHIP_BY_TABLE.get(table)
-            if rule is None:
-                raise OwnershipError(f"tabela sem declaração: {table.fullname}")
-            if isinstance(rule, Public):
-                continue
-            if isinstance(rule, Via):
-                if rule.parent.__table__ not in tables:
-                    raise OwnershipError(f"{table.name} exige JOIN com {rule.parent.__tablename__}")
-                stmt = stmt.where(rule.link)
-                continue
-            stmt = stmt.where(rule(self._student_session))
-        return stmt
+    @staticmethod
+    def _criteria_of(student: StudentSession) -> list[ORMOption]:
+        return [
+            with_loader_criteria(row, rule(student), include_aliases=True)
+            for row, rule in OWNERSHIP_BY_ROW.items()
+            if rule is not None
+        ]
+
+
+# persistence/core/database.py
+event.listen(AsyncSession.sync_session_class, "do_orm_execute", OwnershipCriteria.apply)
+
+
+class RepositoryAdapter:
+    async def fetch[RowT](self, stmt: Select[RowT]) -> Sequence[RowT]:
+        async with self._db_session() as db:
+            result = await db.scalars(stmt)
+            return result.all()
+
+    def _db_session(self) -> AsyncSession:
+        return self._database.db_session_factory(info={STUDENT: self._student_session})
 ```
 
 **O que o desenvolvedor escreve e o SQL resultante:**
 
 ```python
 # repositories.py: consulta normal, sem pensar em ownership
-stmt = select(InvoiceRow).join(ContractRow, InvoiceRow.contract_id == ContractRow.id)
-stmt = stmt.where(InvoiceRow.status == "OVERDUE")
+stmt = select(InvoiceRow).where(InvoiceRow.status == InvoiceStatus.OVERDUE)
 ```
 
 ```sql
-SELECT ... FROM finance.invoice JOIN finance.contract ON invoice.contractid = contract.contractid
-WHERE invoice.status = 'OVERDUE' AND invoice.contractid = contract.contractid
-  AND (contract.companycode, contract.businessarea,
-       lpad(split_part(trim(contract.academicref), '-', 1), 5, '0')) IN (('1050', 'DIGITAL', '01154'));
+SELECT ... FROM finance.invoice
+WHERE invoice.status = 'OVERDUE'
+  AND invoice.contractid IN (
+    SELECT contract.contractid FROM finance.contract
+    WHERE (contract.companycode, contract.businessarea,
+           lpad(split_part(trim(contract.academicref), '-', 1), 5, '0')) IN (('1050', 'DIGITAL', '01154')));
 ```
 
 | Situação | Tabelas | Como declara |
 |---|---|---|
 | Dono direto (8) | SAG: `enrollment`, `enrollment_status_history`, `term_enrollment`, `student_class`, `person`. Raízes dos outros sistemas: `contract`, `mdl_user`, `protocol` | Cláusula a partir da sessão; nas raízes, o predicado do dialeto |
-| Dono por `JOIN` (20) | Financeiro: `discount`, `invoice`, `receivable_snapshot`, `agreement`, `payment`, `late_charge`, `invoice_tax`, `agreement_invoice`, `customer`. LMS: `mdl_user_info_data`, `mdl_user_enrolments`, `mdl_quiz_attempts`, `mdl_logstore_standard_log`, `mdl_course`, `mdl_course_modules`, `mdl_quiz`. Secretaria: `protocol_status_history`, `protocol_interaction`, `issued_document`, `satisfaction_survey` | `Via(pai, ligação)` até a raiz |
+| Dono pela tabela pai (20) | Financeiro: `discount`, `invoice`, `receivable_snapshot`, `agreement`, `payment`, `late_charge`, `invoice_tax`, `agreement_invoice`, `customer`. LMS: `mdl_user_info_data`, `mdl_user_enrolments`, `mdl_quiz_attempts`, `mdl_logstore_standard_log`, `mdl_course`, `mdl_course_modules`, `mdl_quiz`. Secretaria: `protocol_status_history`, `protocol_interaction`, `issued_document`, `satisfaction_survey` | `Filho.fk.in_(select(Pai.id))` até a raiz |
 | Catálogo da marca (10) | `sag.brand`, `sag.unit`, `course_offer`, `class_section`, `secretary.unit`, `company`, `price_list`, `mdl_tenant`, `mdl_course_categories`, `professor` (só nome e e-mail, B35) | Cláusula pela marca da sessão |
-| Global (8) | `course`, `curriculum`, `subject`, `curriculum_subject`, `term`, `product`, `demand_type`, `mdl_user_info_field` | `Public()` |
+| Global (8) | `course`, `curriculum`, `subject`, `curriculum_subject`, `term`, `product`, `demand_type`, `mdl_user_info_field` | `PUBLIC` |
 | Corporativa (1) | `analyst` | Não mapeada |
 
 **Resultados do protótipo e dos testes:**
 
 - Para as 1.000 pessoas, nenhuma linha apareceu em duas pessoas (A5).
-- O guard usa lista de permitidos: colunas de tabela mapeada, parâmetros, operadores comuns e algumas funções. O resto é
-  recusado, como `text()`, subquery, alias, CTE, `UNION`, label, sufixo e hint, operador customizado e função do banco.
-- Foram bloqueados: `payment` sem `JOIN` e tabela não declarada.
-- `JOIN` com condição errada não traz linhas de terceiros, porque o adapter acrescenta a ligação de `Via` com `AND`.
+- O listener só deixa passar consulta ORM sobre model declarado no mapa; consulta sem model e tabela não declarada levantam
+  `OwnershipError`.
+- `payment` sem `JOIN` não traz linhas de terceiros, porque a regra dele sobe até o contrato da sessão.
+- `JOIN` com condição errada não traz linhas de terceiros, porque cada tabela é filtrada pela própria regra.
 - `OR` vindo de parâmetro fica entre parênteses: `(status = 'OVERDUE' OR status = 'PAID') AND contractid IN (...)`.
 - Pessoa sem identificadores gera uma cláusula vazia, que não devolve nenhuma linha.
 - Subquery não custou latência no teste: os planos de consulta foram iguais. Ela saiu porque não é necessária.
 
 **Custos aceitos:**
 
-- Repositórios só usam o que está na lista de permitidos. Se surgir necessidade real, o guard passa a aceitar o caso.
+- Repositórios usam consultas ORM sobre models declarados. O listener recusa consulta Core fora do ORM; `text()` é barrado pelo linter (`ruff.toml`), não pelo listener.
 - A sessão depende só do SAG. Se ele cair, nenhum pedido autenticado passa; a queda de outro sistema afeta só as consultas
   daquele sistema.
 - Cada consulta repete o predicado do dialeto sobre chaves sujas. Os índices de expressão de `03_indexes.sql` pagam esse custo.
@@ -369,13 +388,15 @@ class FinanceDialect:
 
 
 # persistence/sag/dialect.py: `UniSaoPaulo_EAD` só existe aqui
+SOURCE_BRAND = SourceEnum({source: brand for brand, source in SOURCE_BY_BRAND.items()})
+
+
 class SagDialect:
-    @classmethod
-    def enrollment_ref(cls, brand: str, student_id: str) -> EnrollmentRef:
-        modality = Modality.ONLINE if brand.endswith("_EAD") else Modality.IN_PERSON
-        return EnrollmentRef(
-            lookup(cls._BRANDS, brand.removesuffix("_EAD"), "BRAND"), modality, student_id[:5]
-        )
+    @staticmethod
+    def enrollment_ref(brand: str, student_id: str) -> EnrollmentRef:
+        modality = Modality.ONLINE if brand.endswith(ONLINE_SUFFIX) else Modality.IN_PERSON
+        canonical_brand = SOURCE_BRAND.member_of(brand.removesuffix(ONLINE_SUFFIX))
+        return EnrollmentRef(canonical_brand, modality, student_id[:STUDENT_NUMBER_LENGTH])
 ```
 
 O número canônico usa os 5 dígitos de base, sem verificador; a combinação é única nas 1.037 matrículas. Valor
@@ -383,18 +404,39 @@ desconhecido levanta erro em vez de ser adivinhado. A exceção é o `academicRe
 os contratos da pessoa: valor fora do padrão não casa com nenhuma matrícula e o contrato fica sem dono. Um teste de
 cobertura roda sobre o banco real, prova que todo valor distinto tem tradução e serve como evidência para a entrega.
 
-Cada entidade tem um mapper simples, que usa o dialeto para converter o model:
+A tradução do valor da coluna é um tipo de coluna (`persistence/core/column_types.py` e `source_enum.py`, mais um
+`column_types.py` por sistema): o model já entrega o valor canônico. Já o `dialect.py` fica só com a chave de dono e os
+mapas de escrita.
+
+```python
+# persistence/core/column_types.py
+class TextCents(SourceText[Money]):
+    cache_ok = True
+
+    @override
+    def to_source(self, value: Money) -> str:
+        return str(value.cents)
+
+    @override
+    def from_source(self, text: str) -> Money:
+        return Money(int(text))
+```
+
+Cada entidade tem um mapper simples, que só copia os campos do model:
 
 ```python
 # persistence/finance/mappers.py
 class InvoiceMapper:
     @staticmethod
-    def to_entity(row: InvoiceRow) -> Invoice:
+    def _invoice(row: InvoiceRow, payments: tuple[Payment, ...], late_charge: Money) -> Invoice:
         return Invoice(
             id=row.id,
-            due_date=date.fromisoformat(row.due_date),
-            net=Money.from_cents(int(row.net_cents)),
-            status=FinanceDialect.invoice_status(row.status),
+            contract_id=row.contract_id,
+            due_date=row.due_date,
+            net=row.net,
+            status=row.status,
+            payments=payments,
+            late_charge=late_charge,
         )
 ```
 

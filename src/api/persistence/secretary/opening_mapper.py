@@ -1,10 +1,11 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
 
 from sqlalchemy import func
 
+from api.domain.protocol.message import MessageSender
 from api.domain.protocol.opening import ProtocolOpening
+from api.domain.protocol.request import Requester
 from api.persistence.core.base import Base
 from api.persistence.secretary.dialect import SecretaryDialect
 from api.persistence.secretary.models import (
@@ -12,18 +13,13 @@ from api.persistence.secretary.models import (
     ProtocolInteractionRow,
     ProtocolRow,
 )
-from api.persistence.secretary.vocabulary import ProtocolVocabulary
 
 PROTOCOL_SEQUENCE = "agent.protocol_number_seq"
 INTERACTION_SEQUENCE = "agent.protocol_interaction_seq"
-SOURCE_MOMENT = "%Y-%m-%dT%H:%M:%SZ"
-STUDENT_REQUESTER = "Student"
 PORTAL_CHANNEL = "Portal"
 NORMAL_PRIORITY = "Normal"
-FALSE_FLAG = "False"
 FIRST_CHANGE = "1"
 SYSTEM_AUTHOR = "system"
-REQUESTER_AUTHOR = "Requester"
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,16 +49,16 @@ class ProtocolOpeningMapper:
             student_id=student_id,
             requester_cpf=cpf,
             requester_name=opening.requester_name,
-            requester_type=STUDENT_REQUESTER,
+            requester_type=Requester.SELF,
             unit_code=SecretaryDialect.unit_code(opening.unit_name),
             course_label=opening.course_name,
             demand=opening.service_code,
-            status=ProtocolVocabulary.source_of_status(opening.status),
+            status=opening.status,
             channel=PORTAL_CHANNEL,
             priority=NORMAL_PRIORITY,
-            opened_at=cls._moment(opening.opened_at),
-            due_at=cls._moment(opening.due_at),
-            sla_breached=FALSE_FLAG,
+            opened_at=opening.opened_at,
+            due_at=opening.due_at,
+            sla_breached=False,
         )
 
     @classmethod
@@ -71,8 +67,8 @@ class ProtocolOpeningMapper:
         return ProtocolHistoryRow(
             protocol_id=func.currval(PROTOCOL_SEQUENCE),
             seq=FIRST_CHANGE,
-            to_status=ProtocolVocabulary.source_of_status(change.status),
-            changed_at=cls._moment(change.changed_at),
+            to_status=change.status,
+            changed_at=change.changed_at,
             changed_by=SYSTEM_AUTHOR,
         )
 
@@ -81,13 +77,9 @@ class ProtocolOpeningMapper:
         return ProtocolInteractionRow(
             id=func.nextval(INTERACTION_SEQUENCE),
             protocol_id=func.currval(PROTOCOL_SEQUENCE),
-            author_type=REQUESTER_AUTHOR,
+            author_type=MessageSender.REQUESTER,
             author=opening.requester_name,
             message=opening.message,
-            is_internal_note=FALSE_FLAG,
-            created_at=cls._moment(opening.opened_at),
+            is_internal_note=False,
+            created_at=opening.opened_at,
         )
-
-    @staticmethod
-    def _moment(value: datetime) -> str:
-        return value.astimezone(UTC).strftime(SOURCE_MOMENT)

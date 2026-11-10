@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from api.application.agent.tools.registry import RegisteredTool
 from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import ToolResult
-from api.bootstrap.student_providers import StudentProviders
 from api.persistence.core.database import Database
 from api.persistence.identity.student_session_repository import StudentSessionRepository
 from tests.integration.agent.invariant_json import Arguments, Output, ToolCall
 from tests.integration.agent.invariant_support import ArgumentPool, Sweep
 from tests.integration.support.owned import Owned, owned_by
 from tests.integration.support.sql_oracle import SqlOracle
+from tests.integration.support.student_scopes import StudentScopes
 
 SMALL_PAGE = 3
 LARGE_PAGE = 100
@@ -32,7 +32,7 @@ class SampledPerson:
 
 
 class SampleBuilder:
-    def __init__(self, database: Database, factory: StudentProviders) -> None:
+    def __init__(self, database: Database, factory: StudentScopes) -> None:
         self._database = database
         self._factory = factory
 
@@ -49,7 +49,7 @@ class SampleBuilder:
         return SampledPerson(person_id, owned, pool, calls, walks)
 
     async def _owned_of(self, person_id: str) -> Owned:
-        session = await StudentSessionRepository(self._database.db_session_factory).load(person_id)
+        session = await StudentSessionRepository(self._database).load(person_id)
         return await owned_by(self._database, session)
 
     @classmethod

@@ -2,8 +2,8 @@ import pytest
 
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
-from api.persistence.core.dialect_lookup import UnknownDialectValueError
-from api.persistence.finance.dialect import FinanceDialect
+from api.persistence.core.column_types import UnknownDialectValueError
+from api.persistence.finance.column_types import INVOICE_STATUS
 from api.persistence.sag.dialect import SagDialect
 
 
@@ -19,12 +19,12 @@ def test_sag_separates_modality_from_brand() -> None:
 
 
 def test_finance_translates_invoice_status() -> None:
-    assert FinanceDialect.invoice_status("OVERDUE") is InvoiceStatus.OVERDUE
+    assert INVOICE_STATUS.from_source("OVERDUE") is InvoiceStatus.OVERDUE
 
 
 def test_finance_raises_on_unknown_status() -> None:
     with pytest.raises(UnknownDialectValueError):
-        FinanceDialect.invoice_status("WAIVED")
+        INVOICE_STATUS.from_source("WAIVED")
 
 
 def test_sag_raises_on_unknown_brand() -> None:

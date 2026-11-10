@@ -1,6 +1,6 @@
 import pytest
 
-from api.application.shared.page import PageRequest
+from api.application.agent.tool_arguments import BoundedPage
 from api.domain.finance.invoice import InvoiceKind, InvoiceStatus
 from api.persistence.core.database import Database
 from tests.integration.finance.harness import SNAPSHOT_TOTAL, FinanceHarness
@@ -10,7 +10,7 @@ AMOUNT_IN_2026 = (
     "SELECT sum(amountcents::int) FROM finance.payment JOIN finance.invoice USING (invoiceid) "
     "WHERE contractid = 'CT00012783' AND payment.status = :status AND paidat >= '2026'"
 )
-MAX_PAGE = PageRequest(limit=100)
+MAX_PAGE = BoundedPage(limit=100)
 
 
 @pytest.fixture

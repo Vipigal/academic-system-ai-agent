@@ -4,7 +4,7 @@ from sqlalchemy.exc import DBAPIError
 
 from api.persistence.core.base import Base
 from api.persistence.core.database import Database
-from api.persistence.core.ownership_registry import OwnershipRegistry
+from api.persistence.core.ownership_criteria import OwnershipRegistry
 from api.persistence.identity.tables import IDENTITY_METADATA
 from tests.integration.support.sql_oracle import SqlOracle
 

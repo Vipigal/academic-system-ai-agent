@@ -11,10 +11,6 @@ class Money:
     cents: int
 
     @classmethod
-    def from_cents(cls, cents: int) -> Self:
-        return cls(cents)
-
-    @classmethod
     def total(cls, values: Iterable[Money]) -> Self:
         return cls(sum(value.cents for value in values))
 

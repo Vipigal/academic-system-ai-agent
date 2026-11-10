@@ -1,14 +1,12 @@
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
-from datetime import date
 
 from api.domain.finance.invoice import Invoice, Payment
 from api.domain.shared.money import Money
-from api.persistence.core.brasilia import BrasiliaTime
 from api.persistence.finance.charge_models import LateChargeRow
-from api.persistence.finance.dialect import FinanceDialect
-from api.persistence.finance.labels import WAIVED, FinanceLabels
 from api.persistence.finance.models import InvoiceRow, PaymentRow
+
+NO_LATE_CHARGE = Money(0)
 
 
 class InvoiceMapper:
@@ -27,7 +25,7 @@ class InvoiceMapper:
             cls._invoice(
                 row,
                 tuple(payments_by_invoice[row.id]),
-                last_charge.get(row.id, Money.from_cents(0)),
+                last_charge.get(row.id, NO_LATE_CHARGE),
             )
             for row in rows
         ]
@@ -38,12 +36,12 @@ class InvoiceMapper:
             id=row.id,
             contract_id=row.contract_id,
             agreement_id=row.agreement_id,
-            kind=FinanceLabels.invoice_kind(row.kind),
+            kind=row.kind,
             competence=row.competence,
-            due_date=date.fromisoformat(row.due_date),
-            gross=Money.from_cents(int(row.gross_cents)),
-            net=Money.from_cents(int(row.net_cents)),
-            status=FinanceDialect.invoice_status(row.status),
+            due_date=row.due_date,
+            gross=row.gross,
+            net=row.net,
+            status=row.status,
             payments=payments,
             late_charge=late_charge,
         )
@@ -53,15 +51,15 @@ class InvoiceMapper:
         return Payment(
             id=row.id,
             invoice_id=row.invoice_id,
-            paid_at=BrasiliaTime.from_utc(row.paid_at),
-            principal=Money.from_cents(int(row.principal_cents)),
-            late_charge=Money.from_cents(int(row.fine_cents) + int(row.interest_cents)),
+            paid_at=row.paid_at,
+            principal=row.principal,
+            late_charge=row.fine + row.interest,
             method=row.method,
-            status=FinanceLabels.payment_status(row.status),
+            status=row.status,
         )
 
     @staticmethod
     def _late_charge(row: LateChargeRow) -> Money:
-        if row.waived == WAIVED:
-            return Money.from_cents(0)
-        return Money.from_cents(int(row.fine_cents) + int(row.interest_cents))
+        if row.waived:
+            return NO_LATE_CHARGE
+        return row.fine + row.interest

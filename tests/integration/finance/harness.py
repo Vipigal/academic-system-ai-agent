@@ -1,8 +1,8 @@
 from typing import Any
 
+from api.application.agent.tool_arguments import BoundedPage
 from api.application.agent.tools.finance import FinanceTools
 from api.application.finance.dto.invoice import InvoiceDto
-from api.application.shared.page import PageRequest
 from api.application.shared.tool_result import ToolResult
 from api.persistence.core.database import Database
 from tests.integration.support.tools import student_tools
@@ -40,6 +40,6 @@ class FinanceHarness:
         pages: list[InvoicePage] = []
         offset: int | None = 0
         while offset is not None:
-            pages.append(await tools.list_invoices(page=PageRequest(offset=offset, limit=limit)))
+            pages.append(await tools.list_invoices(page=BoundedPage(offset=offset, limit=limit)))
             offset = pages[-1].page.next_offset if pages[-1].page else None
         return pages

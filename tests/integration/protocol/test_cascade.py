@@ -17,7 +17,11 @@ OTHER_STUDENT_ID = "055555"
 OWN_ENROLLMENT = EnrollmentRef(Brand.SAO_PAULO, Modality.ONLINE, "01234")
 OWN_KEY = EnrollmentKey("UniSaoPaulo_EAD", OWN_STUDENT_ID, OWN_ENROLLMENT)
 OWN_UNIT = "SPA-SAO-EAD"
-SYNTHETIC_SCHEMAS = {"schema_translate_map": {"secretary": "pg_temp", "sag": "pg_temp"}}
+NO_STUDENT = {"skip_ownership": True}
+SYNTHETIC_SCHEMAS = {
+    "schema_translate_map": {"secretary": "pg_temp", "sag": "pg_temp"},
+    **NO_STUDENT,
+}
 CREATE_PROTOCOL = text(
     "CREATE TEMP TABLE protocol (protocol text, stu_id text, requester_cpf text, "
     "requester_type text, unit_code text) ON COMMIT DROP",
@@ -88,7 +92,9 @@ async def test_cascade_shows_only_what_is_proven_to_be_of_the_person(
 
 async def test_empty_identity_resolves_nothing(admin_database: Database) -> None:
     async with admin_database.db_session_factory() as db:
-        resolved = await db.scalars(SecretaryDialect.protocols_of("", ()))
+        resolved = await db.scalars(
+            SecretaryDialect.protocols_of("", ()), execution_options=NO_STUDENT
+        )
         assert resolved.all() == []
 
 

@@ -1,19 +1,17 @@
+from dishka import Provider, Scope, provide, provide_all
+
 from api.application.agent.student_tools import StudentTools
 from api.application.agent.tools.academic import AcademicTools
 from api.application.agent.tools.finance import FinanceTools
 from api.application.agent.tools.lms import LmsTools
 from api.application.agent.tools.overview import OverviewTools
 from api.application.agent.tools.protocol import ProtocolTools
-from api.bootstrap.student_services import StudentServices
+from api.application.overview.service import OverviewService
 
 
-class ToolProviders:
-    @staticmethod
-    def tools_for(services: StudentServices) -> StudentTools:
-        return StudentTools(
-            academic=AcademicTools(services.academic()),
-            finance=FinanceTools(services.financial()),
-            protocol=ProtocolTools(services.protocol()),
-            lms=LmsTools(services.lms()),
-            overview=OverviewTools(services.overview()),
-        )
+class ToolProvider(Provider):
+    scope = Scope.REQUEST
+
+    overview = provide(OverviewService)
+    tools = provide_all(AcademicTools, FinanceTools, ProtocolTools, LmsTools, OverviewTools)
+    student_tools = provide(StudentTools)

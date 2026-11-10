@@ -1,11 +1,14 @@
+import inspect
+
 import pytest
 from langchain_core.messages import BaseMessage
+from pydantic import BaseModel
 
 from api.application.agent.skill_library import SkillLibrary
-from api.application.agent.tool_arguments import GUIDES, ParameterGuide
-from api.application.agent.tool_schema import ToolSchema
+from api.application.agent.tool_arguments import ToolArguments
 from api.application.agent.tools.registry import RegisteredTool, ToolRegistry
 from api.application.agent.tools.skill_tools import SkillTools
+from api.application.shared.tool_parameters import Teaching
 from tests.unit.agent import agent_support as support
 from tests.unit.agent.student_stubs import stub_student
 
@@ -46,7 +49,7 @@ def all_tools() -> tuple[RegisteredTool, ...]:
 def wrong_calls() -> list[tuple[str, str, object]]:
     cases: list[tuple[str, str, object]] = []
     for tool in all_tools():
-        for parameter in ToolSchema.of(tool.handler).guides:
+        for parameter in inspect.signature(tool.handler).parameters:
             cases.extend(
                 (tool.definition.name, parameter, value) for value in WRONG_VALUES[parameter]
             )
@@ -60,9 +63,22 @@ def leaf_of(parameter: str, value: object) -> tuple[str, str]:
     return parameter, parameter
 
 
-def guide_of(tool_name: str, leaf: str) -> ParameterGuide:
-    schemas = {tool.definition.name: ToolSchema.of(tool.handler) for tool in all_tools()}
-    return schemas[tool_name].guides.get(leaf) or GUIDES[leaf]
+def path_to(arguments: type[BaseModel], leaf: str) -> tuple[str, ...]:
+    if leaf in arguments.model_fields:
+        return (leaf,)
+    for name, field in arguments.model_fields.items():
+        nested = field.annotation
+        if not (isinstance(nested, type) and issubclass(nested, BaseModel)):
+            continue
+        if leaf in nested.model_fields:
+            return (name, leaf)
+    raise LookupError(leaf)
+
+
+def guide_of(tool_name: str, leaf: str) -> Teaching:
+    handlers = {tool.definition.name: tool.handler for tool in all_tools()}
+    arguments = ToolArguments.model_of(handlers[tool_name])
+    return ToolArguments.teaching_at(arguments, path_to(arguments, leaf))
 
 
 async def teach_and_correct(tool_name: str, wrong: dict[str, object]) -> str:
@@ -88,7 +104,9 @@ def test_the_teaching_covers_the_twenty_tools() -> None:
     assert len(all_tools()) == 20
     covered = {name for name, _, _ in wrong_calls()}
     without_parameters = {
-        tool.definition.name for tool in all_tools() if not ToolSchema.of(tool.handler).guides
+        tool.definition.name
+        for tool in all_tools()
+        if not inspect.signature(tool.handler).parameters
     }
     assert covered | without_parameters == {tool.definition.name for tool in all_tools()}
 

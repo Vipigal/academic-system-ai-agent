@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date
 
 from api.domain.academic.enrollment import CourseOffer, SubjectTeacher
 from api.domain.academic.term_calendar import AcademicCalendar, Term
@@ -12,7 +11,6 @@ from api.persistence.sag.catalog_models import (
     UnitRow,
 )
 from api.persistence.sag.class_models import ClassSectionRow, ProfessorRow
-from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 class UnitNames:
@@ -30,11 +28,11 @@ class CatalogMapper:
             tuple(
                 Term(
                     code=row.code,
-                    start_date=date.fromisoformat(row.start_date),
-                    end_date=date.fromisoformat(row.end_date),
-                    av1_start=date.fromisoformat(row.av1_start),
-                    av2_start=date.fromisoformat(row.av2_start),
-                    is_current=SourceColumn.is_yes(row.is_current),
+                    start_date=row.start_date,
+                    end_date=row.end_date,
+                    av1_start=row.av1_start,
+                    av2_start=row.av2_start,
+                    is_current=row.is_current,
                 )
                 for row in sorted(rows, key=lambda row: row.code)
             )
@@ -55,7 +53,7 @@ class CatalogMapper:
                 unit_name=unit_by_id[row.unit_id].name,
                 city=unit_by_id[row.unit_id].city,
                 state=unit_by_id[row.unit_id].state,
-                shift=AcademicVocabulary.shift(row.shift),
+                shift=row.shift,
             )
             for row in rows
         ]

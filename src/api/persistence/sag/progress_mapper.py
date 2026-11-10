@@ -9,7 +9,6 @@ from api.persistence.sag.catalog_models import CurriculumSubjectRow, SubjectRow,
 from api.persistence.sag.class_models import ClassSectionRow, StudentClassRow
 from api.persistence.sag.dialect import SagDialect
 from api.persistence.sag.mappers import CatalogMapper, UnitNames
-from api.persistence.sag.vocabulary import AcademicVocabulary, SourceColumn
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +53,7 @@ class ProgressMapper:
             name=subject.name,
             hours=int(subject.hours),
             semester=int(row.semester),
-            mandatory=SourceColumn.is_yes(row.mandatory),
+            mandatory=row.mandatory,
             prerequisite_code=prerequisite,
             prerequisite_name=None if prerequisite is None else self._subjects[prerequisite].name,
         )
@@ -68,16 +67,16 @@ class ProgressMapper:
             subject_code=section.subject_code,
             subject_name=self._subjects[section.subject_code].name,
             section=section.section,
-            shift=AcademicVocabulary.shift(section.shift),
-            delivery=AcademicVocabulary.delivery(section.delivery),
+            shift=section.shift,
+            delivery=section.delivery,
             unit_name=UnitNames.of(self._units, section.unit_id),
-            is_retake=SourceColumn.is_yes(row.is_retake),
+            is_retake=row.is_retake,
             grades=Grades(
-                av1=SourceColumn.decimal(row.grade_av1),
-                av2=SourceColumn.decimal(row.grade_av2),
-                av3=SourceColumn.decimal(row.grade_av3),
-                final=SourceColumn.decimal(row.final_grade),
+                av1=row.grade_av1,
+                av2=row.grade_av2,
+                av3=row.grade_av3,
+                final=row.final_grade,
             ),
-            attendance_pct=SourceColumn.decimal(row.attendance_pct),
-            result=AcademicVocabulary.result(row.result),
+            attendance_pct=row.attendance_pct,
+            result=row.result,
         )

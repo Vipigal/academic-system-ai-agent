@@ -11,7 +11,7 @@ from api.domain.protocol.request import Protocol, Requester
 from api.domain.protocol.status import DeadlineSituation, ProtocolStage, ProtocolStatus
 from api.domain.shared.brand import Brand, Modality
 from api.domain.shared.money import Money
-from api.persistence.core.brasilia import BRASILIA
+from api.persistence.core.column_types import BRASILIA
 
 DUE = datetime(2026, 11, 1, 14, 50, tzinfo=BRASILIA)
 SERVICE = Service(

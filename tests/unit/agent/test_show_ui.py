@@ -1,11 +1,11 @@
 import pytest
 
 from api.application.academic.service import AcademicService
+from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT
 from api.application.agent.tools import academic, finance, lms
 from api.application.agent.tools.ui import ToolUi
 from api.application.finance.service import FinancialService
 from api.application.lms.service import LmsService
-from api.application.shared.page import FIRST_PAGE
 from api.application.shared.tool_result import ToolResult
 from tests.unit.agent import agent_support as support
 from tests.unit.agent.student_stubs import stub_service
@@ -82,5 +82,5 @@ async def test_the_model_nested_filters_reach_the_service_unpacked() -> None:
 
     assert support.tool_results(run.events)[0].complete["ui"] == academic.PROGRESS_UI
     service.get_curriculum.assert_awaited_once_with(
-        None, 3, None, pending_only=True, page=FIRST_PAGE
+        None, 3, None, pending_only=True, page=FIRST_PAGE_ARGUMENT
     )
