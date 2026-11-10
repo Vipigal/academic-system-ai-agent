@@ -18,12 +18,14 @@
 | src/api/application/agent/\_\_init\_\_.py                    |        0 |        0 |    100% |           |
 | src/api/application/agent/action\_table.py                   |       45 |        0 |    100% |           |
 | src/api/application/agent/agent\_errors.py                   |        4 |        0 |    100% |           |
-| src/api/application/agent/agent\_graph.py                    |       23 |        0 |    100% |           |
+| src/api/application/agent/agent\_graph.py                    |       24 |        0 |    100% |           |
 | src/api/application/agent/agent\_messages.py                 |       24 |        0 |    100% |           |
-| src/api/application/agent/agent\_runtime.py                  |       15 |        0 |    100% |           |
-| src/api/application/agent/agent\_stream.py                   |       68 |        0 |    100% |           |
+| src/api/application/agent/agent\_runtime.py                  |       16 |        0 |    100% |           |
+| src/api/application/agent/agent\_stream.py                   |       70 |        0 |    100% |           |
 | src/api/application/agent/events.py                          |       21 |        0 |    100% |           |
 | src/api/application/agent/history.py                         |       12 |        0 |    100% |           |
+| src/api/application/agent/input\_guard.py                    |       67 |        0 |    100% |           |
+| src/api/application/agent/input\_guard\_texts.py             |        7 |        0 |    100% |           |
 | src/api/application/agent/langchain\_tools.py                |       59 |        0 |    100% |           |
 | src/api/application/agent/skill\_library.py                  |       37 |        0 |    100% |           |
 | src/api/application/agent/student\_agent.py                  |       55 |        1 |     98% |        56 |
@@ -62,7 +64,7 @@
 | src/api/application/health/\_\_init\_\_.py                   |        0 |        0 |    100% |           |
 | src/api/application/health/dto/\_\_init\_\_.py               |        0 |        0 |    100% |           |
 | src/api/application/health/dto/check.py                      |        3 |        0 |    100% |           |
-| src/api/application/health/service.py                        |        9 |        0 |    100% |           |
+| src/api/application/health/service.py                        |        7 |        0 |    100% |           |
 | src/api/application/identity/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
 | src/api/application/identity/dto/\_\_init\_\_.py             |        0 |        0 |    100% |           |
 | src/api/application/identity/dto/dev\_student.py             |        3 |        0 |    100% |           |
@@ -92,10 +94,10 @@
 | src/api/application/protocol/confirmation\_event.py          |       48 |        0 |    100% |           |
 | src/api/application/protocol/confirmation\_ports.py          |       13 |        0 |    100% |           |
 | src/api/application/protocol/dto/\_\_init\_\_.py             |        0 |        0 |    100% |           |
-| src/api/application/protocol/dto/catalog.py                  |       11 |        0 |    100% |           |
+| src/api/application/protocol/dto/catalog.py                  |       29 |        0 |    100% |           |
 | src/api/application/protocol/dto/confirmation.py             |       10 |        0 |    100% |           |
 | src/api/application/protocol/dto/detail.py                   |       23 |        0 |    100% |           |
-| src/api/application/protocol/dto/proposal.py                 |       37 |        0 |    100% |           |
+| src/api/application/protocol/dto/proposal.py                 |       36 |        0 |    100% |           |
 | src/api/application/protocol/dto/request.py                  |       34 |        0 |    100% |           |
 | src/api/application/protocol/proposal\_parties.py            |       22 |        0 |    100% |           |
 | src/api/application/protocol/proposal\_results.py            |       35 |        0 |    100% |           |
@@ -104,7 +106,7 @@
 | src/api/application/protocol/scope.py                        |       32 |        0 |    100% |           |
 | src/api/application/protocol/service.py                      |       23 |        0 |    100% |           |
 | src/api/application/protocol/snapshot.py                     |       19 |        0 |    100% |           |
-| src/api/application/protocol/source.py                       |       17 |        0 |    100% |           |
+| src/api/application/protocol/source.py                       |       20 |        0 |    100% |           |
 | src/api/application/shared/\_\_init\_\_.py                   |        0 |        0 |    100% |           |
 | src/api/application/shared/name\_search.py                   |       47 |        0 |    100% |           |
 | src/api/application/shared/page.py                           |       21 |        0 |    100% |           |
@@ -113,7 +115,7 @@
 | src/api/application/shared/tool\_parameters.py               |       11 |        0 |    100% |           |
 | src/api/application/shared/tool\_result.py                   |       77 |        0 |    100% |           |
 | src/api/bootstrap/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
-| src/api/bootstrap/agent\_providers.py                        |       15 |        0 |    100% |           |
+| src/api/bootstrap/agent\_providers.py                        |       21 |        0 |    100% |           |
 | src/api/bootstrap/app.py                                     |       29 |        0 |    100% |           |
 | src/api/bootstrap/app\_provider.py                           |       31 |        0 |    100% |           |
 | src/api/bootstrap/chat\_agent\_scope.py                      |       25 |        0 |    100% |           |
@@ -128,7 +130,7 @@
 | src/api/bootstrap/request\_log.py                            |       31 |        0 |    100% |           |
 | src/api/bootstrap/routes.py                                  |       11 |        0 |    100% |           |
 | src/api/bootstrap/session\_providers.py                      |       24 |        0 |    100% |           |
-| src/api/bootstrap/settings.py                                |       29 |        0 |    100% |           |
+| src/api/bootstrap/settings.py                                |       31 |        0 |    100% |           |
 | src/api/bootstrap/student\_providers.py                      |       20 |        0 |    100% |           |
 | src/api/bootstrap/tool\_providers.py                         |       13 |        0 |    100% |           |
 | src/api/domain/\_\_init\_\_.py                               |        0 |        0 |    100% |           |
@@ -179,10 +181,11 @@
 | src/api/domain/ports/rate\_limit.py                          |        3 |        0 |    100% |           |
 | src/api/domain/ports/tracing.py                              |        2 |        0 |    100% |           |
 | src/api/domain/protocol/\_\_init\_\_.py                      |        0 |        0 |    100% |           |
-| src/api/domain/protocol/academic\_actions.py                 |       11 |        0 |    100% |           |
-| src/api/domain/protocol/action.py                            |       33 |        0 |    100% |           |
+| src/api/domain/protocol/academic\_actions.py                 |       10 |        0 |    100% |           |
+| src/api/domain/protocol/action.py                            |       36 |        0 |    100% |           |
 | src/api/domain/protocol/action\_catalog.py                   |       24 |        0 |    100% |           |
-| src/api/domain/protocol/catalog.py                           |       20 |        0 |    100% |           |
+| src/api/domain/protocol/availability.py                      |       23 |        0 |    100% |           |
+| src/api/domain/protocol/catalog.py                           |       15 |        0 |    100% |           |
 | src/api/domain/protocol/document.py                          |       14 |        0 |    100% |           |
 | src/api/domain/protocol/document\_actions.py                 |        7 |        0 |    100% |           |
 | src/api/domain/protocol/errors.py                            |        9 |        0 |    100% |           |
@@ -342,7 +345,7 @@
 | src/evals/settings\_sources.py                               |       15 |        0 |    100% |           |
 | src/evals/student\_driver.py                                 |       34 |        0 |    100% |           |
 | src/evals/trace\_links.py                                    |       12 |        1 |     92% |        15 |
-| **TOTAL**                                                    | **7468** |  **116** | **98%** |           |
+| **TOTAL**                                                    | **7592** |  **116** | **98%** |           |
 
 
 ## Setup coverage badge
