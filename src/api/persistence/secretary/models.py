@@ -9,7 +9,7 @@ from api.domain.protocol.request import Requester
 from api.domain.protocol.status import ProtocolStatus, Resolution
 from api.domain.shared.money import Money
 from api.persistence.core.base import Base
-from api.persistence.core.column_types import UtcMoment
+from api.persistence.core.column_types import TRUE_FALSE, UtcMoment
 from api.persistence.secretary import column_types
 
 SECRETARY_SCHEMA = {"schema": "secretary"}
@@ -35,9 +35,7 @@ class ProtocolRow(Base):
     first_response_at: Mapped[datetime | None] = mapped_column(UtcMoment())
     due_at: Mapped[datetime] = mapped_column("sla_due_at", UtcMoment())
     closed_at: Mapped[datetime | None] = mapped_column(UtcMoment())
-    sla_breached: Mapped[bool] = mapped_column(
-        column_types.TRUE_FALSE, deferred=True, deferred_raiseload=True
-    )
+    sla_breached: Mapped[bool] = mapped_column(TRUE_FALSE, deferred=True, deferred_raiseload=True)
     resolution: Mapped[Resolution | None] = mapped_column(column_types.RESOLUTION)
 
 
@@ -50,7 +48,7 @@ class DemandTypeRow(Base):
     area: Mapped[ServiceArea] = mapped_column(column_types.SERVICE_AREA)
     sla_hours: Mapped[str]
     fee: Mapped[Money] = mapped_column("service_fee", column_types.ServiceFee())
-    active: Mapped[bool] = mapped_column(column_types.TRUE_FALSE)
+    active: Mapped[bool] = mapped_column(TRUE_FALSE)
 
 
 class ProtocolHistoryRow(Base):
@@ -73,7 +71,7 @@ class ProtocolInteractionRow(Base):
     author_type: Mapped[MessageSender] = mapped_column(column_types.SENDER)
     author: Mapped[str] = mapped_column(deferred=True, deferred_raiseload=True)
     message: Mapped[str]
-    is_internal_note: Mapped[bool] = mapped_column(column_types.TRUE_FALSE)
+    is_internal_note: Mapped[bool] = mapped_column(TRUE_FALSE)
     created_at: Mapped[datetime] = mapped_column(UtcMoment())
 
 

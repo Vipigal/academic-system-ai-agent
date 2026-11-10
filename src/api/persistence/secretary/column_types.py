@@ -7,12 +7,11 @@ from api.domain.protocol.message import MessageSender
 from api.domain.protocol.request import Requester
 from api.domain.protocol.status import ProtocolStatus, Resolution
 from api.domain.shared.money import Money
-from api.persistence.core.column_types import SourceText, TextFlag
+from api.persistence.core.column_types import SourceText
 from api.persistence.core.source_enum import SourceEnum
 
 NOT_A_DIGIT = re.compile(r"\D")
 REAL_SEPARATORS = str.maketrans(",.", ".,")
-TRUE_FALSE = TextFlag("True", "False")
 SERVICE_AREA = SourceEnum.by_name(ServiceArea)
 PROTOCOL_STATUS = SourceEnum(
     {

@@ -2,11 +2,7 @@ from collections.abc import Mapping
 from enum import Enum
 from typing import Self, override
 
-from api.persistence.core.column_types import SourceText
-
-
-class UnknownDialectValueError(ValueError):
-    pass
+from api.persistence.core.column_types import SourceText, UnknownDialectValueError
 
 
 class SourceEnum[MemberT: Enum](SourceText[MemberT]):
@@ -17,6 +13,7 @@ class SourceEnum[MemberT: Enum](SourceText[MemberT]):
         self.vocabulary = tuple(vocabulary.items())
         self._members = dict(vocabulary)
         self._sources = {member: source for source, member in reversed(self.vocabulary)}
+        self._name = type(next(iter(self._members.values()))).__name__
 
     @classmethod
     def by_name(cls, members: type[MemberT]) -> Self:
@@ -32,7 +29,7 @@ class SourceEnum[MemberT: Enum](SourceText[MemberT]):
 
     def member_of(self, source: str) -> MemberT:
         if source not in self._members:
-            raise UnknownDialectValueError(source)
+            raise UnknownDialectValueError(self._name, source)
         return self._members[source]
 
     @override

@@ -8,7 +8,7 @@ from api.domain.shared.brand import Modality
 from api.persistence.core.base import Base
 from api.persistence.core.column_types import IsoDate, TextDecimal
 from api.persistence.core.source_enum import SourceEnum
-from api.persistence.sag.column_types import MODALITY
+from api.persistence.sag.column_types import ENROLLMENT_STATUS, MODALITY, SHIFT
 
 SAG_SCHEMA = {"schema": "sag"}
 
@@ -31,14 +31,12 @@ class EnrollmentRow(Base):
     curriculum_id: Mapped[str]
     unit_id: Mapped[str]
     modality: Mapped[Modality] = mapped_column(MODALITY)
-    shift: Mapped[Shift] = mapped_column(SourceEnum.by_name(Shift))
+    shift: Mapped[Shift] = mapped_column(SHIFT)
     entry_term: Mapped[str]
     semester: Mapped[str]
     completion_pct: Mapped[Decimal] = mapped_column("current_curriculum_completion", TextDecimal())
     gpa: Mapped[Decimal | None] = mapped_column(TextDecimal())
-    status: Mapped[EnrollmentStatus] = mapped_column(
-        "enrollment_status", SourceEnum.by_name(EnrollmentStatus)
-    )
+    status: Mapped[EnrollmentStatus] = mapped_column("enrollment_status", ENROLLMENT_STATUS)
     status_date: Mapped[date] = mapped_column(IsoDate())
     origin_brand: Mapped[str | None]
     origin_student_id: Mapped[str | None]
@@ -53,10 +51,8 @@ class EnrollmentHistoryRow(Base):
     student_id: Mapped[str]
     term: Mapped[str]
     event_date: Mapped[date] = mapped_column(IsoDate())
-    old_status: Mapped[EnrollmentStatus | None] = mapped_column(
-        SourceEnum.by_name(EnrollmentStatus)
-    )
-    new_status: Mapped[EnrollmentStatus] = mapped_column(SourceEnum.by_name(EnrollmentStatus))
+    old_status: Mapped[EnrollmentStatus | None] = mapped_column(ENROLLMENT_STATUS)
+    new_status: Mapped[EnrollmentStatus] = mapped_column(ENROLLMENT_STATUS)
     reason: Mapped[str]
 
 

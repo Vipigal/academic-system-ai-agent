@@ -11,6 +11,13 @@ BRASILIA = ZoneInfo("America/Sao_Paulo")
 SOURCE_MOMENT = "%Y-%m-%dT%H:%M:%SZ"
 
 
+class UnknownDialectValueError(ValueError):
+    def __init__(self, vocabulary: str, value: str) -> None:
+        super().__init__(f"valor fora do vocabulário {vocabulary}: {value!r}")
+        self.vocabulary = vocabulary
+        self.value = value
+
+
 class SourceText[ValueT](TypeDecorator[ValueT]):
     impl = String
     cache_ok = True
@@ -44,7 +51,14 @@ class TextFlag(SourceText[bool]):
 
     @override
     def from_source(self, text: str) -> bool:
-        return text == self.true_text
+        if text == self.true_text:
+            return True
+        if text == self.false_text:
+            return False
+        raise UnknownDialectValueError(f"TextFlag({self.true_text}/{self.false_text})", text)
+
+
+TRUE_FALSE = TextFlag("True", "False")
 
 
 class TextCents(SourceText[Money]):
@@ -81,14 +95,6 @@ class IsoDate(SourceText[date]):
     @override
     def from_source(self, text: str) -> date:
         return date.fromisoformat(text)
-
-
-class BlankableIsoDate(IsoDate):
-    cache_ok = True
-
-    @override
-    def process_result_value(self, value: str | None, dialect: Dialect) -> date | None:
-        return self.from_source(value) if value else None
 
 
 class UtcMoment(SourceText[datetime]):

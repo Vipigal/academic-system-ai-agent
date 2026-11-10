@@ -2,7 +2,8 @@ import pytest
 
 from api.domain.finance.invoice import InvoiceStatus
 from api.domain.shared.brand import Brand, EnrollmentRef, Modality
-from api.persistence.core.source_enum import SourceEnum, UnknownDialectValueError
+from api.persistence.core.column_types import UnknownDialectValueError
+from api.persistence.core.source_enum import SourceEnum
 from api.persistence.sag.dialect import SagDialect
 
 INVOICE_STATUS = SourceEnum.by_name(InvoiceStatus)

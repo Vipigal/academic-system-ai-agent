@@ -7,7 +7,7 @@ from api.domain.academic.record import Delivery, SubjectResult
 from api.persistence.core.base import Base
 from api.persistence.core.column_types import TextDecimal
 from api.persistence.core.source_enum import SourceEnum
-from api.persistence.sag.column_types import YES_NO
+from api.persistence.sag.column_types import SHIFT, YES_NO
 from api.persistence.sag.models import SAG_SCHEMA
 
 
@@ -21,7 +21,7 @@ class ClassSectionRow(Base):
     brand: Mapped[str]
     unit_id: Mapped[str | None]
     section: Mapped[str]
-    shift: Mapped[Shift] = mapped_column(SourceEnum.by_name(Shift))
+    shift: Mapped[Shift] = mapped_column(SHIFT)
     delivery: Mapped[Delivery] = mapped_column(SourceEnum.by_name(Delivery))
     professor_id: Mapped[str]
 

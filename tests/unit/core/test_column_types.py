@@ -10,14 +10,14 @@ from api.domain.protocol.request import Requester
 from api.domain.shared.money import Money
 from api.persistence.core.column_types import (
     BRASILIA,
-    BlankableIsoDate,
     IsoDate,
     TextCents,
     TextDecimal,
     TextFlag,
+    UnknownDialectValueError,
     UtcMoment,
 )
-from api.persistence.core.source_enum import SourceEnum, UnknownDialectValueError
+from api.persistence.core.source_enum import SourceEnum
 
 DIALECT = DefaultDialect()
 REQUESTER = SourceEnum({"Student": Requester.SELF, "Alumni": Requester.SELF})
@@ -41,6 +41,11 @@ def test_an_unknown_source_value_raises() -> None:
         SourceEnum.by_name(InvoiceStatus).process_result_value("WAIVED", DIALECT)
 
 
+def test_the_error_names_the_vocabulary_and_the_value() -> None:
+    with pytest.raises(UnknownDialectValueError, match=r"InvoiceStatus: 'WAIVED'"):
+        SourceEnum.by_name(InvoiceStatus).process_result_value("WAIVED", DIALECT)
+
+
 def test_two_sources_of_one_member_write_the_first() -> None:
     assert REQUESTER.process_result_value("Alumni", DIALECT) is Requester.SELF
     assert REQUESTER.process_bind_param(Requester.SELF, DIALECT) == "Student"
@@ -60,6 +65,14 @@ def test_the_flag_uses_the_literal_of_the_source() -> None:
     assert flag.process_bind_param(value=True, dialect=DIALECT) == "Y"
 
 
+def test_a_flag_outside_both_literals_raises() -> None:
+    flag = TextFlag("Y", "N")
+    with pytest.raises(UnknownDialectValueError, match=r"TextFlag\(Y/N\): ''"):
+        flag.process_result_value("", DIALECT)
+    with pytest.raises(UnknownDialectValueError, match=r"'yes'"):
+        flag.process_result_value("yes", DIALECT)
+
+
 def test_cents_in_text_turn_into_money() -> None:
     cents = TextCents()
     assert cents.process_result_value("17965", DIALECT) == Money(17965)
@@ -76,12 +89,6 @@ def test_iso_date_in_text_turns_into_a_date() -> None:
     iso = IsoDate()
     assert iso.process_result_value("2026-03-28", DIALECT) == date(2026, 3, 28)
     assert iso.process_bind_param(date(2026, 3, 28), DIALECT) == "2026-03-28"
-
-
-def test_a_blank_end_date_reads_as_no_date() -> None:
-    blankable = BlankableIsoDate()
-    assert blankable.process_result_value("", DIALECT) is None
-    assert blankable.process_result_value("2026-03-28", DIALECT) == date(2026, 3, 28)
 
 
 def test_utc_moment_is_read_in_brasilia_and_written_in_utc() -> None:

@@ -5,8 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from api.domain.academic.enrollment import Shift
 from api.persistence.core.base import Base
 from api.persistence.core.column_types import IsoDate
-from api.persistence.core.source_enum import SourceEnum
-from api.persistence.sag.column_types import YES_NO
+from api.persistence.sag.column_types import SHIFT, YES_NO
 from api.persistence.sag.models import SAG_SCHEMA
 
 
@@ -49,7 +48,7 @@ class CourseOfferRow(Base):
     id: Mapped[str] = mapped_column("offer_id", primary_key=True)
     unit_id: Mapped[str]
     course_id: Mapped[str] = mapped_column("course")
-    shift: Mapped[Shift] = mapped_column(SourceEnum.by_name(Shift))
+    shift: Mapped[Shift] = mapped_column(SHIFT)
 
 
 class CurriculumRow(Base):

@@ -7,14 +7,14 @@ from api.domain.finance.agreement import AgreementStatus
 from api.domain.shared.money import Money
 from api.persistence.core.base import Base
 from api.persistence.core.column_types import (
-    BlankableIsoDate,
+    TRUE_FALSE,
     IsoDate,
     TextCents,
     TextDecimal,
-    TextFlag,
     UtcMoment,
 )
 from api.persistence.core.source_enum import SourceEnum
+from api.persistence.finance.column_types import BlankableIsoDate
 from api.persistence.finance.models import FINANCE_SCHEMA
 
 
@@ -39,7 +39,7 @@ class LateChargeRow(Base):
     reference_date: Mapped[date] = mapped_column("referencedate", IsoDate())
     fine: Mapped[Money] = mapped_column("finecents", TextCents())
     interest: Mapped[Money] = mapped_column("interestcents", TextCents())
-    waived: Mapped[bool] = mapped_column(TextFlag("True", "False"))
+    waived: Mapped[bool] = mapped_column(TRUE_FALSE)
 
 
 class AgreementRow(Base):
