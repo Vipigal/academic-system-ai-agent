@@ -1,4 +1,4 @@
-from api.domain.protocol.action import ProtocolAction, ServiceAction
+from api.domain.protocol.action import ONLY_ACTIVE, ProtocolAction, ServiceAction
 
 SEGUNDA_VIA_DE_BOLETO = ServiceAction(
     code="FIN-030",
@@ -26,6 +26,7 @@ DESCONTO_OU_BOLSA = ServiceAction(
     title="Pedido de desconto ou bolsa",
     effect="Pede um desconto ou uma bolsa à secretaria.",
     not_for="Não garante o desconto nem a bolsa: os critérios não estão nos dados.",
+    accepted_statuses=ONLY_ACTIVE,
     confirmation_question="Confirma o pedido de desconto ou bolsa no curso {course}?",
     request_text="Solicito um desconto ou uma bolsa.",
 )
@@ -58,6 +59,7 @@ ACESSO_AO_AVA = ServiceAction(
     action=ProtocolAction.PROBLEMA_DE_ACESSO_AO_AVA,
     title="Problema de acesso ao AVA",
     effect="Pede ajuda com o acesso ao ambiente virtual de aprendizagem.",
+    accepted_statuses=ONLY_ACTIVE,
     accepts_subject=True,
     confirmation_question="Confirma o pedido de ajuda com o acesso ao AVA no curso {course}?",
     request_text="Solicito ajuda com o acesso ao ambiente virtual.",

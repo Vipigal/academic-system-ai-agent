@@ -3,9 +3,12 @@ from api.application.protocol.source import ProtocolSource
 from api.application.shared.page import FIRST_PAGE
 from api.application.shared.tool_result import ToolStatus
 from evals.fixed_clock import FixedClock
+from tests.unit.protocol.proposal_fakes import FakeAcademic
 from tests.unit.protocol.protocol_fakes import InMemoryProtocols, NoFees
 
-QUERIES = ProtocolQueries(ProtocolSource(InMemoryProtocols(), NoFees(), FixedClock()))
+QUERIES = ProtocolQueries(
+    ProtocolSource(InMemoryProtocols(), NoFees(), FakeAcademic(), FixedClock())
+)
 
 
 async def test_list_protocols_finds_the_review_by_its_portuguese_name() -> None:
@@ -28,7 +31,7 @@ async def test_list_services_shows_title_and_effect() -> None:
 
     assert result.data is not None
     review = result.data[0]
-    assert (review.code, review.title, review.agent_can_open) == (
+    assert (review.code, review.title, review.available) == (
         "ACA-020",
         "Revisão de nota",
         True,
@@ -41,7 +44,7 @@ async def test_a_service_outside_the_catalog_is_listed_closed() -> None:
 
     assert result.data is not None
     unknown = result.data[2]
-    assert (unknown.code, unknown.title, unknown.effect, unknown.agent_can_open) == (
+    assert (unknown.code, unknown.title, unknown.effect, unknown.available) == (
         "XYZ-999",
         None,
         None,

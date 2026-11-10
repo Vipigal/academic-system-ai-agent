@@ -37,7 +37,7 @@ async def test_du06_eighteen_services_fourteen_without_fee(tools: ProtocolTools)
 
     services = support.rows(await tools.list_services())
 
-    assert (len(services), sum(item.agent_can_open for item in services)) == (
+    assert (len(services), sum(not item.fee_reais and item.active for item in services)) == (
         await oracle.count("SELECT count(*) FROM secretary.demand_type"),
         await oracle.count(FREE_ACTIVE_SERVICES),
     )
@@ -108,7 +108,7 @@ async def test_pr05_free_service_becomes_a_proposal_to_confirm_without_writing(
 
 async def test_pr05_the_chosen_one_of_two_enrollments_is_proposed(database: Database) -> None:
     tools = await harness.tools_for(database, support.TWO_ENROLLMENTS_PERSON)
-    action = ProtocolAction.DECLARACAO_DE_MATRICULA
+    action = ProtocolAction.SEGUNDA_VIA_DE_BOLETO
 
     first = await tools.propose_protocol(action, "UniAraucaria:090697")
     second = await tools.propose_protocol(action, "UniAraucaria_EAD:011541")

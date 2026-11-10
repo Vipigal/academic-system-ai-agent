@@ -1,4 +1,4 @@
-from api.application.protocol.dto.catalog import ServiceDto
+from api.application.protocol.dto.catalog import ServiceOfferDto
 from api.application.protocol.dto.detail import ProtocolDetailDto
 from api.application.protocol.dto.proposal import Proposal
 from api.application.protocol.dto.request import ProtocolDto
@@ -16,7 +16,7 @@ class ProtocolService:
         self._queries = queries
         self._proposer = proposer
 
-    async def list_services(self, area: ServiceArea | None) -> ToolResult[list[ServiceDto]]:
+    async def list_services(self, area: ServiceArea | None) -> ToolResult[list[ServiceOfferDto]]:
         return await self._queries.list_services(area)
 
     async def list_protocols(

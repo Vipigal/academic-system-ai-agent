@@ -1,7 +1,10 @@
 from api.domain.academic.enrollment import EnrollmentStatus
-from api.domain.protocol.action import ProtocolAction, ServiceAction
-
-ONLY_ACTIVE = frozenset({EnrollmentStatus.ACTIVE})
+from api.domain.protocol.action import (
+    ACTIVE_OR_LOCKED,
+    ONLY_ACTIVE,
+    ProtocolAction,
+    ServiceAction,
+)
 
 TRANCAMENTO = ServiceAction(
     code="ACA-010",
@@ -57,7 +60,7 @@ MIGRACAO_DE_MATRIZ = ServiceAction(
     title="Migração de matriz curricular",
     effect="Muda a matriz curricular da matrícula; a situação da matrícula não muda.",
     not_for="Não muda de curso.",
-    accepted_statuses=frozenset({EnrollmentStatus.ACTIVE, EnrollmentStatus.LOCKED}),
+    accepted_statuses=ACTIVE_OR_LOCKED,
     confirmation_question="Tem certeza de que deseja migrar a matriz curricular do curso {course}?",
     confirmation_word="MIGRAR",
     request_text="Solicito a migração da minha matrícula para outra matriz curricular.",
@@ -69,6 +72,7 @@ REVISAO_DE_NOTA = ServiceAction(
     title="Revisão de nota",
     effect="Pede à secretaria a revisão de uma nota.",
     not_for="Não garante a mudança da nota.",
+    accepted_statuses=ACTIVE_OR_LOCKED,
     accepts_subject=True,
     confirmation_question="Confirma o pedido de revisão de nota no curso {course}?",
     request_text="Solicito a revisão de uma nota.",

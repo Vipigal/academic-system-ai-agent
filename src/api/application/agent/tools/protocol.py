@@ -23,10 +23,10 @@ class ProtocolTools:
 
     async def list_services(
         self, area: ServiceArea | None = None
-    ) -> ToolResult[list[catalog.ServiceDto]]:
-        """Lista os serviços da secretaria com taxa, prazo e se o agente pode abrir.
+    ) -> ToolResult[list[catalog.ServiceOfferDto]]:
+        """Lista os serviços com taxa, prazo e se o agente pode abrir para este aluno.
 
-        Use para saber o que o aluno pode pedir, quanto custa e quanto demora.
+        Use para o que o aluno pode pedir. Só ofereça abrir os com available true.
         """
         return await self._service.list_services(area)
 

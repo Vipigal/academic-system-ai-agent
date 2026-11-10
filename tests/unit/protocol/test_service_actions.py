@@ -5,8 +5,6 @@ import pytest
 from api.domain.academic.enrollment import EnrollmentStatus
 from api.domain.protocol.action import ProtocolAction, ServiceAction
 from api.domain.protocol.action_catalog import SERVICE_ACTIONS, ServiceActions
-from api.domain.protocol.catalog import Service, ServiceArea
-from api.domain.shared.money import Money
 
 DEMAND_TYPE_CODES = {
     "ACA-010",
@@ -31,6 +29,7 @@ DEMAND_TYPE_CODES = {
 WITH_FEE = {"ACA-021", "DOC-002", "DOC-003", "DOC-041"}
 FREE_TEXT = {"ACA-020", "GEN-090", "OUV-099", "TEC-060"}
 ACTIVE = frozenset({EnrollmentStatus.ACTIVE})
+ACTIVE_OR_LOCKED = frozenset({EnrollmentStatus.ACTIVE, EnrollmentStatus.LOCKED})
 ANY = frozenset(EnrollmentStatus)
 
 
@@ -46,33 +45,17 @@ ACTION_TABLE: list[ActionRow] = [
     ActionRow("ACA-011", "reativar_matricula", frozenset({EnrollmentStatus.LOCKED}), None),
     ActionRow("ACA-012", "cancelar_curso_inteiro", ACTIVE, "CANCELAR"),
     ActionRow("ACA-013", "transferir_de_curso", ACTIVE, "TRANSFERIR"),
-    ActionRow(
-        "ACA-014",
-        "migrar_matriz_curricular",
-        frozenset({EnrollmentStatus.ACTIVE, EnrollmentStatus.LOCKED}),
-        "MIGRAR",
-    ),
-    ActionRow("ACA-020", "revisar_nota", ANY, None),
-    ActionRow("DOC-001", "declaracao_de_matricula", ANY, None),
-    ActionRow("DOC-040", "emitir_diploma", ANY, None),
+    ActionRow("ACA-014", "migrar_matriz_curricular", ACTIVE_OR_LOCKED, "MIGRAR"),
+    ActionRow("ACA-020", "revisar_nota", ACTIVE_OR_LOCKED, None),
+    ActionRow("DOC-001", "declaracao_de_matricula", ACTIVE, None),
+    ActionRow("DOC-040", "emitir_diploma", frozenset({EnrollmentStatus.GRADUATED}), None),
     ActionRow("FIN-030", "segunda_via_de_boleto", ANY, None),
     ActionRow("FIN-031", "renegociar_divida", ANY, "RENEGOCIAR"),
-    ActionRow("FIN-032", "pedir_desconto_ou_bolsa", ANY, None),
+    ActionRow("FIN-032", "pedir_desconto_ou_bolsa", ACTIVE, None),
     ActionRow("GEN-090", "informacoes_gerais", ANY, None),
     ActionRow("OUV-099", "reclamacao_na_ouvidoria", ANY, None),
-    ActionRow("TEC-060", "problema_de_acesso_ao_ava", ANY, None),
+    ActionRow("TEC-060", "problema_de_acesso_ao_ava", ACTIVE, None),
 ]
-
-
-def service(code: str) -> Service:
-    return Service(
-        code=code,
-        name="Service",
-        area=ServiceArea.GENERAL,
-        sla_hours=72,
-        fee=Money(0),
-        active=True,
-    )
 
 
 def test_the_catalog_covers_exactly_the_18_demand_types_once() -> None:
@@ -128,11 +111,6 @@ def test_only_the_free_text_services_accept_a_subject() -> None:
 def test_an_unknown_code_fails_closed(code: str) -> None:
     assert ServiceActions.find(code) is None
     assert ServiceActions.proposable(code) is None
-    assert not service(code).agent_can_open
-
-
-def test_a_known_free_service_can_be_opened_by_the_agent() -> None:
-    assert service("DOC-001").agent_can_open
 
 
 def test_the_confirmation_question_names_the_course() -> None:
