@@ -25,7 +25,6 @@
 | src/api/application/agent/events.py                          |       21 |        0 |    100% |           |
 | src/api/application/agent/history.py                         |       12 |        0 |    100% |           |
 | src/api/application/agent/langchain\_tools.py                |       59 |        0 |    100% |           |
-| src/api/application/agent/scripted\_model.py                 |       47 |        2 |     96% |    31, 50 |
 | src/api/application/agent/skill\_library.py                  |       37 |        0 |    100% |           |
 | src/api/application/agent/student\_agent.py                  |       55 |        1 |     98% |        56 |
 | src/api/application/agent/student\_tools.py                  |       11 |        0 |    100% |           |
@@ -33,13 +32,13 @@
 | src/api/application/agent/tool\_arguments.py                 |       68 |        1 |     99% |        87 |
 | src/api/application/agent/tool\_teaching.py                  |       37 |        0 |    100% |           |
 | src/api/application/agent/tools/\_\_init\_\_.py              |        0 |        0 |    100% |           |
-| src/api/application/agent/tools/academic.py                  |       35 |        0 |    100% |           |
-| src/api/application/agent/tools/finance.py                   |       32 |        0 |    100% |           |
-| src/api/application/agent/tools/lms.py                       |       25 |        0 |    100% |           |
-| src/api/application/agent/tools/overview.py                  |       11 |        0 |    100% |           |
-| src/api/application/agent/tools/protocol.py                  |       27 |        0 |    100% |           |
-| src/api/application/agent/tools/registry.py                  |       70 |        0 |    100% |           |
-| src/api/application/agent/tools/skill\_tools.py              |       11 |        0 |    100% |           |
+| src/api/application/agent/tools/academic.py                  |       27 |        0 |    100% |           |
+| src/api/application/agent/tools/finance.py                   |       25 |        0 |    100% |           |
+| src/api/application/agent/tools/lms.py                       |       20 |        0 |    100% |           |
+| src/api/application/agent/tools/overview.py                  |        8 |        0 |    100% |           |
+| src/api/application/agent/tools/protocol.py                  |       21 |        0 |    100% |           |
+| src/api/application/agent/tools/registry.py                  |       54 |        0 |    100% |           |
+| src/api/application/agent/tools/skill\_tools.py              |        8 |        0 |    100% |           |
 | src/api/application/agent/tools/ui.py                        |        7 |        0 |    100% |           |
 | src/api/application/chat/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | src/api/application/chat/dto/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
@@ -114,12 +113,12 @@
 | src/api/application/shared/tool\_parameters.py               |       11 |        0 |    100% |           |
 | src/api/application/shared/tool\_result.py                   |       77 |        0 |    100% |           |
 | src/api/bootstrap/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
-| src/api/bootstrap/agent\_providers.py                        |       19 |        0 |    100% |           |
-| src/api/bootstrap/app.py                                     |       26 |        0 |    100% |           |
+| src/api/bootstrap/agent\_providers.py                        |       15 |        0 |    100% |           |
+| src/api/bootstrap/app.py                                     |       29 |        0 |    100% |           |
 | src/api/bootstrap/app\_provider.py                           |       31 |        0 |    100% |           |
 | src/api/bootstrap/chat\_agent\_scope.py                      |       25 |        0 |    100% |           |
 | src/api/bootstrap/chat\_providers.py                         |       17 |        0 |    100% |           |
-| src/api/bootstrap/containers.py                              |       28 |        0 |    100% |           |
+| src/api/bootstrap/containers.py                              |       20 |        0 |    100% |           |
 | src/api/bootstrap/identity\_providers.py                     |       14 |        0 |    100% |           |
 | src/api/bootstrap/lifespan.py                                |       20 |        0 |    100% |           |
 | src/api/bootstrap/observability.py                           |       13 |        0 |    100% |           |
@@ -157,19 +156,17 @@
 | src/api/domain/lms/exam.py                                   |       41 |        0 |    100% |           |
 | src/api/domain/lms/material.py                               |       15 |        0 |    100% |           |
 | src/api/domain/ontology/\_\_init\_\_.py                      |        0 |        0 |    100% |           |
-| src/api/domain/ontology/academic\_enrollment.py              |       16 |        0 |    100% |           |
-| src/api/domain/ontology/academic\_performance.py             |       13 |        0 |    100% |           |
+| src/api/domain/ontology/academic\_enrollment.py              |       15 |        0 |    100% |           |
+| src/api/domain/ontology/academic\_performance.py             |       12 |        0 |    100% |           |
 | src/api/domain/ontology/catalog.py                           |        9 |        0 |    100% |           |
-| src/api/domain/ontology/finance\_charges.py                  |       11 |        0 |    100% |           |
-| src/api/domain/ontology/finance\_settlement.py               |        9 |        0 |    100% |           |
-| src/api/domain/ontology/limits.py                            |        6 |        0 |    100% |           |
-| src/api/domain/ontology/lms.py                               |       10 |        0 |    100% |           |
-| src/api/domain/ontology/model.py                             |       32 |        0 |    100% |           |
-| src/api/domain/ontology/overview.py                          |        5 |        0 |    100% |           |
-| src/api/domain/ontology/protocols.py                         |        9 |        0 |    100% |           |
-| src/api/domain/ontology/renderer.py                          |       67 |        0 |    100% |           |
-| src/api/domain/ontology/tables.py                            |       36 |        0 |    100% |           |
-| src/api/domain/ontology/validator.py                         |       37 |        0 |    100% |           |
+| src/api/domain/ontology/finance\_charges.py                  |       10 |        0 |    100% |           |
+| src/api/domain/ontology/finance\_settlement.py               |        8 |        0 |    100% |           |
+| src/api/domain/ontology/limits.py                            |        5 |        0 |    100% |           |
+| src/api/domain/ontology/lms.py                               |        9 |        0 |    100% |           |
+| src/api/domain/ontology/model.py                             |       21 |        0 |    100% |           |
+| src/api/domain/ontology/overview.py                          |        4 |        0 |    100% |           |
+| src/api/domain/ontology/protocols.py                         |        8 |        0 |    100% |           |
+| src/api/domain/ontology/renderer.py                          |       38 |        0 |    100% |           |
 | src/api/domain/ports/\_\_init\_\_.py                         |        0 |        0 |    100% |           |
 | src/api/domain/ports/academic.py                             |        7 |        0 |    100% |           |
 | src/api/domain/ports/clock.py                                |        3 |        0 |    100% |           |
@@ -202,7 +199,7 @@
 | src/api/domain/shared/brand.py                               |       14 |        0 |    100% |           |
 | src/api/domain/shared/money.py                               |       17 |        0 |    100% |           |
 | src/api/infrastructure/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
-| src/api/infrastructure/clock.py                              |       16 |        0 |    100% |           |
+| src/api/infrastructure/clock.py                              |        8 |        0 |    100% |           |
 | src/api/infrastructure/logging.py                            |       39 |        0 |    100% |           |
 | src/api/infrastructure/proposal\_signer.py                   |       32 |        0 |    100% |           |
 | src/api/infrastructure/rate\_limiter.py                      |       29 |        0 |    100% |           |
@@ -217,7 +214,7 @@
 | src/api/persistence/core/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | src/api/persistence/core/base.py                             |        3 |        0 |    100% |           |
 | src/api/persistence/core/column\_types.py                    |       75 |        2 |     97% |    34, 37 |
-| src/api/persistence/core/database.py                         |       25 |        0 |    100% |           |
+| src/api/persistence/core/database.py                         |       24 |        0 |    100% |           |
 | src/api/persistence/core/ownership.py                        |       11 |        0 |    100% |           |
 | src/api/persistence/core/ownership\_criteria.py              |       58 |        0 |    100% |           |
 | src/api/persistence/core/repository\_adapter.py              |       39 |        0 |    100% |           |
@@ -303,9 +300,10 @@
 | src/evals/dataset/parts.py                                   |        5 |        0 |    100% |           |
 | src/evals/dataset/tool\_names.py                             |       17 |        1 |     94% |        12 |
 | src/evals/dataset/vocabulary.py                              |       27 |        0 |    100% |           |
-| src/evals/driver\_factory.py                                 |       23 |        0 |    100% |           |
-| src/evals/eval\_container.py                                 |       29 |        1 |     97% |        39 |
+| src/evals/driver\_factory.py                                 |       18 |        3 |     83% |     27-29 |
+| src/evals/eval\_container.py                                 |       32 |        1 |     97% |        44 |
 | src/evals/execution.py                                       |       39 |        0 |    100% |           |
+| src/evals/fixed\_clock.py                                    |       17 |        0 |    100% |           |
 | src/evals/gate.py                                            |       70 |        0 |    100% |           |
 | src/evals/graders/\_\_init\_\_.py                            |        0 |        0 |    100% |           |
 | src/evals/graders/dates.py                                   |       47 |        1 |     98% |        50 |
@@ -344,7 +342,7 @@
 | src/evals/settings\_sources.py                               |       15 |        0 |    100% |           |
 | src/evals/student\_driver.py                                 |       34 |        0 |    100% |           |
 | src/evals/trace\_links.py                                    |       12 |        1 |     92% |        15 |
-| **TOTAL**                                                    | **7687** |  **115** | **99%** |           |
+| **TOTAL**                                                    | **7468** |  **116** | **98%** |           |
 
 
 ## Setup coverage badge
