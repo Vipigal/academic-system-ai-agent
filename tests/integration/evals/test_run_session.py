@@ -5,12 +5,16 @@ import pytest
 
 from api.infrastructure.tracing import Tracing
 from evals.dataset.oracle_settings import OracleSettings
-from evals.driver_factory import DriverFactory
 from evals.run_session import RunSession
 from evals.selection import Epochs, RunRequest
 from evals.student_driver import StudentDriver
 from tests.integration.chat.span_sink import SpanSink
-from tests.integration.evals.run_helpers import SELECTION, VERSIONS, fake_settings
+from tests.integration.evals.eval_containers import evaluation_container
+from tests.integration.evals.run_helpers import (
+    SELECTION,
+    VERSIONS,
+    fake_settings,
+)
 
 TRACE_ID_LENGTH = 32
 
@@ -25,8 +29,8 @@ def assert_files_of_the_round(directory: Path) -> None:
 async def test_the_fake_model_produces_a_report_against_the_real_database(
     tmp_path: Path, tracing: Tracing, sink: SpanSink
 ) -> None:
-    container = DriverFactory.container_for(fake_settings(), {Tracing: tracing})
-    driver = StudentDriver(container, VERSIONS)
+    doubles = {Tracing: tracing}
+    driver = StudentDriver(evaluation_container(doubles, fake_settings()), VERSIONS)
     request = RunRequest(SELECTION, Epochs(), tmp_path)
 
     data = await RunSession(driver, request).run()
@@ -42,7 +46,8 @@ async def test_the_fake_model_produces_a_report_against_the_real_database(
 
 async def test_without_langfuse_keys_the_trace_id_is_null(tmp_path: Path) -> None:
     tracing = Tracing(None, None, None, None)
-    container = DriverFactory.container_for(fake_settings(), {Tracing: tracing})
+    doubles = {Tracing: tracing}
+    container = evaluation_container(doubles, fake_settings())
     driver = StudentDriver(container, VERSIONS)
 
     data = await RunSession(driver, RunRequest(SELECTION, Epochs(), tmp_path)).run()
@@ -59,7 +64,10 @@ async def test_the_round_reads_the_oracle_url_from_the_env_file(
     env_file.write_text(f"APP_ORACLE_DATABASE_URL={oracle_url}\n", encoding="utf-8")
     monkeypatch.delenv("APP_ORACLE_DATABASE_URL")
     driver = StudentDriver(
-        DriverFactory.container_for(fake_settings(), {Tracing: Tracing(None, None, None, None)}),
+        evaluation_container(
+            {Tracing: Tracing(None, None, None, None)},
+            fake_settings(),
+        ),
         VERSIONS,
     )
     request = RunRequest(SELECTION, Epochs(), tmp_path / "rodada", env_file=env_file)

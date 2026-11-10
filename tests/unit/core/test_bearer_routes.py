@@ -6,6 +6,7 @@ import pytest
 from fastapi import FastAPI
 
 from api.bootstrap.app import ApiFactory
+from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
 
 PROTECTED = [
@@ -26,7 +27,7 @@ def application() -> FastAPI:
             "proposal_secret": secrets.token_urlsafe(32),
         }
     )
-    return ApiFactory.create(settings)
+    return ApiFactory.assemble(settings, Containers.http(settings))
 
 
 @pytest.mark.parametrize("path", ["/chat", "/protocols/proposals/confirm"])

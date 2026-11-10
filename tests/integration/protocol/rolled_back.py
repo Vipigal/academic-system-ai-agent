@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, async_sessionmaker
 
-from api.persistence.core.database import Database
+from tests.doubles.database import database_at
 from tests.integration.support.sql_oracle import admin_url
 
 ROLE_API = text("SET LOCAL ROLE api")
@@ -21,7 +21,7 @@ type AdminRow = tuple[str | None, ...]
 class RolledBackBank:
     def __init__(self, connection: AsyncConnection) -> None:
         self._connection = connection
-        self.database = Database(admin_url())
+        self.database = database_at(admin_url())
         self.database.db_session_factory = async_sessionmaker(
             bind=connection, expire_on_commit=False, join_transaction_mode="rollback_only"
         )

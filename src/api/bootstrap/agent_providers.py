@@ -3,11 +3,8 @@ from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
 from api.application.agent.agent_runtime import AgentLimits, AgentRuntime
-from api.application.agent.scripted_model import ScriptedChatModel
 from api.bootstrap.settings import Settings
 from api.domain.ports.clock import Clock
-
-FAKE_MODEL = "fake"
 
 
 class AgentProvider(Provider):
@@ -15,8 +12,6 @@ class AgentProvider(Provider):
 
     @provide
     def chat_model(self, settings: Settings) -> BaseChatModel:
-        if settings.agent_model == FAKE_MODEL:
-            return ScriptedChatModel.standard()
         return ChatOpenAI.model_validate(
             {
                 "model": settings.agent_model,

@@ -97,7 +97,8 @@ def test_trace_attributes_carry_the_pseudonym_and_never_the_person() -> None:
 
 
 def test_log_is_valid_json_with_the_fixed_fields() -> None:
-    LogContext.bind("req-1", "trace-1")
+    LogContext.bind("req-1")
+    LogContext.bind_trace("trace-1")
     entry = format_record("hello %s", "world")
     assert entry == {
         "level": "INFO",

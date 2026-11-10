@@ -2,7 +2,8 @@ import time
 from datetime import date, datetime, timedelta
 
 from api.domain.protocol.opening import BRASILIA
-from api.infrastructure.clock import FixedClock, SystemClock
+from api.infrastructure.clock import SystemClock
+from evals.fixed_clock import FixedClock
 
 TOLERANCE = timedelta(seconds=5)
 

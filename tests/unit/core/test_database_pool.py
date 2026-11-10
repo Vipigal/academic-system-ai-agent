@@ -44,12 +44,3 @@ async def test_the_engine_pool_comes_from_the_settings(engine_spy: EngineSpy) ->
     assert engine_spy.options["pool_timeout"] == 2.5
     assert engine_spy.options["pool_pre_ping"] is True
     await container.close()
-
-
-async def test_without_a_pool_the_engine_keeps_the_sqlalchemy_defaults(
-    engine_spy: EngineSpy,
-) -> None:
-    connected = Database(DATABASE_URL)
-
-    assert set(engine_spy.options) == {"connect_args", "hide_parameters"}
-    await connected.dispose()

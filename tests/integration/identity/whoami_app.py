@@ -2,11 +2,11 @@ from dishka.integrations.fastapi import DishkaRoute, FromDishka, setup_dishka
 from fastapi import APIRouter, FastAPI
 from pydantic import BaseModel
 
-from api.bootstrap.containers import Containers
 from api.bootstrap.routes import ApiRoutes
 from api.bootstrap.settings import Settings
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
+from tests.doubles.doubles import DoubleContainers
 
 
 class WhoAmIRequest(BaseModel):
@@ -26,5 +26,5 @@ def build_app(database: Database, settings: Settings) -> FastAPI:
         return {"person_ids": sorted(session.person_ids), "claimed": [request.person_id]}
 
     application.include_router(router)
-    setup_dishka(Containers.http(settings, {Database: database}), application)
+    setup_dishka(DoubleContainers.http(settings, {Database: database}), application)
     return application

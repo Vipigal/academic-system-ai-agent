@@ -2,7 +2,7 @@ from api.application.protocol.queries import ProtocolQueries
 from api.application.protocol.source import ProtocolSource
 from api.application.shared.page import FIRST_PAGE
 from api.application.shared.tool_result import ToolStatus
-from api.infrastructure.clock import FixedClock
+from evals.fixed_clock import FixedClock
 from tests.unit.protocol.protocol_fakes import InMemoryProtocols, NoFees
 
 QUERIES = ProtocolQueries(ProtocolSource(InMemoryProtocols(), NoFees(), FixedClock()))

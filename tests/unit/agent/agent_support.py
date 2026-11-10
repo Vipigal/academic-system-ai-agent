@@ -7,10 +7,10 @@ from pydantic import Field
 
 from api.application.agent.agent_runtime import AgentLimits, AgentRuntime
 from api.application.agent.events import AgentEvent, ToolResultReceived
-from api.application.agent.scripted_model import ScriptedChatModel
 from api.application.agent.student_agent import StudentAgent
 from api.application.agent.tools.registry import RegisteredTool, ToolRegistry
-from api.infrastructure.clock import FixedClock
+from evals.fixed_clock import FixedClock
+from tests.doubles.scripted_model import ScriptedChatModel
 from tests.unit.agent.student_stubs import stub_student
 
 FINAL_ANSWER = "Resposta final ao aluno."

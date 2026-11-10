@@ -2,20 +2,20 @@ from dishka import AsyncContainer
 
 from api.application.agent.student_tools import StudentTools
 from api.application.agent.tools.registry import ToolRegistry
-from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
 from api.domain.identity.session import StudentSession
 from api.domain.ports.clock import Clock
 from api.domain.ports.protocol import ProposalSigner
-from api.infrastructure.clock import FixedClock
 from api.persistence.core.database import Database
 from api.persistence.identity.student_session_repository import StudentSessionRepository
+from evals.fixed_clock import FixedClock
+from tests.doubles.doubles import DoubleContainers
 
 
 class StudentScopes:
     def __init__(self, database: Database, signer: ProposalSigner) -> None:
         self._database = database
-        self._container: AsyncContainer = Containers.students(
+        self._container: AsyncContainer = DoubleContainers.students(
             Settings.from_environment(),
             {Database: database, Clock: FixedClock(), ProposalSigner: signer},
         )

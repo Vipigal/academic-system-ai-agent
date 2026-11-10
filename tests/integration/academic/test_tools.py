@@ -7,8 +7,8 @@ from api.application.shared.tool_result import DataState, ToolStatus
 from api.domain.academic.enrollment import EnrollmentStatus, Shift, TermStatus
 from api.domain.academic.record import SubjectResult
 from api.domain.shared.brand import Modality
-from api.infrastructure.clock import SNAPSHOT_DATE
 from api.persistence.core.database import Database
+from evals.fixed_clock import SNAPSHOT_DATE
 from tests.integration.academic import support
 from tests.integration.support.sql_oracle import SqlOracle
 

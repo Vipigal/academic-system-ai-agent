@@ -3,19 +3,19 @@ from pathlib import Path
 import pytest
 
 from evals.dataset.vocabulary import Suite
-from evals.driver_factory import DriverFactory
 from evals.records import ExecutionRecord
 from evals.run_files import JsonLines, RunFiles
 from evals.run_manifest import RunConflictError
 from evals.run_session import RunSession
 from evals.selection import Epochs, ItemSelection, RunRequest
+from tests.integration.evals.eval_containers import standard_driver
 from tests.integration.evals.run_helpers import SELECTION, fake_settings
 
 ACTIONS = frozenset({Suite.PROTOCOL})
 
 
 async def test_a_resumed_run_executes_only_what_is_missing(tmp_path: Path) -> None:
-    driver = DriverFactory.create(fake_settings())
+    driver = standard_driver(fake_settings())
     request = RunRequest(SELECTION, Epochs(), tmp_path)
     await RunSession(driver, request).run()
     executions = RunFiles(tmp_path).executions
@@ -32,11 +32,11 @@ async def test_a_resumed_run_executes_only_what_is_missing(tmp_path: Path) -> No
 
 
 async def test_a_run_refuses_a_directory_of_another_configuration(tmp_path: Path) -> None:
-    driver = DriverFactory.create(fake_settings())
+    driver = standard_driver(fake_settings())
     request = RunRequest(SELECTION, Epochs(), tmp_path)
     await RunSession(driver, request).run()
     other_settings = fake_settings().model_copy(update={"agent_effort": "medium"})
-    other = DriverFactory.create(other_settings)
+    other = standard_driver(other_settings)
 
     with pytest.raises(RunConflictError):
         await RunSession(other, request).run()
@@ -45,7 +45,7 @@ async def test_a_run_refuses_a_directory_of_another_configuration(tmp_path: Path
 
 
 async def test_two_selections_of_the_same_size_do_not_mix_in_a_directory(tmp_path: Path) -> None:
-    driver = DriverFactory.create(fake_settings())
+    driver = standard_driver(fake_settings())
     first = ItemSelection(ACTIONS, only=frozenset({"TR-01"}))
     other = ItemSelection(ACTIONS, only=frozenset({"TR-02"}))
     await RunSession(driver, RunRequest(first, Epochs(), tmp_path)).run()
@@ -56,7 +56,7 @@ async def test_two_selections_of_the_same_size_do_not_mix_in_a_directory(tmp_pat
 
 
 async def test_a_run_refuses_a_directory_of_another_composition(tmp_path: Path) -> None:
-    driver = DriverFactory.create(fake_settings())
+    driver = standard_driver(fake_settings())
     await RunSession(driver, RunRequest(SELECTION, Epochs(), tmp_path)).run()
     larger = RunRequest(SELECTION, Epochs(default=2), tmp_path)
 

@@ -1,9 +1,9 @@
 import pytest
 import pytest_asyncio
 
-from api.bootstrap.settings import Settings
 from api.persistence.core.database import Database
 from api.persistence.identity.student_session_repository import StudentSessionRepository
+from tests.doubles.database import application_database
 from tests.integration.agent import invariant_queries, invariant_volumes
 from tests.integration.support.owned import owned_by
 from tests.integration.support.sql_oracle import SqlOracle
@@ -12,7 +12,7 @@ from tests.integration.support.tools import tools_factory
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def people() -> list[str]:
-    connected = Database(Settings.from_environment().database_url.get_secret_value())
+    connected = application_database()
     found = await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope="full")
     await connected.dispose()
     return sorted(found)

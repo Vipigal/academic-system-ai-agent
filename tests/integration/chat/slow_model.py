@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk
 from pydantic import Field
 
-from api.application.agent.scripted_model import ScriptedChatModel
+from tests.doubles.scripted_model import ScriptedChatModel
 
 CALL_SECONDS = 0.3
 

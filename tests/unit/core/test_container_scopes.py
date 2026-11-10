@@ -5,11 +5,11 @@ from dishka import AsyncContainer
 
 from api.application.agent.student_tools import StudentTools
 from api.application.finance.service import FinancialService
-from api.bootstrap.containers import Containers
 from api.bootstrap.settings import Settings
 from api.domain.identity.session import StudentSession
 from api.persistence.core.database import Database
 from api.persistence.core.repository_adapter import RepositoryAdapter
+from tests.doubles.doubles import DoubleContainers
 
 SETTINGS = Settings.model_validate(
     {
@@ -44,7 +44,7 @@ async def resolved_for(container: AsyncContainer, session: StudentSession) -> Re
 
 
 async def test_concurrent_request_scopes_share_the_database_and_nothing_of_the_student() -> None:
-    container = Containers.students(SETTINGS)
+    container = DoubleContainers.students(SETTINGS, {})
     try:
         first, second = await asyncio.gather(
             resolved_for(container, FIRST), resolved_for(container, SECOND)

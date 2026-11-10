@@ -6,10 +6,10 @@ from api.bootstrap.settings import Settings
 from api.infrastructure.tracing import Tracing
 from api.persistence.core.database import Database
 from evals.dataset.vocabulary import Suite
-from evals.driver_factory import DriverFactory
 from evals.records import RunVersions
 from evals.selection import ItemSelection
-from tests.integration.chat.scripted_given import given_with
+from tests.integration.chat.scripted_doubles import doubles_with
+from tests.integration.evals.eval_containers import evaluation_container
 
 SECRET = SecretStr("segredo-de-teste-com-tamanho-suficiente-para-o-hmac")
 VERSIONS = RunVersions(
@@ -30,4 +30,4 @@ def fake_settings() -> Settings:
 def scripted_container(
     database: Database, model: BaseChatModel, tracing: Tracing
 ) -> AsyncContainer:
-    return DriverFactory.container_for(fake_settings(), given_with(database, model, tracing))
+    return evaluation_container(doubles_with(database, model, tracing), fake_settings())

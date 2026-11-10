@@ -37,7 +37,7 @@ class UserPseudonym:
 
 
 class CurrentTrace:
-    def __init__(self, *, enabled: bool = False) -> None:
+    def __init__(self, *, enabled: bool) -> None:
         self._enabled = enabled
 
     def bind_to_log(self) -> None:

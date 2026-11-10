@@ -6,8 +6,8 @@ import pytest
 import pytest_asyncio
 
 from api.application.agent.tools.registry import ToolRegistry
-from api.bootstrap.settings import Settings
 from api.persistence.core.database import Database
+from tests.doubles.database import application_database
 from tests.integration.agent import (
     invariant_json,
     invariant_queries,
@@ -59,7 +59,7 @@ Exposure = invariant_json.Exposure
 
 
 async def build_sample(scope: str) -> list[Person]:
-    connected = Database(Settings.from_environment().database_url.get_secret_value())
+    connected = application_database()
     builder = invariant_sample.SampleBuilder(connected, tools_factory(connected))
     people = sorted(await SqlOracle().values(invariant_queries.SAMPLE_PEOPLE, scope=scope))
     sampled = list(await asyncio.gather(*(builder.person(person_id) for person_id in people)))
