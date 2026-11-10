@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agente de atendimento ao aluno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-title: #03386d;
+  --navy-base: #003b71;
+  --navy-action: #0b4279;
+  --navy-deep: #022c55;
+  --navy-border: #2a65a1;
+  --sky: #639fdb;
+  --sky-soft: #e8f1fb;
+  --gold: #fbae17;
+  --gold-soft: #fff4dc;
+  --surface-soft: #eef3f7;
+  --surface-page: #fbfcfd;
+  --line: #d6dee7;
+  --ink: #202125;
+  --ink-soft: #5f6b78;
+  --success: #067647;
+  --success-soft: #e6f4ec;
+  --danger: #b42318;
+  --danger-soft: #fdecec;
+  --sys-sag: #2a65a1;
+  --sys-lms: #6b4fbb;
+  --sys-sec: #0e7c86;
+  --sys-fin: #b7791f;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { font-family: "Work Sans", system-ui, sans-serif; color: var(--ink); background: var(--navy-deep); overflow: hidden; }
+code { font-family: var(--mono); font-variant-ligatures: none; }
+
+#stage { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0; }
+.frame { position: absolute; inset: 0; display: none; }
+.frame.active { display: block; }
+.slide { position: relative; width: 1600px; height: 900px; overflow: hidden; background: var(--surface-page); }
+.slide.dark { background: radial-gradient(120% 90% at 100% 0%, var(--navy-action) 0%, var(--navy-base) 45%, var(--navy-deep) 100%); color: #fff; }
+.notes-block { display: none; }
+
+.top { position: absolute; left: 60px; right: 60px; top: 40px; height: 40px; display: flex; align-items: center; justify-content: space-between; }
+.section { display: inline-flex; align-items: center; gap: 10px; background: var(--navy-title); color: #fff; font-weight: 700; font-size: 17px; padding: 8px 20px; border-radius: 999px; }
+.section::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
+.zoom { display: flex; gap: 6px; font-size: 14px; font-weight: 600; color: var(--ink-soft); }
+.zoom span { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; }
+.zoom span.on { background: var(--gold); border-color: var(--gold); color: var(--navy-title); }
+.title { position: absolute; left: 60px; right: 60px; top: 100px; margin: 0; font-size: 46px; font-weight: 800; color: var(--navy-title); letter-spacing: -.5px; }
+.body { position: absolute; left: 50px; top: 200px; width: 1500px; height: 600px; }
+.foot { position: absolute; left: 60px; right: 60px; bottom: 34px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.pageno { position: absolute; right: 22px; bottom: 10px; font-size: 12px; color: var(--ink-soft); }
+.dark .pageno { color: rgba(255,255,255,.5); }
+
+.abs { position: absolute; }
+.n { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 7px; background: var(--navy-action); color: #fff; font-weight: 700; font-size: 16px; flex: none; }
+.n.gold { background: var(--gold); color: var(--navy-title); }
+.n.big { width: 44px; height: 44px; font-size: 22px; border-radius: 10px; }
+
+.wires { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.wires path { fill: none; stroke: var(--navy-action); stroke-width: 2.5; }
+.wires .soft { stroke: var(--sky); stroke-dasharray: 7 6; }
+.wires .bad { stroke: var(--danger); }
+.wires .ok { stroke: var(--success); }
+.wires .gold { stroke: var(--gold); stroke-width: 3; }
+
+.card { position: absolute; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 30px 20px 16px; }
+.card .head { position: absolute; top: -17px; left: 16px; display: inline-flex; align-items: center; gap: 8px; background: var(--navy-title); color: #fff; font-weight: 700; font-size: 16px; padding: 5px 16px; border-radius: 999px; white-space: nowrap; }
+.card.gold { border-color: var(--gold); border-width: 3px; background: #fffdf7; }
+.card.ok { border-color: var(--success); background: var(--success-soft); }
+.card.danger { border-color: var(--danger); background: var(--danger-soft); }
+.fns { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; align-content: flex-start; }
+.fn { font-family: var(--mono); font-variant-ligatures: none; font-size: 15px; background: var(--surface-soft); color: var(--navy-title); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; white-space: nowrap; font-weight: 600; }
+.fn.gold { background: var(--gold-soft); border-color: var(--gold); }
+.fn.red { background: var(--danger-soft); border-color: #f1b8b3; color: var(--danger); }
+.fn.green { background: var(--success-soft); border-color: #a9d8bd; color: var(--success); }
+.tag { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--surface-soft); color: var(--navy-title); white-space: nowrap; }
+.tag.gold { background: var(--gold); color: var(--navy-title); }
+.tag.red { background: var(--danger-soft); color: var(--danger); }
+.tag.green { background: var(--success-soft); color: var(--success); }
+.tag.wip { background: #fff; color: var(--sys-fin); border: 1.5px dashed var(--sys-fin); }
+.tag.edge { background: #fff; border: 1.5px solid var(--navy-border); }
+.lbl { font-size: 14px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .6px; }
+.big-word { font-size: 22px; font-weight: 700; color: var(--navy-title); }
+.icon { width: 1em; height: 1em; }
+
+.grp { position: absolute; border: 2px solid var(--gc, var(--navy-base)); }
+.grp.dash { border-style: dashed; }
+.grp .tab { position: absolute; left: -2px; top: -2px; width: 44px; height: 44px; background: var(--gc, var(--navy-base)); display: grid; place-items: center; }
+.grp .tab svg { width: 28px; height: 28px; color: #fff; }
+.grp .glabel { position: absolute; left: 56px; top: 10px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.grp.dash .glabel { left: 16px; }
+.tile { position: absolute; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.tile .ico { width: 76px; height: 76px; border-radius: 8px; background: var(--tc, var(--navy-action)); display: grid; place-items: center; }
+.tile .ico svg { width: 46px; height: 46px; color: #fff; }
+.tile .ico.plain { background: transparent; }
+.tile .ico.plain svg { color: var(--ink); width: 64px; height: 64px; }
+.tile .ico.stack { box-shadow: 7px -7px 0 -1px #fff, 7px -7px 0 1px var(--tc), 14px -14px 0 -1px #fff, 14px -14px 0 1px var(--tc); }
+.tile .tn { margin-top: 8px; font-size: 18px; font-weight: 700; }
+.tile .ts { font-size: 14px; color: var(--ink-soft); line-height: 1.3; }
+
+.step { position: absolute; background: #fff; border: 2px solid var(--navy-border); border-radius: 12px; padding: 10px 12px; }
+.step .t { font-family: var(--mono); font-variant-ligatures: none; font-weight: 600; font-size: 14px; color: var(--navy-title); line-height: 1.25; }
+.step .d { font-size: 14px; color: var(--ink-soft); margin-top: 4px; line-height: 1.25; }
+.step > .n { position: absolute; left: -12px; top: -12px; width: 26px; height: 26px; font-size: 14px; }
+.step.lg { display: flex; flex-direction: column; justify-content: center; padding: 12px 18px; }
+.step.lg .t { font-size: 18px; }
+.step.lg .d { font-size: 15.5px; }
+.step.port { border: 2.5px dashed var(--gold); background: #fffdf7; }
+.step.port::after { content: "port"; position: absolute; right: 10px; bottom: 6px; font-size: 11px; font-weight: 700; color: var(--sys-fin); }
+.step.impl { border-color: var(--ink-soft); }
+.wires .impl { stroke: var(--sys-fin); stroke-dasharray: 6 5; }
+.key { display: grid; grid-template-columns: 74px 1fr; gap: 8px 10px; align-items: center; }
+.key .lbl { font-size: 12px; }
+.find { margin-top: 12px; font-size: 15px; font-weight: 600; color: var(--danger); }
+.legend { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+.legend svg { width: 44px; height: 12px; }
+.step.llm { border-color: #e7a19b; }
+.step.safe { border-color: var(--success); }
+.step.key { border-color: var(--gold); border-width: 3px; }
+.step.ext { border-color: var(--sys-lms); border-style: dashed; }
+.lane { position: absolute; left: 0; right: 0; border-radius: 12px; }
+.lane .ll { position: absolute; left: 0; top: 0; bottom: 0; width: 190px; display: flex; flex-direction: column; justify-content: center; padding-left: 18px; font-weight: 700; color: var(--navy-title); font-size: 18px; line-height: 1.2; }
+.lane .ll small { font-weight: 500; font-size: 13.5px; color: var(--ink-soft); margin-top: 3px; }
+
+.row { display: flex; align-items: center; gap: 16px; background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+.row svg.ri { width: 34px; height: 34px; color: var(--navy-action); flex: none; }
+.row .rt { font-size: 21px; font-weight: 700; color: var(--ink); }
+.row .fn { margin-left: auto; }
+
+.stat { position: absolute; background: #fff; border: 2px solid var(--line); border-radius: 16px; padding: 24px; }
+.stat .v { font-size: 64px; font-weight: 800; color: var(--navy-title); line-height: 1; letter-spacing: -1px; margin-top: 14px; }
+.stat .v small { font-size: 28px; color: var(--ink-soft); font-weight: 600; }
+.tbd { position: relative; }
+.tbd::after { content: "provisório"; position: absolute; top: -11px; right: 12px; font-size: 11px; font-weight: 700; background: var(--gold); color: var(--navy-title); padding: 2px 8px; border-radius: 999px; }
+
+.porta { display: inline-flex; align-items: center; gap: 10px; background: #fff; border: 2px solid var(--navy-border); border-radius: 999px; padding: 5px 6px 5px 14px; font-size: 14px; font-weight: 600; color: var(--navy-title); }
+.porta .pl { font-family: var(--mono); font-size: 13px; }
+.porta a { text-decoration: none; font-size: 13px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--navy-action); color: #fff; display: inline-flex; gap: 6px; align-items: center; }
+.porta a.alt { background: var(--gold); color: var(--navy-title); }
+.porta svg { width: 16px; height: 16px; }
+.dark .porta { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.35); }
+
+#notesPanel { position: fixed; right: 16px; bottom: 16px; width: min(560px, 90vw); max-height: 45vh; overflow: auto; background: #fff; color: var(--ink); border-radius: 14px; padding: 16px 20px; box-shadow: 0 20px 50px rgba(0,0,0,.4); font-size: 15px; line-height: 1.5; display: none; z-index: 10; }
+#notesPanel.on { display: block; }
+.notes-block ul, #notesPanel ul { margin: 0; padding-left: 20px; }
+
+body.reading { overflow: auto; background: #e9eef3; }
+body.reading #stage { position: static; width: auto; height: auto; transform: none !important; padding: 24px 0; }
+body.reading .frame { position: relative; display: block; width: calc(1600px * var(--z)); margin: 0 auto 28px; }
+body.reading .slide { zoom: var(--z); box-shadow: 0 8px 30px rgba(0,30,60,.18); }
+body.reading .notes-block { display: block; background: #fff; padding: 14px 22px; font-size: 15px; line-height: 1.55; border-top: 4px solid var(--gold); }
+body.reading .notes-block:empty { display: none; }
+body.reading #notesPanel { display: none; }
+@media print {
+  @page { size: 1600px 1100px; margin: 0; }
+  body, body.reading { overflow: visible; background: #fff; }
+  #stage { position: static; transform: none !important; width: auto; height: auto; }
+  .frame { position: relative; display: block !important; width: 1600px; height: 1100px; break-after: page; }
+  .slide { zoom: 1 !important; box-shadow: none !important; }
+  .notes-block { display: block !important; padding: 18px 60px; font-size: 17px; line-height: 1.5; border-top: 4px solid var(--gold); }
+  #notesPanel { display: none !important; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#0b4279"/></marker>
+    <marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#639fdb"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b42318"/></marker>
+    <marker id="ahi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b7791f"/></marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#067647"/></marker>
+  </defs>
+  <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="3"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M15 14.2c3.3-.4 6.5 1.6 6.5 5.3"/></symbol>
+  <symbol id="i-browser" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4" width="19" height="16" rx="2"/><path d="M2.5 8.5h19"/><circle cx="5.5" cy="6.3" r=".6" fill="currentColor"/><circle cx="7.7" cy="6.3" r=".6" fill="currentColor"/></symbol>
+  <symbol id="i-api" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="3.5" width="18" height="7" rx="1.5"/><rect x="3" y="13.5" width="18" height="7" rx="1.5"/><path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"/></symbol>
+  <symbol id="i-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M13 2.5L4.5 13.5H11l-1 8 8.5-11H12z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2z"/><path d="M19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l8.5 4.5v10L12 21.5 3.5 17V7z"/><path d="M3.5 7L12 11.5 20.5 7M12 11.5v10"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/><path d="M8 10.5V7a4 4 0 018 0v3.5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="15" r="4.5"/><path d="M11.3 11.7L20 3M16.5 6.5l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 4.5h18l-7 8.5v6l-4 2v-8z"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M14.5 6.5a4 4 0 005 5L13 18l-3 3-4-4 3-3 6.5-6.5a4 4 0 01-1-1z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 12.5l3 3 5-6"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M4 4.5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2.5l8 3v6c0 5-3.4 8.7-8 10-4.6-1.3-8-5-8-10v-6z"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5a10.5 10.5 0 00-3.3 20.5c.5.1.7-.2.7-.5v-1.8c-2.9.6-3.5-1.4-3.5-1.4-.5-1.2-1.2-1.5-1.2-1.5-1-.7.1-.6.1-.6 1 .1 1.6 1.1 1.6 1.1.9 1.6 2.5 1.1 3.1.9.1-.7.4-1.1.7-1.4-2.3-.3-4.8-1.2-4.8-5.2 0-1.1.4-2.1 1.1-2.8-.1-.3-.5-1.4.1-2.8 0 0 .9-.3 2.9 1.1a10 10 0 015.3 0c2-1.4 2.9-1.1 2.9-1.1.6 1.5.2 2.5.1 2.8.7.7 1.1 1.7 1.1 2.8 0 4-2.5 4.9-4.8 5.2.4.3.7 1 .7 1.9v2.9c0 .3.2.6.7.5A10.5 10.5 0 0012 1.5z"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+</svg>
+
+<div id="stage">
+
+<section class="slide dark" data-title="Capa">
+  <div class="abs" style="left:110px;top:200px;width:14px;height:240px;background:var(--gold);border-radius:4px"></div>
+  <div class="abs" style="left:160px;top:190px;width:1300px">
+    <div style="color:var(--gold);font-size:20px;font-weight:700;letter-spacing:.6px;text-transform:uppercase">Case · Engenharia de IA</div>
+    <h1 style="margin:18px 0 0;font-size:88px;line-height:1.02;letter-spacing:-2px;font-weight:800">Agente de atendimento<br>ao aluno</h1>
+  </div>
+  <div class="abs" style="left:160px;top:560px;display:flex;gap:12px;flex-wrap:wrap">
+    <span class="tag gold">Python 3.14</span><span class="tag gold">FastAPI</span><span class="tag gold">LangChain</span><span class="tag gold">Postgres</span><span class="tag gold">Redis</span><span class="tag gold">Langfuse</span><span class="tag gold">React</span>
+  </div>
+  <div class="abs" style="left:160px;top:680px;font-size:24px;font-weight:600">Vinicius Pinho</div>
+  <aside class="notes"><ul><li>Roteiro: demonstração, estrutura do código, resultados, decisões de arquitetura.</li></ul></aside>
+</section>
+
+<section class="slide" data-title="Conexão entre sistemas">
+  <div class="top"><span class="section">Contexto</span></div>
+  <h2 class="title">Conexão entre sistemas</h2>
+  <div class="body">
+    <svg class="wires">
+      <path class="soft" d="M640 290 L580 200"/><path class="soft" d="M860 290 L920 200"/>
+      <path class="soft" d="M640 330 L580 400"/><path class="soft" d="M860 330 L920 400"/>
+    </svg>
+    <div class="card" style="left:0;top:20px;width:580px;height:200px;border-color:var(--sys-sag)"><span class="head" style="background:var(--sys-sag)">SAG · acadêmico</span>
+      <div class="key"><span class="lbl">chave</span><div class="fns"><span class="fn">brand</span><span class="fn">student_id</span></div>
+        <span class="lbl">valor</span><div class="fns"><span class="fn gold">UniSaoPaulo</span><span class="fn gold">181722</span></div></div>
+      <div class="find">15 CPFs com dois person_id</div></div>
+    <div class="card" style="left:920px;top:20px;width:580px;height:200px;border-color:var(--sys-lms)"><span class="head" style="background:var(--sys-lms)">LMS · ambiente virtual</span>
+      <div class="key"><span class="lbl">chave</span><div class="fns"><span class="fn">tenant_id</span><span class="fn">student_id</span></div>
+        <span class="lbl">valor</span><div class="fns"><span class="fn gold">1</span><span class="fn gold">PRES_18172</span></div></div>
+      <div class="find">35 de 1.078 contas sem student_id · 10 em minúscula ou com espaço</div></div>
+    <div class="card" style="left:0;top:380px;width:580px;height:200px;border-color:var(--sys-sec)"><span class="head" style="background:var(--sys-sec)">Secretaria · protocolos</span>
+      <div class="key"><span class="lbl">chave</span><div class="fns"><span class="fn">stu_id</span><span class="fn">unit_code</span><span class="fn">requester_cpf</span></div>
+        <span class="lbl">valor</span><div class="fns"><span class="fn gold">181722</span><span class="fn gold">SPA-PAU</span><span class="fn gold">8140522660</span></div></div>
+      <div class="find">315 de 3.933 CPFs sem o zero à esquerda · 124 abertos por responsável</div></div>
+    <div class="card" style="left:920px;top:380px;width:580px;height:200px;border-color:var(--sys-fin)"><span class="head" style="background:var(--sys-fin)">Financeiro · cobrança</span>
+      <div class="key"><span class="lbl">chave</span><div class="fns"><span class="fn">companycode</span><span class="fn">businessarea</span><span class="fn">academicref</span></div>
+        <span class="lbl">valor</span><div class="fns"><span class="fn gold">1010</span><span class="fn gold">PRESENCIAL</span><span class="fn gold">18172-2</span></div></div>
+      <div class="find">pagador ≠ aluno · academicref com e sem dígito</div></div>
+    <div class="tile" style="left:630px;top:190px;width:240px">
+      <div class="ico" style="--tc:var(--gold);width:104px;height:104px;border-radius:52px"><svg style="color:var(--navy-title);width:58px;height:58px"><use href="#i-user"/></svg></div>
+      <div class="tn" style="font-size:19px">CPF 081.405.226-60</div>
+      <div class="ts" style="font-size:15px">mesmo aluno, quatro chaves</div>
+    </div>
+  </div>
+  <div class="foot"><span class="tag">medido no banco local</span><span class="tag">âncora: CPF → person_ids → (marca, RA)</span><span class="porta" data-code="src/api/persistence/finance/dialect.py" data-lines="20-35" data-label="finance/dialect.py"></span></div>
+  <aside class="notes"><ul>
+    <li>Exemplo real: o aluno de RA 181722 da UniSaoPaulo presencial, nos quatro sistemas.</li>
+    <li>SAG: marca + RA. O mesmo CPF aparece com dois person_id em 15 casos, por isso a sessão guarda conjuntos.</li>
+    <li>LMS: tenant numérico por marca + PRES_/EAD_ + os 5 primeiros dígitos do RA, sem o dígito verificador. Comparação com trim e upper.</li>
+    <li>Secretaria: stu_id perde o zero à esquerda (lpad 6), requester_cpf também (lpad 11); a unidade (SPA-PAU, -EAD) diz marca e modalidade. 351 protocolos sem stu_id: a posse vem do CPF do requerente.</li>
+    <li>Financeiro: empresa 1010–1050 por marca, área PRESENCIAL/DIGITAL e academicref "18172-2" (número-dígito; 7 de 1.065 sem hífen).</li>
+    <li>O mesmo protocolo: PRT-2022/0003091 no histórico do SAG e 20220003091 na secretaria; as 229 referências casam depois de normalizadas.</li>
+    <li>Cada tradução vive no dialeto do sistema, na persistence; o domínio só conhece marca, modalidade e RA.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Demonstração">
+  <div class="top"><span class="section">Demonstração</span></div>
+  <h2 class="title">Demonstração</h2>
+  <div class="body">
+    <div class="abs" style="left:0;top:40px;width:1500px;display:grid;grid-template-columns:repeat(3,1fr);gap:40px">
+      <div class="card" style="position:relative;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><svg style="width:72px;height:72px;color:var(--navy-action)"><use href="#i-users"/></svg><div class="big-word">Login simulado</div></div>
+      <div class="card" style="position:relative;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><svg style="width:72px;height:72px;color:var(--navy-action)"><use href="#i-chat"/></svg><div class="big-word">Pergunta livre</div></div>
+      <div class="card" style="position:relative;height:250px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><svg style="width:72px;height:72px;color:var(--navy-action)"><use href="#i-eye"/></svg><div class="big-word">Trace</div></div>
+    </div>
+    <div class="abs fns" style="left:0;top:350px;width:1500px;justify-content:center;gap:14px">
+      <span class="fn" style="font-size:17px">painel de tools</span><span class="fn" style="font-size:17px">widgets</span><span class="fn" style="font-size:17px">card de confirmação</span><span class="fn" style="font-size:17px">tempo de modelo × tools</span>
+    </div>
+  </div>
+  <div class="foot" style="justify-content:center"><span class="porta" data-href="front" data-label="Front"></span><span class="porta" data-href="langfuse" data-label="Langfuse"></span></div>
+  <aside class="notes"><ul>
+    <li>Aluno escolhido na hora pelo login simulado; a identidade vira um JWT.</li>
+    <li>Perguntas à escolha dos examinadores.</li>
+    <li>Em cada resposta: painel de tools, widgets, card de confirmação e o trace no Langfuse.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Arquitetura" data-zoom="1">
+  <div class="top"><span class="section">Estrutura</span><span class="zoom"></span></div>
+  <h2 class="title">Arquitetura</h2>
+  <div class="body">
+    <div class="grp" style="left:200px;top:0;width:930px;height:600px;--gc:var(--navy-base)"><div class="tab"><svg><use href="#i-box"/></svg></div><div class="glabel">Produção</div></div>
+    <div class="grp dash" style="left:440px;top:76px;width:658px;height:500px;--gc:var(--sky)"><div class="glabel" style="font-size:15px;color:var(--ink-soft)">rede interna</div></div>
+    <div class="grp dash" style="left:1180px;top:76px;width:320px;height:500px;--gc:var(--ink-soft)"><div class="glabel">externos</div></div>
+
+    <div class="tile" style="left:0;top:240px;width:150px"><div class="ico plain"><svg><use href="#i-users"/></svg></div><div class="tn">Aluno</div></div>
+    <div class="tile" style="left:270px;top:240px;width:120px;--tc:var(--sky)"><div class="ico"><svg><use href="#i-browser"/></svg></div><div class="tn">web</div><div class="ts">React estático</div></div>
+    <div class="tile" style="left:500px;top:240px;width:200px;--tc:var(--navy-action)"><div class="ico stack"><svg><use href="#i-api"/></svg></div><div class="tn">api</div><div class="ts">FastAPI · réplicas</div></div>
+    <div class="tile" style="left:800px;top:100px;width:280px;--tc:var(--sys-sec)"><div class="ico"><svg><use href="#i-db"/></svg></div><div class="tn">Postgres</div>
+      <div class="fns" style="justify-content:center;margin-top:6px;gap:5px"><span class="fn" style="font-size:13px;color:var(--sys-sag)">sag</span><span class="fn" style="font-size:13px;color:var(--sys-lms)">lms</span><span class="fn" style="font-size:13px;color:var(--sys-sec)">secretary</span><span class="fn" style="font-size:13px;color:var(--sys-fin)">finance</span><span class="fn" style="font-size:13px">agent</span></div></div>
+    <div class="tile" style="left:840px;top:400px;width:200px;--tc:var(--sys-lms)"><div class="ico"><svg><use href="#i-bolt"/></svg></div><div class="tn">Redis</div></div>
+    <div class="tile" style="left:1265px;top:120px;width:150px;--tc:var(--ink)"><div class="ico"><svg><use href="#i-spark"/></svg></div><div class="tn">OpenAI</div></div>
+    <div class="tile" style="left:1265px;top:350px;width:150px;--tc:var(--gold)"><div class="ico"><svg style="color:var(--navy-title)"><use href="#i-eye"/></svg></div><div class="tn">Langfuse</div><div class="ts">opcional</div></div>
+
+    <svg class="wires">
+      <path d="M118 278 H290" marker-end="url(#ah)"/>
+      <path d="M370 278 H560" marker-end="url(#ah)"/>
+      <path d="M640 262 H760 V138 H898" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      <path d="M640 294 H760 V438 H898" marker-start="url(#ah)" marker-end="url(#ah)"/>
+      <path d="M600 238 V44 H1160 V158 H1298" marker-end="url(#ah)"/>
+      <path class="soft" d="M600 384 V545 H1160 V388 H1298" marker-end="url(#ahs)"/>
+    </svg>
+    <span class="tag edge abs" style="left:176px;top:243px">JWT</span>
+    <span class="tag edge abs" style="left:452px;top:240px">/chat · stream</span>
+    <span class="tag edge abs" style="left:700px;top:186px">role api</span>
+    <span class="tag edge abs" style="left:696px;top:356px">rate limit</span>
+    <span class="tag edge abs" style="left:900px;top:28px">modelo + tools</span>
+    <span class="tag edge abs" style="left:930px;top:530px">traces</span>
+  </div>
+  <aside class="notes"><ul>
+    <li>Desenho de produção: o front é estático e fica fora da rede interna; só a API é exposta, e banco e Redis ficam na rede interna.</li>
+    <li>API stateless: sessão a partir do JWT em cada request, histórico no schema agent, proposta de protocolo em token assinado. Escala por réplicas.</li>
+    <li>Postgres com a role api: lê só as tabelas mapeadas, grava só protocolo e agent.</li>
+    <li>Redis guarda o contador do rate limit (60 mensagens/hora por aluno, fail-open).</li>
+    <li>Langfuse é opcional; sem as chaves, nada muda.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Camadas num turno" data-zoom="2">
+  <div class="top"><span class="section">Estrutura</span><span class="zoom"></span></div>
+  <h2 class="title">Camadas, seguindo um turno</h2>
+  <div class="body">
+    <div class="lane" style="top:0;height:108px;background:var(--sky-soft)"><div class="ll">presentation<small>rotas HTTP</small></div></div>
+    <div class="lane" style="top:123px;height:108px;background:var(--surface-soft)"><div class="ll">application<small>agente · services</small></div></div>
+    <div class="lane" style="top:246px;height:108px;background:#fff7e6;border:2px solid var(--gold)"><div class="ll">domain<small>regras · ports · stdlib</small></div></div>
+    <div class="lane" style="top:369px;height:108px;background:#eaf5f5"><div class="ll">persistence<small>SQLAlchemy · Postgres</small></div></div>
+    <div class="lane" style="top:492px;height:108px;background:#f1eef8"><div class="ll">infrastructure<small>Redis · JWT · tracing</small></div></div>
+    <svg class="wires">
+      <path d="M292 92 V260" marker-end="url(#ah)"/>
+      <path d="M380 54 H400 V177 H418" marker-end="url(#ah)"/>
+      <path d="M507 215 V260" marker-end="url(#ah)"/>
+      <path d="M595 177 H633" marker-end="url(#ah)"/>
+      <path d="M810 177 H848" marker-end="url(#ah)"/>
+      <path d="M937 215 V260" marker-end="url(#ah)"/>
+      <path d="M1025 177 H1045 V300 H1063" marker-end="url(#ah)"/>
+      <path d="M1240 300 H1260 V177 H1278" marker-end="url(#ah)"/>
+      <path d="M1367 139 V94" marker-end="url(#ah)"/>
+      <path class="impl" d="M292 385 V341" marker-end="url(#ahi)"/>
+      <path class="impl" d="M507 508 V341" marker-end="url(#ahi)"/>
+      <path class="impl" d="M937 385 V341" marker-end="url(#ahi)"/>
+    </svg>
+    <div class="step" style="left:205px;top:16px;width:175px;height:76px"><span class="n">1</span><div class="t">POST /chat</div><div class="d">Bearer JWT</div></div>
+    <div class="step port" style="left:205px;top:262px;width:175px;height:76px"><div class="t">StudentSession<br>Loader</div></div>
+    <div class="step impl" style="left:205px;top:385px;width:175px;height:76px"><div class="t">StudentSession<br>Repository</div></div>
+
+    <div class="step" style="left:420px;top:139px;width:175px;height:76px"><span class="n">2</span><div class="t">ChatRateLimit</div><div class="d">admit()</div></div>
+    <div class="step port" style="left:420px;top:262px;width:175px;height:76px"><div class="t">RateLimiter</div></div>
+    <div class="step impl" style="left:420px;top:508px;width:175px;height:76px"><div class="t">RedisRateLimiter</div><div class="d">→ Redis</div></div>
+
+    <div class="step" style="left:635px;top:139px;width:175px;height:76px"><span class="n">3</span><div class="t">StudentAgent</div><div class="d">LangChain → OpenAI</div></div>
+
+    <div class="step" style="left:850px;top:139px;width:175px;height:76px"><span class="n">4</span><div class="t">AcademicService</div><div class="d">via AcademicTools</div></div>
+    <div class="step port" style="left:850px;top:262px;width:175px;height:76px"><div class="t">StudentAcademic<br>Repository</div></div>
+    <div class="step impl key" style="left:850px;top:385px;width:175px;height:76px"><div class="t">SagStudent<br>AcademicRepository</div><div class="d">+ filtro do aluno</div></div>
+
+    <div class="step" style="left:1065px;top:262px;width:175px;height:76px"><span class="n">5</span><div class="t">SubjectRecord<br>.required_av2</div><div class="d">regra pura</div></div>
+
+    <div class="step" style="left:1280px;top:139px;width:175px;height:76px"><span class="n">6</span><div class="t">ToolResult</div><div class="d">volta ao modelo</div></div>
+    <div class="step" style="left:1280px;top:16px;width:175px;height:76px"><span class="n">7</span><div class="t">stream</div><div class="d">texto + widget</div></div>
+  </div>
+  <div class="foot">
+    <span class="legend"><svg viewBox="0 0 44 12"><path d="M2 6 H36" stroke="#0b4279" stroke-width="2.5"/><path d="M34 1 L42 6 L34 11z" fill="#0b4279"/></svg>usa</span>
+    <span class="legend"><svg viewBox="0 0 44 12"><path d="M2 6 H36" stroke="#b7791f" stroke-width="2.5" stroke-dasharray="6 5"/><path d="M34 1 L42 6 L34 11z" fill="#b7791f"/></svg>implementa</span>
+    <span class="tag">bootstrap liga port → implementação, por request</span>
+    <span class="porta" data-code=".importlinter"></span>
+  </div>
+  <aside class="notes"><ul>
+    <li>Exemplo: "quanto preciso tirar na AV2 de Engenharia de Software?". Todas as setas apontam para o domain.</li>
+    <li>1: a rota recebe o Bearer; o bootstrap carrega a sessão pelo port StudentSessionLoader, implementado na persistence (todos os person_ids da pessoa, achados pelo CPF).</li>
+    <li>2: ChatRateLimit depende do port RateLimiter; quem fala com o Redis é o RedisRateLimiter, na infrastructure. Sem Redis, o bootstrap liga uma implementação sem limite (fail-open).</li>
+    <li>3: o StudentAgent roda o grafo do LangChain; LangChain e o cliente do modelo ficam presos em application/agent.</li>
+    <li>4: a tool list_subject_records chama o AcademicService, que depende do port StudentAcademicRepository; o SagStudentAcademicRepository implementa, e o ORM acrescenta o filtro do aluno.</li>
+    <li>5: SubjectRecord.required_av2 é domínio puro: (6 − 0,4 × AV1) / 0,6, só para disciplina em curso com AV1 lançada; senão, o valor sai como não disponível.</li>
+    <li>6–7: o resultado volta num envelope com status; texto e widget vão em stream.</li>
+    <li>O import-linter quebra o build se application importar persistence ou infrastructure; o bootstrap é o único que conhece todas.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Guardrails" data-zoom="3">
+  <div class="top"><span class="section">Estrutura · segurança</span><span class="zoom"></span></div>
+  <h2 class="title">Guardrails</h2>
+  <div class="body">
+    <div class="lbl abs" style="left:0;top:0">Arquitetura</div>
+    <div class="abs" style="left:0;top:34px;width:1000px;display:flex;flex-direction:column;gap:14px">
+      <div class="row"><span class="n big">1</span><svg class="ri"><use href="#i-key"/></svg><span class="rt">Identidade só do JWT</span><span class="fn gold">HttpSession.session</span></div>
+      <div class="row"><span class="n big">2</span><svg class="ri"><use href="#i-tool"/></svg><span class="rt">Tools sem parâmetro de aluno</span><span class="fn gold">FinanceTools</span></div>
+      <div class="row" style="border-color:var(--gold);border-width:3px"><span class="n big gold">3</span><svg class="ri"><use href="#i-filter"/></svg><span class="rt">Filtro do aluno em toda consulta</span><span class="fn gold">OwnershipCriteria.apply</span></div>
+      <div class="row"><span class="n big">4</span><svg class="ri"><use href="#i-lock"/></svg><span class="rt">Role de banco restrita</span><span class="fn gold">05_roles.sh</span></div>
+      <div class="row"><span class="n big">5</span><svg class="ri"><use href="#i-check"/></svg><span class="rt">Escrita só com confirmação do aluno</span><span class="fn gold">ProtocolConfirmation</span></div>
+    </div>
+    <div class="lbl abs" style="left:1060px;top:0">Modelo</div>
+    <div class="abs" style="left:1060px;top:34px;width:440px;display:flex;flex-direction:column;gap:14px">
+      <div class="row" style="border-style:dashed"><svg class="ri" style="color:var(--ink-soft)"><use href="#i-chat"/></svg><span class="rt" style="font-size:19px">Regras no prompt</span></div>
+      <div class="row" style="border-style:dashed"><svg class="ri" style="color:var(--ink-soft)"><use href="#i-shield"/></svg><span class="rt" style="font-size:19px">Skills por área</span></div>
+      <div class="row" style="border-style:dashed"><svg class="ri" style="color:var(--ink-soft)"><use href="#i-filter"/></svg><span class="rt" style="font-size:19px">InputGuard</span><span class="tag wip" style="margin-left:auto">em avaliação</span></div>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>A coluna da esquerda não depende do modelo obedecer; a da direita reduz a chance de um ataque funcionar.</li>
+    <li>1: RA, CPF ou nome digitados não mudam a sessão. Teste: test_the_body_id_never_changes_the_session.</li>
+    <li>2: um teste falha se alguma tool tiver parâmetro de identidade (IDENTITY_PARAMETERS).</li>
+    <li>3: toda consulta ORM recebe o filtro do aluno da sessão; varredura chama todas as tools com todos os argumentos.</li>
+    <li>4: a role api lê só as tabelas mapeadas e grava só em protocolo e no schema agent.</li>
+    <li>5: o agente só propõe; gravar exige token assinado e a palavra digitada pelo aluno.</li>
+    <li>InputGuard: classificador de entrada (fora do escopo, injeção), ainda sendo medido no eval.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Ownership" data-zoom="3">
+  <div class="top"><span class="section">Estrutura · segurança</span><span class="zoom"></span></div>
+  <h2 class="title">Ownership em toda consulta</h2>
+  <div class="body">
+    <svg class="wires">
+      <path d="M300 80 H338" marker-end="url(#ah)"/>
+      <path d="M640 80 H678" marker-end="url(#ah)"/>
+      <path d="M1020 80 H1058" marker-end="url(#ah)"/>
+      <path class="bad" d="M850 122 V170" marker-end="url(#ahr)"/>
+      <path d="M380 470 H448" marker-end="url(#ah)"/>
+      <path d="M830 470 H898" marker-end="url(#ah)"/>
+    </svg>
+    <div class="step lg" style="left:0;top:40px;width:300px;height:80px"><div class="t">select(InvoiceRow)</div><div class="d">consulta normal</div></div>
+    <div class="step lg" style="left:340px;top:40px;width:300px;height:80px"><div class="t">do_orm_execute</div><div class="d">toda execução ORM</div></div>
+    <div class="step lg key" style="left:680px;top:40px;width:340px;height:80px"><div class="t">OwnershipCriteria.apply</div><div class="d">+ critério de cada tabela</div></div>
+    <div class="step lg" style="left:1060px;top:40px;width:440px;height:80px;background:#0f1b2b;border-color:#0f1b2b"><div class="t" style="color:#dbe4ee">WHERE … matrículas da sessão</div></div>
+    <div class="abs fns" style="left:690px;top:180px;flex-direction:column"><span class="fn red">sem aluno → erro</span><span class="fn red">tabela sem regra → erro</span></div>
+
+    <div class="lbl abs" style="left:0;top:340px">posse em cadeia</div>
+    <div class="step lg" style="left:0;top:420px;width:380px;height:100px;border-color:var(--sys-fin)"><div class="t">Contrato</div><div class="d">matrículas da sessão</div></div>
+    <div class="step lg" style="left:450px;top:420px;width:380px;height:100px;border-color:var(--sys-fin)"><div class="t">Fatura</div><div class="d">contract_id ∈ contratos visíveis</div></div>
+    <div class="step lg" style="left:900px;top:420px;width:380px;height:100px;border-color:var(--sys-fin)"><div class="t">Pagamento</div><div class="d">invoice_id ∈ faturas visíveis</div></div>
+  </div>
+  <div class="foot"><span class="porta" data-code="src/api/persistence/core/ownership_criteria.py" data-lines="49-85"></span><span class="porta" data-code="src/api/persistence/finance/ownership.py" data-lines="12-20" data-label="finance/ownership.py:12"></span></div>
+  <aside class="notes"><ul>
+    <li>O repositório escreve a consulta sem pensar em ownership.</li>
+    <li>O listener do_orm_execute chama OwnershipCriteria.apply em toda execução ORM, que acrescenta with_loader_criteria para cada tabela com regra.</li>
+    <li>Fail-closed: sessão de banco sem aluno levanta erro; tabela sem regra declarada também (assert_complete no teste).</li>
+    <li>A fatura filtra por contract_id em select(ContractRow.id), e esse subselect também recebe o critério do contrato.</li>
+    <li>SKIP_OWNERSHIP só em dois pontos: carga da sessão e health.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Abertura de protocolo" data-zoom="3">
+  <div class="top"><span class="section">Estrutura · segurança</span><span class="zoom"></span></div>
+  <h2 class="title">Abertura de protocolo</h2>
+  <div class="body">
+    <div class="lane" style="top:0;height:260px;background:var(--danger-soft);border:2px dashed #e7a19b"><div class="ll" style="color:var(--danger)">turno do LLM</div></div>
+    <div class="lane" style="top:320px;height:280px;background:var(--success-soft);border:2px solid #a9d8bd"><div class="ll" style="color:var(--success)">fora do LLM</div></div>
+    <svg class="wires">
+      <path d="M440 100 H498" marker-end="url(#ah)"/>
+      <path d="M760 100 H818" marker-end="url(#ah)"/>
+      <path d="M1080 100 H1138" marker-end="url(#ah)"/>
+      <path class="bad" d="M950 150 V180" marker-end="url(#ahr)"/>
+      <path class="gold" d="M1270 150 V398" marker-end="url(#ah)"/>
+      <path class="ok" d="M1140 460 H1082" marker-end="url(#ahg)"/>
+      <path class="ok" d="M820 460 H762" marker-end="url(#ahg)"/>
+      <path class="ok" d="M500 460 H442" marker-end="url(#ahg)"/>
+    </svg>
+    <div class="step lg llm" style="left:200px;top:50px;width:240px;height:100px"><span class="n">1</span><div class="t">aluno pede</div></div>
+    <div class="step lg llm" style="left:500px;top:50px;width:260px;height:100px"><span class="n">2</span><div class="t">propose_protocol</div></div>
+    <div class="step lg llm" style="left:820px;top:50px;width:260px;height:100px"><span class="n">3</span><div class="t">regras do domínio</div></div>
+    <div class="step lg llm" style="left:1140px;top:50px;width:260px;height:100px"><span class="n">4</span><div class="t">token assinado</div><div class="d">pessoa · serviço · matrícula</div></div>
+    <div class="abs fns" style="left:820px;top:186px;width:300px"><span class="fn red">disciplina</span><span class="fn red">já trancada</span><span class="fn red">duplicado</span></div>
+    <div class="step lg safe" style="left:1140px;top:400px;width:260px;height:110px"><span class="n">5</span><div class="t">card + palavra</div></div>
+    <div class="step lg safe" style="left:820px;top:400px;width:260px;height:110px"><span class="n">6</span><div class="t">POST …/confirm</div></div>
+    <div class="step lg safe" style="left:500px;top:400px;width:260px;height:110px"><span class="n">7</span><div class="t">verifica + revalida</div><div class="d">pessoa ∈ sessão</div></div>
+    <div class="step lg safe" style="left:200px;top:400px;width:240px;height:110px"><span class="n">8</span><div class="t">grava</div><div class="d">uma transação</div></div>
+  </div>
+  <div class="foot"><span class="porta" data-code="src/api/application/protocol/proposer.py" data-lines="29-56"></span><span class="porta" data-code="src/api/application/protocol/confirmation.py" data-lines="30-43"></span></div>
+  <aside class="notes"><ul>
+    <li>Dentro do turno, o pior resultado de uma injeção é uma proposta.</li>
+    <li>O domínio recusa antes de assinar: disciplina, serviço com taxa, matrícula já trancada, pedido duplicado.</li>
+    <li>O token carrega pessoa, serviço e matrícula e expira em 15 minutos.</li>
+    <li>A confirmação é uma rota sem LLM: confere a assinatura, confere que a pessoa pertence à sessão, revalida as regras e grava.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Domínio no contexto do modelo" data-zoom="3">
+  <div class="top"><span class="section">Estrutura · corretude</span><span class="zoom"></span></div>
+  <h2 class="title">Domínio no contexto do modelo</h2>
+  <div class="body">
+    <svg class="wires">
+      <path d="M440 175 H526" marker-end="url(#ah)"/>
+      <path d="M970 175 H1056" marker-end="url(#ah)"/>
+    </svg>
+    <div class="card gold" style="left:0;top:20px;width:440px;height:310px"><span class="head" style="background:var(--gold);color:var(--navy-title)">Ontologia · domain</span>
+      <div style="display:grid;grid-template-columns:96px 1fr;gap:12px 10px;align-items:start;font-size:16px">
+        <span class="lbl">conceito</span><b style="font-size:22px;color:var(--navy-title)">Trancamento</b>
+        <span class="lbl">sinônimos</span><div class="fns"><span class="fn">trancar o curso</span><span class="fn">parar o curso</span></div>
+        <span class="lbl">definição</span><span style="font-weight:600">curso inteiro, nunca disciplina; pede confirmação</span>
+        <span class="lbl">never_say</span><span class="fn red" style="white-space:normal">garantir cobranças futuras</span>
+        <span class="lbl">relação</span><span class="fn" style="white-space:normal">NOT_IMPLIES quitação</span>
+      </div>
+    </div>
+    <div class="card" style="left:530px;top:20px;width:440px;height:310px"><span class="head">Skill da área</span>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:6px">
+        <div class="row" style="padding:16px"><span class="rt" style="font-size:19px">SKILL.md</span></div>
+        <div class="row" style="padding:16px"><span class="rt" style="font-size:19px">tabela de ações</span><span class="tag" style="margin-left:auto">gerada do código</span></div>
+        <div class="row" style="padding:16px;border-color:var(--gold)"><span class="rt" style="font-size:19px">ontologias</span><span class="tag" style="margin-left:auto">renderizadas</span></div>
+      </div>
+    </div>
+    <div class="card" style="left:1060px;top:20px;width:440px;height:310px"><span class="head">Contexto</span>
+      <div class="row" style="padding:16px;border-style:dashed"><span class="rt" style="font-size:19px">prompt base · 19 linhas</span></div>
+      <div style="text-align:center;margin:18px 0;font-family:var(--mono);font-weight:700;font-size:17px;color:var(--navy-action)">↓ load_skill(área)</div>
+      <div class="row" style="padding:16px;border-color:var(--gold)"><span class="rt" style="font-size:19px">skill + tools da área</span></div>
+    </div>
+  </div>
+  <div class="foot"><span class="tag">54 conceitos · 7 áreas</span><span class="tag">sem RAG</span><span class="porta" data-code="src/api/application/agent/skill_library.py" data-lines="34-42"></span></div>
+  <aside class="notes"><ul>
+    <li>Não há base de texto para indexar; o que o aluno confunde são conceitos. Por isso, ontologia em vez de RAG.</li>
+    <li>Ontologia: classe do domínio com conceito, área, sinônimos (como o aluno fala), definição, never_say (o que o agente não pode afirmar) e relações tipadas (NOT_IMPLIES, NOT_SAME_AS). 54 conceitos em 7 áreas.</li>
+    <li>O OntologyRenderer transforma as ontologias da área em texto e anexa à skill: o vocabulário vive no código, testado, e não espalhado no prompt.</li>
+    <li>Skill: procedimento escrito + tabela de ações gerada do código + ontologias da área renderizadas.</li>
+    <li>O prompt base só lista as áreas; o modelo carrega a skill com load_skill quando a pergunta pede.</li>
+    <li>A definição de trancamento (curso inteiro, nunca disciplina) entrou depois do bug do trancamento.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Resposta das tools" data-zoom="3">
+  <div class="top"><span class="section">Estrutura · corretude</span><span class="zoom"></span></div>
+  <h2 class="title">Resposta das tools</h2>
+  <div class="body">
+    <div class="lbl abs" style="left:0;top:0">status do ToolResult</div>
+    <div class="abs" style="left:0;top:32px;width:820px;display:grid;grid-template-columns:130px 1fr;gap:10px 14px;align-items:center;font-size:15.5px">
+      <span class="fn green">ok</span><span>dado encontrado</span>
+      <span class="fn">empty</span><span>consultou, não há registro</span>
+      <span class="fn gold">not_found</span><span><code>subject="Engenharia de Software"</code> → candidatos</span>
+      <span class="fn gold">ambiguous</span><span><code>subject="CRIMINAL LAW"</code> → <code>DIR0302</code> · <code>DIR0703</code></span>
+      <span class="fn red">refused</span><span>trancar uma disciplina → só o curso inteiro</span>
+      <span class="fn red">invalid</span><span><code>term="segundo semestre"</code> → "Aceita AAAA/S. Exemplo: 2026/2"</span>
+      <span class="fn red">error</span><span>falha técnica; o turno segue</span>
+    </div>
+    <div class="lbl abs" style="left:900px;top:0">erro que ensina · duas chamadas</div>
+    <svg class="wires">
+      <path d="M1200 112 V136" marker-end="url(#ah)"/>
+      <path class="gold" d="M1200 228 V250" marker-end="url(#ah)"/>
+      <path d="M1200 316 V338" marker-end="url(#ah)"/>
+    </svg>
+    <div class="step lg" style="left:900px;top:32px;width:600px;height:80px;align-items:flex-start"><span class="n">1</span><div class="t">list_subject_records(subject="Engenharia de Software")</div></div>
+    <div class="step lg key" style="left:900px;top:138px;width:600px;height:90px;align-items:flex-start"><div class="t">not_found</div><div class="d">ADS0203 SOFTWARE ENGINEERING I · ADS0503 SOFTWARE ENGINEERING II</div></div>
+    <div class="step lg" style="left:900px;top:252px;width:600px;height:64px;align-items:flex-start"><span class="n">2</span><div class="t">list_subject_records(subject="ADS0203")</div></div>
+    <div class="step lg safe" style="left:900px;top:340px;width:600px;height:76px;align-items:flex-start"><div class="t">ok</div><div class="d">registro da disciplina, com required_av2</div></div>
+  </div>
+  <div class="foot"><span class="tag">valores: recorded · not_yet · not_recorded</span><span class="porta" data-code="src/api/application/agent/langchain_tools.py" data-lines="61-88"></span><span class="porta" data-trace="40dd17d0783835df09ab9a307bf59f34" data-label="trace VA-03"></span></div>
+  <aside class="notes"><ul>
+    <li>Toda tool devolve um envelope com status; o modelo lê o status antes do dado.</li>
+    <li>not_found: não achou, e devolve candidatos com código. ambiguous: achou mais de um, e o modelo pergunta ao aluno. refused: a regra não permite, com o motivo. invalid: o argumento não passou na validação, e a resposta diz o formato aceito e um exemplo (a tool nem executa). error: falha técnica, uma nova tentativa.</li>
+    <li>Erro que ensina são duas chamadas da mesma tool em passos diferentes do grafo: a primeira volta not_found com candidatos; o modelo escolhe o código e chama de novo.</li>
+    <li>Na rodada final da T14, 7 de 16 buscas por disciplina falharam na primeira chamada, e as 7 se recuperaram na seguinte.</li>
+    <li>StatedValue separa nota zero, nota ainda não lançada (not_yet) e dado que o sistema não registra (not_recorded).</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Como avaliamos">
+  <div class="top"><span class="section">Resultados</span></div>
+  <h2 class="title">Como avaliamos</h2>
+  <div class="body">
+    <svg class="wires">
+      <path d="M230 170 H262" marker-end="url(#ah)"/>
+      <path d="M490 170 H522" marker-end="url(#ah)"/>
+      <path d="M750 170 H782" marker-end="url(#ah)"/>
+      <path d="M1010 170 H1042" marker-end="url(#ah)"/>
+      <path d="M1270 170 H1302" marker-end="url(#ah)"/>
+    </svg>
+    <div class="card" style="left:0;top:60px;width:230px;height:220px"><span class="head">1 · golden sets</span><div class="fns" style="flex-direction:column"><span class="fn">qualidade</span><span class="fn">protocolo</span><span class="fn">segurança</span><span class="fn">escopo</span></div></div>
+    <div class="card gold" style="left:265px;top:60px;width:225px;height:220px"><span class="head" style="background:var(--gold);color:var(--navy-title)">2 · gabarito</span><div class="big-word">SQL direto</div><div class="tag" style="margin-top:12px">sem as tools</div></div>
+    <div class="card" style="left:525px;top:60px;width:225px;height:220px"><span class="head">3 · agente</span><div class="big-word">k repetições</div></div>
+    <div class="card" style="left:785px;top:60px;width:225px;height:220px"><span class="head">4 · graders</span><div class="fns" style="flex-direction:column"><span class="fn">trajetória</span><span class="fn">vazamento</span><span class="fn">proposta</span><span class="fn">recusa</span></div></div>
+    <div class="card" style="left:1045px;top:60px;width:225px;height:220px"><span class="head">5 · juiz LLM</span><div class="big-word">rubrica</div><div class="tag" style="margin-top:12px">18/20 com humano</div></div>
+    <div class="card ok" style="left:1305px;top:60px;width:195px;height:220px"><span class="head" style="background:var(--success)">6 · gate</span><div class="big-word" style="color:var(--success);font-size:30px">pass^k</div><div class="tag green" style="margin-top:12px">itens críticos</div></div>
+  </div>
+  <div class="foot"><span class="porta" data-href="evals" data-label="Painel do eval"></span></div>
+  <aside class="notes"><ul>
+    <li>Gabarito de cada item em SQL direto no banco, independente das tools testadas.</li>
+    <li>Agente de produção, com repetições (5 nos itens críticos de trancamento).</li>
+    <li>Graders em código para o que é objetivo: trajetória, vazamento, proposta indevida, recusa.</li>
+    <li>Juiz LLM para a rubrica, calibrado com respostas corretas e adulteradas: 18 de 20 iguais à avaliação humana.</li>
+    <li>Gate: item crítico precisa acertar em todas as repetições.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Resultados">
+  <div class="top"><span class="section">Resultados</span></div>
+  <h2 class="title">Resultados</h2>
+  <div class="body">
+    <div class="stat tbd" style="left:0;top:20px;width:470px;height:260px;border-color:var(--success);border-width:3px"><div class="lbl">vazamento entre alunos</div><div class="v" style="color:var(--success)">0<small> / 183</small></div></div>
+    <div class="stat tbd" style="left:515px;top:20px;width:470px;height:260px"><div class="lbl">ataques bem-sucedidos</div><div class="v">0<small> / 27</small></div></div>
+    <div class="stat tbd" style="left:1030px;top:20px;width:470px;height:260px"><div class="lbl">itens críticos · pass^k</div><div class="v">14<small> / 15</small></div></div>
+    <div class="stat tbd" style="left:0;top:320px;width:470px;height:260px"><div class="lbl">fora do escopo atendido</div><div class="v">6<small> / 72</small></div></div>
+    <div class="stat tbd" style="left:515px;top:320px;width:470px;height:260px"><div class="lbl">latência · p50 / p95</div><div class="v">4,4<small> / 8,5 s</small></div></div>
+    <div class="stat tbd" style="left:1030px;top:320px;width:470px;height:260px"><div class="lbl">custo por turno</div><div class="v">US$ 0,0014</div></div>
+  </div>
+  <div class="foot"><span class="porta" data-href="evals" data-label="Painel do eval"></span><span class="porta" data-trace="2a140135798c0baa8f13c2d437100e97" data-label="trace AT-01"></span><span class="porta" data-trace="4b5cbd8f6616bfe2b8b5d936c0b873d9" data-label="trace AT-27"></span></div>
+  <aside class="notes"><ul>
+    <li>Números provisórios (rodada de 2026-11-09; o juiz não terminou). Trocar pela rodada aprovada.</li>
+    <li>Vazamento: zero nas 183 execuções.</li>
+    <li>Ataques: 21 + 6 injeções, uma execução cada, nenhum bem-sucedido.</li>
+    <li>Crítico que falhou: PR-08 em 1 de 5, o modelo pulou list_enrollments; o servidor já recusa trancar matrícula trancada.</li>
+    <li>Escopo (rodada própria, 41 itens × 3): 0/30 recusas indevidas, 0/24 injeções, 6/72 fora do escopo atendidos (tradução, dolo eventual).</li>
+    <li>Tools somam 29 ms no p50 e 418 ms no p95: quase todo o tempo é do modelo.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Caso: trancamento">
+  <div class="top"><span class="section">Resultados</span></div>
+  <h2 class="title">Caso: trancamento de disciplina</h2>
+  <div class="body">
+    <svg class="wires">
+      <path d="M350 110 H392" marker-end="url(#ah)"/>
+      <path d="M745 110 H787" marker-end="url(#ah)"/>
+      <path d="M1140 110 H1182" marker-end="url(#ah)"/>
+    </svg>
+    <div class="card danger" style="left:0;top:40px;width:350px;height:140px"><span class="head" style="background:var(--danger)">1 · uso real</span><div class="big-word" style="font-size:20px">propôs trancar o curso</div></div>
+    <div class="card" style="left:395px;top:40px;width:350px;height:140px"><span class="head">2 · baseline</span><div class="big-word" style="font-size:20px">TR-13: 4/5</div></div>
+    <div class="card gold" style="left:790px;top:40px;width:350px;height:140px"><span class="head" style="background:var(--gold);color:var(--navy-title)">3 · correção</span><div class="big-word" style="font-size:20px">regra no servidor</div></div>
+    <div class="card ok" style="left:1185px;top:40px;width:315px;height:140px"><span class="head" style="background:var(--success)">4 · mesmo eval</span><div class="big-word" style="font-size:20px">TR-13: 0/5</div></div>
+    <div class="abs" style="left:0;top:280px;width:1500px">
+      <div class="lbl" style="margin-bottom:18px">itens críticos com acerto em todas as repetições</div>
+      <div style="display:grid;grid-template-columns:110px 1fr 100px;gap:18px;align-items:center;font-weight:700;font-size:19px">
+        <span>antes</span><div style="height:50px;background:var(--surface-soft);border-radius:8px"><div style="width:50%;height:100%;background:var(--sky);border-radius:8px"></div></div><span style="font-size:26px">7/14</span>
+        <span>depois</span><div style="height:50px;background:var(--surface-soft);border-radius:8px"><div style="width:93%;height:100%;background:var(--success);border-radius:8px"></div></div><span style="font-size:26px;color:var(--success)">14/15</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span class="porta" data-trace="0b5b3efdab5c08a4df0759f73823a892" data-label="trace TR-13"></span><span class="porta" data-code="src/evals/results/rodada-final-t14/antes-e-depois.md" data-label="antes-e-depois.md"></span></div>
+  <aside class="notes"><ul>
+    <li>No uso real, o aluno pediu trancamento de matrícula de uma disciplina e o agente propôs trancar o curso inteiro.</li>
+    <li>O caso virou item do golden antes da correção; o baseline reproduziu 4 vezes em 5.</li>
+    <li>Correção no servidor: o domínio recusa trancamento de disciplina antes de assinar; a ontologia define trancamento.</li>
+    <li>Depois: TR-13 e TR-14 com 0/5; propostas indevidas nos críticos de 7 para 0.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-title="Decisões e limites">
+  <div class="top"><span class="section">Arquitetura</span></div>
+  <h2 class="title">Decisões e limites</h2>
+  <div class="body">
+    <div class="lbl abs" style="left:0;top:0">decisão · custo</div>
+    <div class="abs" style="left:0;top:34px;width:880px;display:flex;flex-direction:column;gap:12px">
+      <div class="row"><span class="rt" style="font-size:19px">sem RAG</span><span class="tag red" style="margin-left:auto">regulamento em texto pediria RAG</span></div>
+      <div class="row"><span class="rt" style="font-size:19px">tools tipadas, sem text-to-SQL</span><span class="tag red" style="margin-left:auto">pergunta nova, tool nova</span></div>
+      <div class="row"><span class="rt" style="font-size:19px">segurança em código, sem RLS</span><span class="tag red" style="margin-left:auto">regra vive na aplicação</span></div>
+      <div class="row"><span class="rt" style="font-size:19px">API stateless</span><span class="tag red" style="margin-left:auto">sessão carregada por request</span></div>
+      <div class="row"><span class="rt" style="font-size:19px">um fato, um sistema oficial</span><span class="tag red" style="margin-left:auto">divergência vira aviso</span></div>
+    </div>
+    <div class="lbl abs" style="left:940px;top:0">limites</div>
+    <div class="abs" style="left:940px;top:34px;width:560px;display:flex;flex-direction:column;gap:12px">
+      <div class="row" style="border-style:dashed"><span class="rt" style="font-size:19px">cruzar sistemas: 45%</span></div>
+      <div class="row" style="border-style:dashed"><span class="rt" style="font-size:19px">escopo: 6/72</span></div>
+      <div class="row" style="border-style:dashed"><span class="rt" style="font-size:19px">sem teste de carga</span></div>
+      <div class="row" style="border-style:dashed"><span class="rt" style="font-size:19px">login simulado</span></div>
+    </div>
+  </div>
+  <div class="foot"><span class="porta" data-code="docs/architecture.md" data-label="architecture.md"></span></div>
+  <aside class="notes"><ul>
+    <li>Sem RAG: os dados são tabelas e conceitos; ontologia e skill cobrem o vocabulário.</li>
+    <li>Tools tipadas: o modelo nunca escreve SQL; não há query livre para validar.</li>
+    <li>Segurança em código: num ambiente real os quatro sistemas podem nem estar em Postgres; a role do banco é a segunda camada.</li>
+    <li>Stateless: escala por réplicas; o gargalo é a cota de tokens do provedor, e o rate limit por aluno deixa o custo previsível.</li>
+    <li>Um fato, um sistema oficial: nota do AVA difere do SAG em ~1% das provas; vale o SAG, que entra na média.</li>
+    <li>Cruzar sistemas: 45% dos critérios nos itens que cruzam; o dado cruza certo, o agente não chama a tool do outro sistema. Spec de interoperabilidade pronto.</li>
+    <li>Teste de carga exigiria um modelo falso em produção; o caminho é medir com o provedor real e cota dedicada.</li>
+  </ul></aside>
+</section>
+
+<section class="slide dark" data-title="Perguntas">
+  <div class="abs" style="left:110px;top:220px">
+    <h1 style="margin:0;font-size:80px;font-weight:800;letter-spacing:-1.5px">Perguntas</h1>
+  </div>
+  <div class="abs" style="left:110px;top:440px;width:1380px;display:flex;flex-wrap:wrap;gap:14px">
+    <span class="porta" data-repo="1" data-label="Repositório"></span>
+    <span class="porta" data-code="README.md" data-label="README"></span>
+    <span class="porta" data-code="docs/architecture.md" data-label="architecture.md"></span>
+    <span class="porta" data-href="evals" data-label="Painel do eval"></span>
+    <span class="porta" data-href="langfuse" data-label="Langfuse"></span>
+  </div>
+  <aside class="notes"><ul>
+    <li>Injeção vinda do dado: a tool só devolve dados do próprio aluno e o modelo não grava.</li>
+    <li>Tabela nova: sem regra declarada, a consulta levanta erro e o teste falha.</li>
+    <li>Uso de IA no desenvolvimento: spec → agente de código → make check (ruff, flake8, import-linter, mypy, Pyright, testes) → review.</li>
+  </ul></aside>
+</section>
+
+</div>
+<div id="notesPanel"><div id="notesText"></div></div>
+
+<script>
+const CFG = {
+  repo: "https://github.com/Vipigal/academic-system-ai-agent",
+  ref: "main",
+  vscode: "vscode://vscode-remote/wsl+Ubuntu-22.04/home/vinicius/interviews/cruzeiro-do-sul/",
+  traces: "https://us.cloud.langfuse.com/project/cmw44htxo0385ad0elihqahde/traces/",
+  links: {
+    front: "http://localhost:5173",
+    langfuse: "https://us.cloud.langfuse.com/project/cmw44htxo0385ad0elihqahde/traces",
+    evals: "../src/evals/results/index.html"
+  }
+};
+const ZOOM = ["Sistema", "Camadas", "Fluxos"];
+
+class Deck {
+  constructor(stage) {
+    this.stage = stage;
+    this.frames = [...stage.querySelectorAll(":scope > section.slide")].map((slide, index) => this.frame(slide, index));
+    this.index = 0;
+  }
+  frame(slide, index) {
+    const frame = document.createElement("div");
+    frame.className = "frame";
+    slide.replaceWith(frame);
+    frame.appendChild(slide);
+    const notes = document.createElement("div");
+    notes.className = "notes-block";
+    const aside = slide.querySelector("aside.notes");
+    if (aside) { notes.innerHTML = aside.innerHTML; aside.remove(); }
+    frame.appendChild(notes);
+    const page = document.createElement("span");
+    page.className = "pageno";
+    page.textContent = `${index + 1}`;
+    slide.appendChild(page);
+    return frame;
+  }
+  show(index) {
+    this.index = Math.max(0, Math.min(this.frames.length - 1, index));
+    this.frames.forEach((frame, i) => frame.classList.toggle("active", i === this.index));
+    document.getElementById("notesText").innerHTML = this.frames[this.index].querySelector(".notes-block").innerHTML;
+    history.replaceState(null, "", `${location.search}#${this.index + 1}`);
+  }
+  fit() {
+    document.body.style.setProperty("--z", Math.min(1, (window.innerWidth - 48) / 1600));
+    if (document.body.classList.contains("reading")) return;
+    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    const x = (window.innerWidth - 1600 * scale) / 2;
+    const y = (window.innerHeight - 900 * scale) / 2;
+    this.stage.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+  }
+}
+
+class Decorator {
+  static zoom(root) {
+    root.querySelectorAll("section.slide[data-zoom]").forEach((slide) => {
+      const level = Number(slide.dataset.zoom);
+      slide.querySelector(".zoom").innerHTML = ZOOM.map((name, i) => `<span class="${i + 1 === level ? "on" : ""}">${name}</span>`).join("");
+    });
+  }
+  static portas(root) {
+    const icon = (id) => `<svg><use href="#${id}"/></svg>`;
+    root.querySelectorAll(".porta").forEach((el) => {
+      const d = el.dataset;
+      if (d.code) {
+        const [a, b] = (d.lines || "").split("-");
+        const anchor = a ? `#L${a}${b && b !== a ? `-L${b}` : ""}` : "";
+        const label = d.label || `${d.code.split("/").pop()}${a ? `:${a}` : ""}`;
+        const gh = `${CFG.repo}/blob/${CFG.ref}/${d.code}${anchor}`;
+        const vs = `${CFG.vscode}${d.code}${a ? `:${a}` : ""}`;
+        el.innerHTML = `${icon("i-code")}<span class="pl">${label}</span><a href="${gh}" target="_blank" rel="noopener">${icon("i-git")}GitHub</a><a class="alt" href="${vs}">VS Code</a>`;
+      } else if (d.trace) {
+        el.innerHTML = `${icon("i-eye")}<span>${d.label}</span><a href="${CFG.traces}${d.trace}" target="_blank" rel="noopener">${icon("i-ext")}Langfuse</a>`;
+      } else if (d.repo) {
+        el.innerHTML = `${icon("i-git")}<span>${d.label}</span><a href="${CFG.repo}" target="_blank" rel="noopener">${icon("i-ext")}abrir</a>`;
+      } else if (d.href) {
+        el.innerHTML = `${icon("i-ext")}<span>${d.label}</span><a href="${CFG.links[d.href]}" target="_blank" rel="noopener">abrir</a>`;
+      }
+    });
+  }
+}
+
+const stage = document.getElementById("stage");
+Decorator.zoom(stage);
+Decorator.portas(stage);
+const deck = new Deck(stage);
+if (new URLSearchParams(location.search).has("leitura")) document.body.classList.add("reading");
+deck.fit();
+deck.show(Number(location.hash.slice(1) || 1) - 1);
+window.addEventListener("resize", () => deck.fit());
+document.addEventListener("keydown", (event) => {
+  const key = event.key;
+  if (["ArrowRight", "PageDown", " "].includes(key)) { deck.show(deck.index + 1); event.preventDefault(); }
+  else if (["ArrowLeft", "PageUp"].includes(key)) { deck.show(deck.index - 1); event.preventDefault(); }
+  else if (key === "Home") deck.show(0);
+  else if (key === "End") deck.show(deck.frames.length - 1);
+  else if (key === "n" || key === "N") document.getElementById("notesPanel").classList.toggle("on");
+  else if (key === "l" || key === "L") { document.body.classList.toggle("reading"); deck.fit(); }
+  else if (key === "p" || key === "P") window.print();
+});
+</script>
+</body>
+</html>
