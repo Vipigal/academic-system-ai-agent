@@ -8,5 +8,9 @@ from api.infrastructure.clock import FixedClock
 
 
 async def agent_for(settings: Settings, tools: StudentTools, trace_id: str) -> StudentAgent:
-    runtime = await Containers.students(settings, {Clock: FixedClock()}).get(AgentRuntime)
+    container = Containers.students(settings, {Clock: FixedClock()})
+    try:
+        runtime = await container.get(AgentRuntime)
+    finally:
+        await container.close()
     return StudentAgent(runtime, tools.registry().tools, trace_id)

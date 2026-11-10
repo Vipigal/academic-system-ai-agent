@@ -13,8 +13,9 @@ from api.domain.protocol.errors import (
     ServiceNotOpenableError,
 )
 from api.domain.protocol.opening import StudentAnswer
+from api.presentation.http.identity import REQUIRED_BEARER
 
-router = APIRouter(route_class=DishkaRoute)
+router = APIRouter(route_class=DishkaRoute, dependencies=[REQUIRED_BEARER])
 
 
 class ConfirmProposalRequest(BaseModel):

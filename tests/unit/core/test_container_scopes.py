@@ -45,10 +45,12 @@ async def resolved_for(container: AsyncContainer, session: StudentSession) -> Re
 
 async def test_concurrent_request_scopes_share_the_database_and_nothing_of_the_student() -> None:
     container = Containers.students(SETTINGS)
-
-    first, second = await asyncio.gather(
-        resolved_for(container, FIRST), resolved_for(container, SECOND)
-    )
+    try:
+        first, second = await asyncio.gather(
+            resolved_for(container, FIRST), resolved_for(container, SECOND)
+        )
+    finally:
+        await container.close()
 
     assert (first.session, second.session) == (FIRST, SECOND)
     assert (first.adapter.student_session, second.adapter.student_session) == (FIRST, SECOND)
@@ -58,4 +60,3 @@ async def test_concurrent_request_scopes_share_the_database_and_nothing_of_the_s
         second.tools,
     }
     assert first.database is second.database
-    await container.close()

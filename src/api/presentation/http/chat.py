@@ -10,6 +10,7 @@ from api.application.chat.rate_limit import ChatRateLimit
 from api.application.chat.service import ChatService
 from api.domain.conversation.errors import ConversationNotFoundError
 from api.domain.rate_limit.decision import RateLimitDecision
+from api.presentation.http.identity import REQUIRED_BEARER
 from api.presentation.http.ui_stream import HEADERS, UiMessageStream
 
 USER_ROLE = "user"
@@ -21,7 +22,7 @@ RATE_LIMIT_LIMIT = "RateLimit-Limit"
 RATE_LIMIT_REMAINING = "RateLimit-Remaining"
 RATE_LIMIT_RESET = "RateLimit-Reset"
 
-router = APIRouter(route_class=DishkaRoute)
+router = APIRouter(route_class=DishkaRoute, dependencies=[REQUIRED_BEARER])
 
 
 class UiMessagePart(BaseModel):

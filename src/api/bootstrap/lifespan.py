@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from dishka import AsyncContainer
 from fastapi import FastAPI
@@ -17,7 +17,11 @@ class ContainerLifespan:
 
     @asynccontextmanager
     async def __call__(self, _: FastAPI) -> AsyncGenerator[None]:
+        async with AsyncExitStack() as stack:
+            stack.push_async_callback(self._container.close)
+            await self._warm_up()
+            yield
+
+    async def _warm_up(self) -> None:
         for checked in CHECKED_AT_STARTUP:
             await self._container.get(checked)
-        yield
-        await self._container.close()

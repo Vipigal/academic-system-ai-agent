@@ -1,3 +1,4 @@
+from dishka import AsyncContainer
 from langchain_core.language_models import BaseChatModel
 from langchain_openai import ChatOpenAI
 
@@ -21,7 +22,11 @@ def settings_with(**values: object) -> Settings:
 async def test_the_real_model_uses_the_responses_api_with_the_configured_effort() -> None:
     settings = settings_with(agent_model="gpt-6-luna", agent_effort="medium", OPENAI_API_KEY="k")
 
-    model = await Containers.http(settings).get(BaseChatModel)
+    container = Containers.http(settings)
+    try:
+        model = await container.get(BaseChatModel)
+    finally:
+        await container.close()
 
     assert isinstance(model, ChatOpenAI)
     assert model.model_name == "gpt-6-luna"
@@ -32,7 +37,10 @@ async def test_the_real_model_uses_the_responses_api_with_the_configured_effort(
 
 async def test_the_fake_model_is_chosen_by_configuration() -> None:
     container = Containers.http(settings_with(agent_model="fake"))
-    assert isinstance(await container.get(BaseChatModel), ScriptedChatModel)
+    try:
+        assert isinstance(await container.get(BaseChatModel), ScriptedChatModel)
+    finally:
+        await container.close()
 
 
 async def test_limits_come_from_the_settings() -> None:
@@ -44,7 +52,10 @@ async def test_limits_come_from_the_settings() -> None:
     )
 
     container = Containers.http(settings, {Clock: FixedClock()})
-    limits = (await container.get(AgentRuntime)).limits
+    try:
+        limits = (await container.get(AgentRuntime)).limits
+    finally:
+        await container.close()
 
     assert limits.model_calls == 3
     assert limits.tool_calls == 4
@@ -68,9 +79,10 @@ async def test_singletons_use_the_system_clock_unless_another_is_given() -> None
     await injected.close()
 
 
-async def test_the_fake_model_runs_the_same_script_for_every_request() -> None:
-    container = Containers.http(settings_with(agent_model="fake"), {Clock: FixedClock()})
-    runtime = await container.get(AgentRuntime)
+async def test_the_fake_model_runs_the_same_script_for_every_request(
+    dated_container: AsyncContainer,
+) -> None:
+    runtime = await dated_container.get(AgentRuntime)
 
     for trace_id in ("um", "dois"):
         agent = StudentAgent(runtime, stub_student().registry().tools, trace_id)
