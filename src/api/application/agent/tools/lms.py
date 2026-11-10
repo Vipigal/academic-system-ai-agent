@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from api.application.agent.tool_arguments import FIRST_PAGE_ARGUMENT, PageArgument
-from api.application.agent.tools.registry import ToolRegistry
 from api.application.agent.tools.ui import ToolUi
 from api.application.lms.dto.account import LmsAccountDto
 from api.application.lms.dto.exam import OnlineExamDto
@@ -14,7 +13,6 @@ from api.application.shared.tool_parameters import (
     TermArgument,
 )
 from api.application.shared.tool_result import ToolResult
-from api.domain.ontology import lms, overview
 
 EXAMS_UI = "Calendário das provas online exibido ao aluno."
 
@@ -23,13 +21,6 @@ class LmsTools:
     def __init__(self, service: LmsService) -> None:
         self._service = service
 
-    @ToolRegistry.declares(
-        lms.PROVA_ONLINE,
-        lms.TENTATIVA,
-        lms.NOTA_DO_AVA,
-        lms.GABARITO,
-        overview.PERIODO_COBERTO,
-    )
     async def list_online_exams(
         self,
         subject: SubjectArgument | None = None,
@@ -46,7 +37,6 @@ class LmsTools:
         exams = await self._service.list_online_exams(subject, term, page)
         return ToolUi.shown(exams, EXAMS_UI) if show_ui else exams
 
-    @ToolRegistry.declares(lms.ULTIMO_ACESSO, lms.SUSPENSAO_DO_AVA)
     async def get_lms_account(self) -> ToolResult[list[LmsAccountDto]]:
         """Mostra, por matrícula, se há conta no AVA, se está suspensa e o último acesso.
 
@@ -54,7 +44,6 @@ class LmsTools:
         """
         return await self._service.get_lms_account()
 
-    @ToolRegistry.declares(lms.VISUALIZACAO_DE_MATERIAL)
     async def list_material_views(
         self,
         subject: SubjectArgument,

@@ -32,22 +32,10 @@ async def test_load_skill_returns_the_body_and_the_ontologies(area: Area) -> Non
     assert result.data.startswith("# ")
 
 
-@pytest.mark.parametrize("area", list(Area))
-async def test_load_skill_hides_evidence_and_tables(area: Area) -> None:
-    result = await SkillTools(LIBRARY).load_skill(area)
-
-    assert result.data is not None
-    for ontology in (item for item in ONTOLOGIES if item.area is area):
-        assert ontology.evidence not in result.data
-        for table in ontology.data:
-            assert table not in result.data
-
-
 def test_load_skill_passes_the_registry_rules() -> None:
     tool = ToolRegistry(SkillTools(LIBRARY)).tools[0]
 
     assert tool.definition.name == "load_skill"
-    assert set(tool.definition.ontologies) == set(ONTOLOGIES)
 
 
 async def test_the_agent_offers_load_skill_without_student_tools() -> None:

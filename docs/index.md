@@ -3,7 +3,6 @@
 ## Base
 
 - [Arquitetura do agente de atendimento ao aluno](/docs/architecture.md): Decisões, desenho e restrições da API que dá ao agente acesso seguro e normalizado aos quatro sistemas do grupo educacional.
-- [Ontologia do atendimento ao aluno](/docs/ontology.md): Os conceitos do agente, com definição, sistema oficial, origem, evidência e relações.
 
 ## Processo
 

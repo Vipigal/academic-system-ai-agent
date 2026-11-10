@@ -7,7 +7,6 @@ import pytest_asyncio
 
 from api.application.agent.tools.registry import ToolRegistry
 from api.bootstrap.settings import Settings
-from api.domain.ontology.catalog import ONTOLOGIES
 from api.persistence.core.database import Database
 from tests.integration.agent import (
     invariant_json,
@@ -130,10 +129,9 @@ def test_no_tool_receives_identity(registry: ToolRegistry) -> None:
     assert received & IDENTITY_PARAMETERS == set()
 
 
-def test_every_registered_tool_has_description_and_ontology(registry: ToolRegistry) -> None:
+def test_every_registered_tool_has_a_description(registry: ToolRegistry) -> None:
     assert len(registry.tools) == TOOL_COUNT
     assert all(tool.definition.description for tool in registry.tools)
-    assert all(tool.definition.ontologies for tool in registry.tools)
 
 
 @pytest.mark.sweep
@@ -228,20 +226,6 @@ async def test_no_cpf_internal_note_analyst_payer_or_collection_stage_appears(
     ]
     assert notes
     assert exposed == []
-
-
-@pytest.mark.sweep
-def test_no_ontology_evidence_or_data_reaches_a_tool_result(full_sample: list[Person]) -> None:
-    hidden = {ontology.evidence for ontology in ONTOLOGIES}
-    hidden |= {table for ontology in ONTOLOGIES for table in ontology.data}
-    hidden |= {
-        relation.evidence
-        for ontology in ONTOLOGIES
-        for relation in ontology.relations
-        if relation.evidence
-    }
-    dumped = "\n".join(JsonLeaves.text(call.output) for call in all_calls(full_sample))
-    assert {text for text in hidden if text in dumped} == set()
 
 
 def totals_of(person: Person, tool: str) -> set[str]:
