@@ -143,7 +143,7 @@ def test_the_prompt_says_today_is_the_given_date() -> None:
         "atende só assuntos acadêmicos, financeiros, de secretaria e do ambiente virtual",
         "recuse em uma frase e diga o que pode fazer por ele",
         "Dúvida sobre o próprio curso não é recusada.",
-        "tenha certeza do objeto do pedido",
+        "Tenha certeza do objeto do pedido",
     ],
 )
 def test_the_prompt_carries_the_scope_and_the_certainty_rules(expected: str) -> None:
