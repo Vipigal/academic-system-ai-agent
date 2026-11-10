@@ -479,3 +479,19 @@
   - Prepara o pedido de problema de acesso ao AVA para o aluno confirmar
   - 'Não diz que o pedido já foi aberto: ele depende da confirmação do aluno'
   reference: Preparei o pedido de problema de acesso ao AVA. Ele só será aberto depois que você confirmar.
+- id: SV-19
+  kind: answerable
+  split: dev
+  question: Quais pedidos você consegue abrir para mim?
+  student: UniAraucaria:090140
+  proposal: none
+  tools:
+    expected:
+    - list_services
+    forbidden: []
+  rubric:
+  - Oferece abrir só pedidos que valem para matrícula cancelada, como segunda via de boleto, renegociação, informações gerais ou reclamação
+  - Não oferece trancamento, cancelamento, transferência, migração de matriz, revisão de nota nem declaração de matrícula
+  reference: 'Como sua matrícula está cancelada, posso preparar por aqui: segunda via de boleto, renegociação
+    de dívida, pedido de informações gerais e reclamação na ouvidoria. Serviços com taxa, como o histórico
+    impresso, são pedidos direto na secretaria.'
