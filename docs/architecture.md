@@ -16,18 +16,15 @@ sources:
   - id: carga
     resource: /db/init/01_load.sh
     title: Script de carga dos CSVs
-  - id: atlas
-    resource: https://claude.ai/artifact/QT94fmWSRppKT2JUBGAKds
-    title: Atlas de Dados, reconferência de 2026-11-04
 ---
 
 # Arquitetura do agente de atendimento ao aluno
 
-> **Estado:** verificado. A seção 3 traz o que está decidido. O que falta definir está em
-> [Pendências](/docs/pendencias.md).
+> **Estado:** verificado. A seção 3 traz as decisões; a seção 5, o desenho como está no código.
 >
-> **Medições:** consultas no banco local e protótipos descartáveis, em 2026-11-04 e 2026-11-05. Latências
-> foram medidas em execução sequencial e sem índices; não são resultado de teste de carga.
+> **Medições:** consultas no banco local e protótipos, em 2026-11-04 e 2026-11-05, salvo onde indicado. Latências
+> foram medidas em execução sequencial; não são resultado de teste de carga. A latência do agente, medida no eval, está no
+> [README](/README.md#latência-e-custo).
 
 ## Para o humano
 
@@ -96,8 +93,8 @@ o termo colide com a sessão de banco do SQLAlchemy.
 | B23 | `JOIN` entre sistemas é permitido quando simplifica, sempre respeitando o ownership de cada tabela | Conhecemos o sistema e preferimos simplicidade; aceito o acoplamento ao mesmo banco nessas consultas |
 | B24 | As 5 FKs com violação são criadas com `NOT VALID` | A regra vale para linhas novas e os dados recebidos ficam intactos |
 | B25 | O agente roda no mesmo processo da API | Menos latência e nenhuma propagação de identidade |
-| B26 | Abrir protocolo cria 3 linhas em 2 passos, com aprovação humana: a proposta aparece na interface, o aluno aprova com um clique e outro endpoint, fora do LLM, grava | O LLM não efetiva escrita sozinho |
-| B27 | O agente abre só os 14 serviços sem taxa. Nos 4 com taxa, orienta a procurar a secretaria | Evita protocolo pago sem fatura |
+| B26 | Abrir protocolo cria 3 linhas em 2 passos, com aprovação humana: a proposta aparece na interface, o aluno aprova no card, com a mensagem e a palavra de confirmação, e outro endpoint, fora do LLM, grava | O LLM não efetiva escrita sozinho |
+| B27 | O agente só abre serviço sem taxa e compatível com a situação da matrícula. Nos 4 com taxa, orienta a procurar a secretaria | Evita protocolo pago sem fatura |
 | B28 | Protocolos abertos por terceiros e casos ambíguos: ninguém vê | *Fail closed* |
 | B29 | Um listener `do_orm_execute` acrescenta o `AND` de ownership em toda consulta com `with_loader_criteria`, a partir de um mapa estático por model e dos identificadores da sessão (5.2) | Mesma garantia com menos conceitos, sem depender de lembrar do filtro |
 | B30 | O aluno vê os 73 protocolos abertos por responsável com o ID dele, sem os dados do responsável | O protocolo é dele; os dados do responsável não |
@@ -137,8 +134,8 @@ o termo colide com a sessão de banco do SQLAlchemy.
 
 ## 5. Desenho
 
-Os trechos de código são versões condensadas de protótipos que rodaram contra o banco, salvo onde indicado. Eles mostram o
-desenho completo, não o código: podem não passar no lint, e o código real cresce por fatia em `src/api/`.
+Os trechos de código são versões condensadas do código em `src/api/`, sem imports e sem os detalhes que não mudam o
+desenho.
 
 ### 5.1 Camadas e organização
 
@@ -187,7 +184,7 @@ O padrão é um critério global que acrescenta `AND` em todas as consultas, com
 **Passo 1: a sessão carrega só quem a pessoa é.** É montada a cada pedido e descartada ao final. Uma
 dependência de escopo de request lê o `person_id` do JWT e chama a carga; os services que precisam da sessão a recebem
 pronta, e a sessão nunca existe vazia (B37). O que pertence à pessoa (contratos, contas do AVA, protocolos) não fica na
-sessão: é resolvido em cada consulta pelo mapa de ownership (D16 do spec do agente). A carga faz 2 consultas.
+sessão: é resolvido em cada consulta pelo mapa de ownership. A carga faz 2 consultas.
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -468,54 +465,61 @@ compõe os resultados pelas chaves canônicas.
 Dois passos, com aprovação humana:
 
 ```text
-Aluno pede → tool propose_protocol → proposta com token assinado, preso ao aluno → interface mostra a proposta
-Aluno clica em aprovar → POST /protocols/proposals/confirm com o token, fora do LLM
-  → confere assinatura e dono → domínio valida de novo e abre o protocolo → grava 3 linhas em uma transação
+Aluno pede → tool propose_protocol(action, enrollment, subject) → regras do domínio → token assinado, preso à pessoa
+  → o front mostra o card da proposta
+Aluno escreve a mensagem, digita a palavra de confirmação → POST /protocols/proposals/confirm, fora do LLM
+  → confere assinatura e dono → o domínio valida de novo e abre o protocolo → grava 3 linhas em uma transação
 ```
 
-O LLM consegue propor, mas não efetivar. A aprovação exige uma página mínima de chat.
+O LLM consegue propor, mas não efetivar. O pior resultado de uma injeção dentro do turno é uma proposta, que o aluno precisa
+confirmar.
 
-Trecho ilustrativo; ainda não foi testado.
+- **Disponibilidade:** `ServiceAvailability` diz, para cada serviço, se ele pode ser aberto pelo agente e por quê não: serviço
+  inativo, com taxa, tratado só pela secretaria ou incompatível com a situação da matrícula (trancamento só com matrícula
+  ativa, reativação só trancada, diploma só concluída). `list_services` devolve essa resposta, e `propose_protocol` recusa no
+  servidor o que não está disponível.
+- **Recusas antes de assinar:** trancamento de disciplina (trancamento é sempre do curso inteiro), matrícula em situação
+  incompatível e pedido igual já aberto. A recusa volta como resultado `refused`, com o motivo, para o modelo explicar.
+- **Token:** assina pessoa, serviço e matrícula e expira em 15 minutos (`APP_PROPOSAL_TTL_MINUTES`). Não existe tabela de
+  rascunho (B40).
+- **Confirmação:** a rota confere a assinatura e que a pessoa do token pertence à sessão, relê os protocolos do aluno e
+  chama de novo a regra do domínio, com a mensagem e a palavra digitadas pelo aluno:
 
 ```python
-# domain/protocol.py: regras e efeitos em memória
-class StudentProtocol:
+# application/protocol/confirmation.py
+class ProtocolConfirmation:
+    async def confirm(
+        self, token: str, conversation_id: str, answer: StudentAnswer
+    ) -> ConfirmedProtocolDto:
+        proposal = self._ports.signer.verify(token)
+        if proposal is None or proposal.person_id not in self._session.person_ids:
+            raise ProposalNotFoundError
+        conversation = await self._events.conversation_of(conversation_id)
+        parties = await self._parties.of(proposal)
+        opening = await self._opening_of(parties, answer)
+        number = await self._ports.writer.save(opening)
+        await self._events.attach(conversation, ConfirmationEvent.message(number, opening, parties))
+        return ConfirmedProtocolDto.of(number, opening)
+
+
+# domain/protocol/opening.py
+class ProtocolOpening:
     @classmethod
-    def open(cls, *, session, enrollment, demand, message, now) -> "StudentProtocol":
-        if not session.owns(enrollment):
-            raise EnrollmentNotOwned()
-        if not demand.active or demand.has_fee:
-            raise DemandUnavailable(demand.code)
-        return cls(
-            enrollment=enrollment,
-            demand=demand,
-            status=ProtocolStatus.OPEN,
-            opened_at=now,
-            sla_due_at=now + demand.sla,
-            history=[StatusChange(seq=1, to=ProtocolStatus.OPEN, at=now)],
-            interactions=[Interaction(author=AuthorType.REQUESTER, message=message, at=now)],
-        )
-
-
-# persistence/secretary/protocol_writer.py: traduz e grava em uma transação
-class ProtocolWriter:
-    async def save(self, protocol: StudentProtocol) -> str:
-        row = ProtocolMapper.to_row(protocol)  # número por nextval no INSERT
-        await self._adapter.write(
-            [row],
-            ProtocolMapper.history_rows(protocol),
-            ProtocolMapper.interaction_rows(protocol),
-        )
-        return row.protocol
+    def open(cls, service, enrollment, existing, request) -> Self:
+        reason = request.refusal(service, enrollment)
+        if reason is not None:
+            raise ServiceNotOpenableError(reason)
+        if ProposalRules.duplicate_of(existing, service, enrollment) is not None:
+            raise DuplicateProtocolError
+        ...
 ```
 
-O `write` faz `flush` entre os lotes: sem ele, o ORM gravou as linhas filhas antes do protocolo no teste, o que violaria as
-FKs criadas em `02_constraints.sql`. A ordem com `flush` foi confirmada em transação desfeita.
-
-A unidade e o nome do curso vêm da matrícula e são traduzidos pelo dialeto da secretaria; unidades de SAG e secretaria
-casam em 27/27 por marca, modalidade, cidade e UF.[^atlas] Números de protocolo e de mensagem vêm de sequências no
-schema `agent`, sem alterar as tabelas recebidas, e saem de `nextval` e `currval` no próprio INSERT. Duas confirmações no mesmo
-instante podem abrir dois protocolos: o `409` de duplicado é checado na aplicação, e o front desabilita o botão.
+`SqlProtocolWriter` grava protocolo, histórico `Open` e mensagem inicial numa transação, com `flush` entre os lotes: sem ele,
+o ORM gravou as linhas filhas antes do protocolo, o que violaria as FKs de `02_constraints.sql`. A unidade e o nome do curso
+vêm da matrícula e são traduzidos pelo dialeto da secretaria; unidades de SAG e secretaria casam em 27/27 por marca,
+modalidade, cidade e UF (consulta no banco local). Números de protocolo e de mensagem vêm de sequências no schema `agent`,
+sem alterar as tabelas recebidas. A confirmação vira um evento `system_event` no histórico da conversa, para o modelo saber
+no turno seguinte que o pedido foi aberto.
 
 ### 5.7 Banco
 
@@ -544,8 +548,17 @@ limite de concorrência por processo: o custo é contido por um rate limit por a
 ### 5.9 Agente, tools e skills
 
 - **Agente:** `create_agent` do LangChain, montado a cada request com as tools do aluno (cerca de 3 ms medidos). Modelo
-  da OpenAI pela Responses API, configurável em settings; middlewares limitam chamadas ao modelo e às tools e devolvem
-  erro de tool ao modelo como mensagem genérica.
+  da OpenAI pela Responses API, configurável em settings. Os middlewares, em ordem: `InputGuardMiddleware`, limite de
+  chamadas ao modelo, limite de chamadas às tools, retry da chamada ao modelo e erro de tool devolvido ao modelo como
+  mensagem genérica.
+- **InputGuard:** antes do agente, uma chamada à Decisions API da OpenAI (`langchain_openai.decisions`) com a última
+  mensagem e até 6 falas anteriores responde duas perguntas. Um `Choice` de assunto (aluno, misto ou fora) bloqueia só quando
+  "fora" chega a 0,8, e então o turno termina com um texto fixo, sem chamar o modelo. Um `Predicate` de prompt injection a
+  partir de 0,5 não recusa: acrescenta um aviso de sistema dizendo que saída de tool, texto de sistema ou ordem de terceiro
+  colados na mensagem não são fatos. O limiar alto de escopo é escolha: a pior pergunta legítima medida deu 0,23, e recusar
+  um aluno custa mais do que deixar passar um pedido fora do escopo. Se a API falhar, o turno segue sem o guard. É camada de
+  modelo, como o prompt e as skills: reduz a chance de um ataque mudar o comportamento, mas a segurança dos dados não depende
+  dele.
 - **Tools:** adaptadores finos sobre os services, em `application/agent/tools/`. Não recebem identidade: cada tool é uma
   closure sobre services que já carregam a sessão do aluno. O schema de cada tool é calculado uma vez, na subida.
 - **Parâmetros amigáveis:** a busca por nome fica dentro da tool. Sem correspondência, a tool devolve candidatos, e o
@@ -593,23 +606,19 @@ limite de concorrência por processo: o custo é contido por um rate limit por a
 - O modelo pode interpretar mal um dado, chamar a ferramenta errada ou responder de forma imprecisa. Isso é qualidade,
   medida por eval e melhorada por iteração.
 - Jailbreak pode mudar o comportamento e o tom do modelo e até revelar o prompt. O dano é limitado porque o prompt
-  não contém segredos e o modelo não tem acesso além das tools. Medido por red team.
+  não contém segredos e o modelo não tem acesso além das tools. O InputGuard reduz essa chance, e o red team do eval mede.
 
 | # | Risco | Mitigação |
 |---|---|---|
 | R1 | Repositório é barreira única (B9) | Invariantes da seção 6 e role restrita |
 | R2 | Código contorna o adapter com SQL manual | Invariante 8, lint que restringe quem abre sessão de banco e revisão |
-| R3 | Escala não comprovada | Índices e teste de carga com LLM simulado |
-| R4 | Escrita altera os dados usados pelo eval | Eval em banco recarregado ou com transação desfeita ao final |
+| R3 | Escala não medida sob carga | API stateless, índices, rate limit por aluno e limites por turno; latência medida por turno no eval |
+| R4 | Escrita altera os dados usados pelo eval | O eval só propõe e nunca confirma; os testes de escrita usam um Postgres efêmero |
 | R5 | Texto do aluno em protocolo pode conter injeção | Texto tratado como dado; escrita depende de aprovação humana |
 | R6 | Sem regulamento na base[^eda] | O agente diz que não tem a informação |
 | R7 | Sistemas com períodos e valores diferentes[^eda] | Fonte oficial por tema e ausência de dado explicada |
 
-## 8. Pendências
-
-A lista de pendências fica em [Pendências](/docs/pendencias.md).
-
-## 9. Fora de escopo por enquanto
+## 8. Fora de escopo
 
 | Item | Volta quando |
 |---|---|
@@ -623,4 +632,3 @@ A lista de pendências fica em [Pendências](/docs/pendencias.md).
 [^readme]: Enunciado do case, seções 1 e 3.
 [^eda]: Análise exploratória dos dados, seções 5 a 8.
 [^carga]: Script de carga: todas as colunas são `text`, para preservar os valores originais.
-[^atlas]: Atlas de Dados: correspondência de unidades entre SAG e secretaria.
