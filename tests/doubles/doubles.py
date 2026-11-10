@@ -3,9 +3,11 @@ from typing import Any
 
 from dishka import AsyncContainer, Provider, Scope, make_async_container
 
+from api.application.agent.input_guard import InputGuard
 from api.bootstrap.containers import Containers
 from api.bootstrap.session_providers import GivenSession, HttpSession
 from api.bootstrap.settings import Settings
+from tests.doubles.decisions import passing_guard
 
 type Objects = Mapping[Any, object]
 
@@ -13,7 +15,7 @@ type Objects = Mapping[Any, object]
 class Doubles(Provider):
     def __init__(self, objects: Objects) -> None:
         super().__init__(scope=Scope.APP)
-        for kind, double in objects.items():
+        for kind, double in {InputGuard: passing_guard(), **objects}.items():
             self.provide(Doubles._constant(double), provides=kind, override=True)
 
     @staticmethod

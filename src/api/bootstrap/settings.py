@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     agent_tool_call_limit: int = 12
     agent_timeout_seconds: float = 60
     history_window: int = 20
+    guard_model: str = "gpt-6-luna"
+    guard_timeout_seconds: float = 5
 
     jwt_secret: SecretStr | None = None
     jwt_ttl_minutes: int = 60

@@ -8,6 +8,7 @@ from langgraph.types import StreamPart
 
 from api.application.agent.agent_runtime import AgentRuntime
 from api.application.agent.agent_stream import STREAM_MODES
+from api.application.agent.input_guard import InputGuardMiddleware
 from api.application.agent.langchain_tools import LangchainTools
 from api.application.agent.tools.registry import RegisteredTool
 
@@ -34,6 +35,7 @@ class AgentGraph:
             tools=[converter.convert(tool) for tool in tools],
             system_prompt=runtime.system_message(),
             middleware=[
+                InputGuardMiddleware(runtime.guard),
                 middleware.ModelCallLimitMiddleware(
                     run_limit=limits.model_calls, exit_behavior="error"
                 ),
