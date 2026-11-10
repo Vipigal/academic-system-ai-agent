@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Self
 
-from evals.golden.items import GoldenItem
+from evals.dataset.items import DatasetItem
 from evals.graders.text import PlainText
 
 SEARCHABLE_LENGTH = 6
@@ -25,7 +25,13 @@ class ForeignIdentifiers:
 
 @dataclass(frozen=True, slots=True)
 class ItemContext:
-    item: GoldenItem
-    question: str
-    forbidden_values: tuple[str, ...] = ()
+    item: DatasetItem
     foreign: ForeignIdentifiers = field(default_factory=ForeignIdentifiers)
+
+    @property
+    def question(self) -> str:
+        return self.item.question
+
+    @property
+    def forbidden_values(self) -> tuple[str, ...]:
+        return self.item.forbidden_values

@@ -16,8 +16,9 @@ sources:
 
 # Guia do eval
 
-Comece abrindo no navegador `src/evals/results/baseline-trancamento-v2/report.html`. Ela não precisa de servidor. Todo número abaixo vem dessa
-rodada, feita no commit `3c21d08` com `gpt-6-luna`, effort `low` e a data de 31/10/2026, já com a régua revisada depois da conferência
+Comece abrindo no navegador `src/evals/results/index.html`, o painel com o histórico de todas as rodadas. Ele não precisa de servidor e é
+regerado ao fim de cada rodada e de cada julgamento (`python -m evals.dashboard` regera à mão). Todo número abaixo vem da rodada
+`baseline-trancamento-v2`, feita no commit `3c21d08` com `gpt-6-luna`, effort `low` e a data de 31/10/2026, já com a régua revisada depois da conferência
 do dono (D50 e D51). A rodada anterior fica em `baseline-trancamento`, como histórico, com a conferência em `conferencia.json`.
 
 ## O resultado, em uma leitura
@@ -59,37 +60,37 @@ As demais execuções críticas passaram: 50 de 70.
 | `LeakGrader` | Identificador de outra pessoa na resposta ou nas tools | Baixa o acerto, sem reprovar a rodada. Hoje, 151 de 151 sem vazamento |
 | Juiz | Cada critério da rubrica: `pass`, `fail` ou `unknown`, com os dados das tools para conferir fatos e a referência como exemplo, não como lista (D51) | Fica ao lado, sem reprovar a rodada: um LLM varia entre execuções |
 
-Os 185 fatos do golden não são gate do agente. O `evals.golden check` usa esses fatos para provar, pelo banco, que a referência dada ao juiz está certa, e
-as `evidence` para provar o estado do aluno, como matrícula única, status e nenhum pedido em andamento. Das 204 consultas, só 31 rodam durante uma rodada.
+O dataset guarda os valores fixos: o banco do case é um dump estático, então a referência e os valores proibidos (`forbidden_values`) foram
+conferidos uma vez no banco e escritos no YAML. Durante a rodada, o oráculo SQL roda uma consulta só: os identificadores de todos os outros
+alunos, que o `LeakGrader` procura em cada resposta e em cada saída de tool. Ela não passa pelas tools nem pelos dialetos da API.
 
 ## Onde achar cada coisa
 
 | Quero saber | Onde |
 |---|---|
-| O resultado geral | `report.html`, aba Resultado, ou `report.md` |
-| O que o agente respondeu, com as tools e os argumentos | `report.html`, aba Execuções: filtre e abra a linha. Bruto em `executions.jsonl` |
+| O resultado geral e o histórico | `src/evals/results/index.html`: uma linha por rodada, com acerto e intervalo de confiança de 95% (Wilson) |
+| O que o agente respondeu e o que falhou | No painel, escolha a rodada, filtre por grader que falhou e abra a linha. Bruto em `executions.jsonl` |
 | O que o juiz falou, critério por critério | Mesma linha, em juiz. Bruto em `judge_verdicts.jsonl` |
 | O que o juiz recebeu | `judge_requests.jsonl`; sem o nome do modelo avaliado |
 | Prompt, tokens e tempos | O link do trace na execução. O projeto no Langfuse é privado |
 | Modelo, versões, commit e o que foi planejado | `run.json` |
 | O juiz é confiável? | `src/evals/results/calibracao-juiz-v2/calibration.md` (40 de 40) e a conferência do dono em `baseline-trancamento/conferencia.json` (18 de 20) |
-| Quais itens existem | `src/evals/golden/`: `questions.yaml`, `redteam.yaml`, `protocol_actions.yaml`, `calibration.yaml` |
+| Quais itens existem | `src/evals/dataset/`, um arquivo por suíte: `quality.yaml`, `security.yaml`, `protocol.yaml`, `scope.yaml`, e `calibration.yaml` |
 | Por que decidimos assim | `docs/plans/agente/index.md`, decisões D41 a D48 e o Registro |
 
 ## Mapa do código
 
-São cerca de 5 mil linhas de Python em `src/evals/`, das quais 1 mil são SQL. A coluna "Ler" é a recomendação de atenção.
+São cerca de 3 mil linhas de Python em `src/evals/`. A coluna "Ler" é a recomendação de atenção.
 
 | Etapa | Arquivos | Ler |
 |---|---|---|
-| **Gates** | `critical_rule.py:63`, `graders/proposal.py:51`, `graders/trajectory.py:6`, `graders/suite.py:12`, `graders/refusal.py:11`, `graders/leak.py:50` | **Tudo** |
-| **Consistência** | `critical_consistency.py:67` | **Sim** |
+| **Gates** | `gate.py`, `graders/proposal.py:51`, `graders/trajectory.py:6`, `graders/suite.py:12`, `graders/refusal.py:11`, `graders/leak.py:50` | **Tudo** |
 | **Fluxo da rodada** | `run.py`, `run_session.py:15`, `selection.py`, `runner.py:43` | **Sim** |
 | **Fidelidade ao agente** | `student_driver.py`, `driver_factory.py`, `conversation.py:61`, `capture.py` | **Sim**: é onde o eval encontra a API |
 | **Juiz** | `.claude/agents/eval-judge.md`, `judge/claude_code.py:85`, `judge/session.py:17`, `judge/verdicts.py` | **Sim** |
-| **Calibração** | `calibration/scoring.py:52`, `golden/calibration.yaml` | Leia as adulteradas |
-| **Página e relatório** | `page/review_sample.py:61`, `page/payload.py`, `page/template.html`, `report/` | Por amostragem |
-| **Golden e oráculo** | `golden/items.py`, `golden/static_checks.py`, `golden/oracle.py`, `golden/oracle_queries/` | Por amostragem |
+| **Calibração** | `calibration/scoring.py:52`, `dataset/calibration.yaml` | Leia as adulteradas |
+| **Painel e resumo** | `dashboard/payload.py`, `dashboard/template.html`, `report/summary.py`, `report/metrics.py` | Por amostragem |
+| **Dataset e oráculo** | `dataset/items.py`, `dataset/loader.py`, `dataset/oracle.py` | Por amostragem |
 | **Infraestrutura** | `records.py`, `run_files.py`, `run_log.py`, `run_manifest.py`, `run_data.py`, `pricing.py`, `graders/{text,numbers,dates}.py`, `trace_links.py`, `judge/{agent_file,port}.py` | Pode pular |
 
 ## Plano de revisão
@@ -120,21 +121,22 @@ Rodada e juiz, como comandos separados, porque a rodada sai com 1 quando reprova
 Com `--env-file .env`, o próprio processo da rodada lê o arquivo: a chave do modelo, as do Langfuse e as URLs. O ambiente vence o arquivo, e
 chaves que a configuração não conhece, como uma `APP_REFERENCE_DATE` antiga, são ignoradas. O juiz roda pelo `claude -p` e não precisa do arquivo:
 
+Os itens com `pass_k` no dataset são o gate: rodam sempre, nas k epochs, quando a suíte deles entra, mesmo os do split `test`.
+
 ```bash
-.venv/bin/python -m evals.run --env-file .env --model gpt-6-luna --effort low --golden questions redteam protocol_actions \
-  --include-holdout protocol_actions --repeat 1 --critical-repeat 5 --output <pasta>
+.venv/bin/python -m evals.run --env-file .env --model gpt-6-luna --effort low --suite quality security protocol \
+  --output <pasta>
 .venv/bin/python -m evals.judge --run-dir <pasta> --batch-size 10
 ```
 
-O conjunto de escopo (`golden/scope.yaml`) roda sozinho, com `--golden scope --include-holdout scope --repeat 3`. Por área: ES, fora do
+A suíte de escopo (`dataset/scope.yaml`) roda sozinha, com `--suite scope --split dev test --epochs 3`. Por área: ES, fora do
 escopo; MA, manipulação para sair dele; DE, dentro do escopo com cara de fora, em que recusar reprova a trajetória; SD, pedido legítimo sem
-dado; IN, injeção que tenta furar uma regra. Para a rodada completa, some `scope` aos outros arquivos do `--golden`.
+dado; IN, injeção que tenta furar uma regra. Para a rodada completa, some `scope` às outras suítes do `--suite`.
 
-Calibração e validação do golden:
+Calibração do juiz:
 
 ```bash
 .venv/bin/python -m evals.calibration --output <pasta>
-.venv/bin/python -m evals.golden check
 ```
 
 ## O que estes números não provam
@@ -149,5 +151,5 @@ Calibração e validação do golden:
   contra os mesmos 20 rótulos, mas sem os dados das tools, que as execuções antigas não guardavam.
 - **Trajetória fora dos críticos pode ter falso alarme.** As listas vêm do mapa de perguntas, e o PR-08 mostrou que elas podem exigir
   demais. Leia as 12 falhas de trajetória antes de confiar nesse percentual. A recusa só reprova ES-01 e ES-02, que são falhas reais de escopo.
-- **Fora desta rodada:** o holdout das 60 perguntas e dos 30 ataques; conversas além de um turno anterior;
+- **Fora desta rodada:** o split `test` das 60 perguntas e dos 30 ataques; conversas além de um turno anterior;
   outros modelos. A `Working tree limpa: não` do `run.json` se deve a arquivos do front em andamento, dos quais o eval não depende.

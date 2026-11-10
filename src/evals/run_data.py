@@ -1,8 +1,8 @@
-from collections import Counter
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Self
 
+from evals.gate import GateRule, RoundResult
 from evals.judge.verdicts import JudgedVerdict, JudgeRequest
 from evals.records import ExecutionRecord, RunManifest
 from evals.run_files import JsonLines, RunFiles
@@ -14,7 +14,6 @@ class RunData:
     records: tuple[ExecutionRecord, ...]
     verdicts: Mapping[str, JudgedVerdict]
     requests: Mapping[str, JudgeRequest]
-    redone_keys: tuple[str, ...] = ()
 
     @classmethod
     def load(cls, files: RunFiles) -> Self:
@@ -25,15 +24,8 @@ class RunData:
             tuple(latest[key] for key in sorted(latest)),
             {line.id: line for line in JsonLines.read(files.judge_verdicts, JudgedVerdict)},
             {line.id: line for line in JsonLines.read(files.judge_requests, JudgeRequest)},
-            cls._redone(lines),
         )
 
     @property
-    def redone_critical(self) -> tuple[str, ...]:
-        critical = set(self.manifest.critical_keys)
-        return tuple(key for key in self.redone_keys if key in critical)
-
-    @staticmethod
-    def _redone(lines: Sequence[ExecutionRecord]) -> tuple[str, ...]:
-        repeated = Counter(line.key for line in lines)
-        return tuple(sorted(key for key in repeated if repeated[key] > 1))
+    def result(self) -> RoundResult:
+        return GateRule.result(self.manifest, self.records)

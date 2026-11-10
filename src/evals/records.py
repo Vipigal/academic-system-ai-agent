@@ -2,11 +2,14 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import Self
 
+from pydantic import model_validator
+
+from evals.dataset.items import DatasetItem
+from evals.dataset.parts import FrozenModel
+from evals.dataset.vocabulary import Kind, Split
 from evals.execution import Execution, ToolStep
-from evals.golden.items import GoldenItem
-from evals.golden.parts import FrozenModel
-from evals.golden.vocabulary import Kind, Split
 from evals.graders.verdict import GraderName, Verdict
+from evals.run_files import LegacyNames
 
 
 class RunVersions(FrozenModel):
@@ -20,9 +23,16 @@ class RunVersions(FrozenModel):
 class PlannedRound(FrozenModel):
     versions: RunVersions
     planned_keys: tuple[str, ...]
-    critical_keys: tuple[str, ...]
-    golden_critical_items: tuple[str, ...]
+    gated_keys: tuple[str, ...]
+    gated_items: tuple[str, ...]
     trace_url_prefix: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_names(cls, data: object) -> object:
+        return LegacyNames.renamed(
+            data, {"critical_keys": "gated_keys", "golden_critical_items": "gated_items"}
+        )
 
     def same_round(self, other: PlannedRound) -> bool:
         mine = (self.versions, self.planned_keys)
@@ -65,11 +75,11 @@ class VerdictRecord(FrozenModel):
 
 class ExecutionRecord(FrozenModel):
     item_id: str
-    repetition: int
+    epoch: int
     area: str
     kind: Kind
     split: Split
-    critical: bool
+    gated: bool
     history: tuple[str, ...] = ()
     question: str
     answer: str
@@ -85,9 +95,14 @@ class ExecutionRecord(FrozenModel):
     verdicts: tuple[VerdictRecord, ...]
     versions: RunVersions
 
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_names(cls, data: object) -> object:
+        return LegacyNames.renamed(data, {"repetition": "epoch", "critical": "gated"})
+
     @property
     def key(self) -> str:
-        return f"{self.item_id}#{self.repetition}"
+        return f"{self.item_id}#{self.epoch}"
 
     @property
     def passed(self) -> bool:
@@ -97,7 +112,7 @@ class ExecutionRecord(FrozenModel):
 class ExecutionRecords:
     @staticmethod
     def of(
-        item: GoldenItem,
+        item: DatasetItem,
         execution: Execution,
         verdicts: Sequence[Verdict],
         priced: tuple[RunVersions, Decimal | None],
@@ -105,11 +120,11 @@ class ExecutionRecords:
         versions, cost = priced
         return ExecutionRecord(
             item_id=item.id,
-            repetition=execution.repetition,
+            epoch=execution.epoch,
             area=item.area,
             kind=item.kind,
             split=item.split,
-            critical=item.critical,
+            gated=item.gated,
             history=item.history,
             question=execution.question,
             answer=execution.answer,

@@ -34,7 +34,7 @@ class Timing:
 @dataclass(frozen=True, slots=True)
 class Execution:
     item_id: str
-    repetition: int
+    epoch: int
     question: str
     answer: str
     steps: tuple[ToolStep, ...] = ()
@@ -52,7 +52,7 @@ class Execution:
 
     @property
     def key(self) -> str:
-        return f"{self.item_id}#{self.repetition}"
+        return f"{self.item_id}#{self.epoch}"
 
     @property
     def tools_used(self) -> frozenset[str]:

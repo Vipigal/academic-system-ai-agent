@@ -3,7 +3,7 @@ from typing import Protocol, Self
 
 from pydantic import ValidationError
 
-from evals.golden.parts import FrozenModel
+from evals.dataset.parts import FrozenModel
 from evals.judge.verdicts import ItemVerdict, JudgeRequest
 
 SHOWN_TEXT_LENGTH = 300

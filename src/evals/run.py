@@ -3,17 +3,18 @@ import asyncio
 import sys
 from pathlib import Path
 
-from evals.critical_rule import CriticalRule
+from evals.dashboard.page import DashboardPage
+from evals.dataset.vocabulary import Split, Suite
 from evals.driver_factory import DriverFactory
-from evals.golden.vocabulary import Split
-from evals.report.markdown import RunReport
+from evals.report.summary import RunSummary
 from evals.run_data import RunData
 from evals.run_manifest import RunConflictError
 from evals.run_session import RunSession
-from evals.selection import GoldenSource, ItemSelection, Repetitions, RunRequest, SelectionError
+from evals.selection import Epochs, ItemSelection, RunRequest, SelectionError
 
 RESULTS_DIRECTORY = Path(__file__).parent / "results"
-GOLDEN_FILES = [source.value for source in GoldenSource]
+SUITES = [suite.value for suite in Suite]
+SPLITS = [split.value for split in Split]
 ONE_OR_MORE = "+"
 
 
@@ -23,8 +24,7 @@ class RunCli:
         parser = argparse.ArgumentParser(prog="python -m evals.run")
         parser.add_argument("--model", required=True)
         parser.add_argument("--effort", default="low")
-        parser.add_argument("--repeat", type=int, default=1)
-        parser.add_argument("--critical-repeat", type=int)
+        parser.add_argument("--epochs", type=int, default=1)
         parser.add_argument("--concurrency", type=int)
         parser.add_argument("--output", type=Path)
         parser.add_argument("--env-file", type=Path)
@@ -36,12 +36,11 @@ class RunCli:
         output = arguments.output or RESULTS_DIRECTORY / f"{arguments.model}-{arguments.effort}"
         return RunRequest(
             selection=ItemSelection(
-                sources=frozenset(map(GoldenSource, arguments.golden)),
-                split=Split(arguments.split),
-                holdout_from=frozenset(map(GoldenSource, arguments.include_holdout)),
+                suites=frozenset(map(Suite, arguments.suite)),
+                splits=frozenset(map(Split, arguments.split)),
                 only=frozenset(arguments.items),
             ),
-            repetitions=Repetitions(arguments.repeat, arguments.critical_repeat),
+            epochs=Epochs(arguments.epochs),
             output=output,
             concurrency=arguments.concurrency,
             env_file=arguments.env_file,
@@ -55,18 +54,14 @@ class RunCli:
             data = asyncio.run(cls._execute(arguments))
         except (SelectionError, RunConflictError) as error:
             parser.error(str(error))
-        sys.stdout.write(RunReport.render(data))
-        return CriticalRule.result(data.manifest, data.records).exit_code
+        sys.stdout.write(RunSummary.render(data))
+        DashboardPage.write()
+        return data.result.exit_code
 
     @staticmethod
     def _selection_options(parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("--split", choices=list(Split), type=Split, default=Split.DEV)
-        parser.add_argument(
-            "--golden", nargs=ONE_OR_MORE, choices=GOLDEN_FILES, default=[GoldenSource.QUESTIONS]
-        )
-        parser.add_argument(
-            "--include-holdout", nargs=ONE_OR_MORE, choices=GOLDEN_FILES, default=[]
-        )
+        parser.add_argument("--suite", nargs=ONE_OR_MORE, choices=SUITES, default=[Suite.QUALITY])
+        parser.add_argument("--split", nargs=ONE_OR_MORE, choices=SPLITS, default=[Split.DEV])
         parser.add_argument("--items", nargs=ONE_OR_MORE, default=[])
 
     @classmethod

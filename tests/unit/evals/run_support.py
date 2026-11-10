@@ -1,11 +1,10 @@
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 
-from evals.golden.items import GoldenItem
+from evals.dataset.items import DatasetItem
 from evals.item_context import ItemContext
 from evals.pricing import Pricing
 from evals.records import ExecutionRecord, RunManifest, RunVersions
-from evals.report.markdown import RunReport
 from evals.run_data import RunData
 from evals.run_files import RunFiles
 from evals.run_log import RunLog
@@ -22,22 +21,22 @@ VERSIONS = RunVersions(
 
 def key_of(run: ContextualizedExecution) -> str:
     item_id = run.context.item.id
-    return f"{item_id}#{run.repetition}"
+    return f"{item_id}#{run.epoch}"
 
 
 def manifest_of(
-    items: Sequence[tuple[GoldenItem, int]],
-    golden_critical: tuple[str, ...] | None,
+    items: Sequence[tuple[DatasetItem, int]],
+    gated_items: tuple[str, ...] | None,
     extra_planned: tuple[str, ...],
 ) -> RunManifest:
     keys = [key_of(run) for run in planned_of(items)]
     keys.extend(extra_planned)
-    critical = [item.id for item, _ in items if item.critical]
+    gated = [item.id for item, _ in items if item.gated]
     return RunManifest(
         versions=VERSIONS,
         planned_keys=tuple(keys),
-        critical_keys=tuple(key for key in keys if key.split("#")[0] in critical),
-        golden_critical_items=tuple(critical) if golden_critical is None else golden_critical,
+        gated_keys=tuple(key for key in keys if key.split("#")[0] in gated),
+        gated_items=tuple(gated) if gated_items is None else gated_items,
         commit="abc123",
         worktree_clean=True,
         started_at="2026-11-06T00:00:00+00:00",
@@ -52,22 +51,22 @@ def write_manifest(files: RunFiles, manifest: RunManifest) -> None:
 async def run_items(
     directory: Path,
     driver: AgentDriver,
-    items: Sequence[tuple[GoldenItem, int]],
-    golden_critical: tuple[str, ...] | None = None,
+    items: Sequence[tuple[DatasetItem, int]],
+    gated_items: tuple[str, ...] | None = None,
     extra_planned: tuple[str, ...] = (),
 ) -> RunData:
     files = RunFiles(directory)
-    write_manifest(files, manifest_of(items, golden_critical, extra_planned))
+    write_manifest(files, manifest_of(items, gated_items, extra_planned))
     log = RunLog(files, VERSIONS, Pricing.load())
     await EvalRunner(driver, log, 2).run(list(planned_of(items)))
-    return RunReport.write(files)
+    return RunData.load(files)
 
 
-def planned_of(items: Sequence[tuple[GoldenItem, int]]) -> Iterator[ContextualizedExecution]:
+def planned_of(items: Sequence[tuple[DatasetItem, int]]) -> Iterator[ContextualizedExecution]:
     for item, total in items:
-        context = ItemContext(item=item, question=item.question)
-        for repetition in range(1, total + 1):
-            yield ContextualizedExecution(context, repetition)
+        context = ItemContext(item=item)
+        for epoch in range(1, total + 1):
+            yield ContextualizedExecution(context, epoch)
 
 
 def record_of(data: RunData, key: str) -> ExecutionRecord:

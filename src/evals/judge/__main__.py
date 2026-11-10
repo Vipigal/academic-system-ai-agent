@@ -3,11 +3,11 @@ import asyncio
 import sys
 from pathlib import Path
 
+from evals.dashboard.page import DashboardPage
 from evals.judge.agent_file import JudgeAgent
 from evals.judge.claude_code import ClaudeCodeJudge
 from evals.judge.port import JudgeFailedError
 from evals.judge.session import JudgingSession
-from evals.report.markdown import RunReport
 from evals.run_files import RunFiles
 
 DEFAULT_BATCH_SIZE = 10
@@ -30,11 +30,11 @@ class JudgeCli:
         try:
             outcome = asyncio.run(session.run(arguments.batch_size, arguments.limit))
         except JudgeFailedError as error:
-            RunReport.write(files)
+            DashboardPage.write()
             missing = len(session.pending())
             sys.stderr.write(f"{error}\nRode de novo para retomar: {missing} faltam\n")
             return 1
-        RunReport.write(files)
+        DashboardPage.write()
         sys.stdout.write(
             f"Julgados: {outcome.judged}, recusados: {outcome.rejected}, "
             f"pendentes: {outcome.pending}\n"

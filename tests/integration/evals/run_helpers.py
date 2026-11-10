@@ -1,16 +1,18 @@
 from pydantic import SecretStr
 
 from api.bootstrap.settings import Settings
+from evals.dataset.vocabulary import Suite
 from evals.records import RunVersions
-from evals.selection import GoldenSource, ItemSelection
+from evals.selection import ItemSelection
 
 SECRET = SecretStr("segredo-de-teste-com-tamanho-suficiente-para-o-hmac")
 VERSIONS = RunVersions(
     model="fake", effort="low", prompt_version="v", skills_hash="s", tools_hash="t"
 )
+PROTOCOL_SUITE = frozenset({Suite.PROTOCOL})
 SELECTION = ItemSelection(
-    frozenset({GoldenSource.QUESTIONS, GoldenSource.PROTOCOL_ACTIONS}),
-    only=frozenset({"FI-01", "TR-01"}),
+    frozenset({Suite.QUALITY, Suite.PROTOCOL}),
+    only=frozenset({"FI-01", "SV-01"}),
 )
 
 

@@ -1,5 +1,5 @@
+from evals.dataset.vocabulary import Kind
 from evals.execution import Execution
-from evals.golden.vocabulary import Kind
 from evals.graders.text import PlainText
 from evals.graders.verdict import GraderName, Verdict
 from evals.item_context import ItemContext

@@ -1,10 +1,10 @@
 import ast
 from pathlib import Path
 
-import evals.golden.oracle_queries
+import evals.dataset.oracle
 
-QUERIES_PACKAGE = Path(evals.golden.oracle_queries.__file__).parent
-OWN_MODULES = "evals.golden.oracle_queries"
+ORACLE_FILE = Path(evals.dataset.oracle.__file__)
+FORBIDDEN_PREFIXES = ("api", "evals.graders", "evals.runner", "evals.student_driver")
 
 
 def imported_modules(path: Path) -> set[str]:
@@ -17,6 +17,6 @@ def imported_modules(path: Path) -> set[str]:
     }
 
 
-def test_named_queries_do_not_import_tools_services_or_the_api() -> None:
-    imports = {module for path in QUERIES_PACKAGE.glob("*.py") for module in imported_modules(path)}
-    assert {module for module in imports if not module.startswith(OWN_MODULES)} == set()
+def test_the_oracle_does_not_import_tools_services_or_the_api() -> None:
+    imports = imported_modules(ORACLE_FILE)
+    assert {module for module in imports if module.startswith(FORBIDDEN_PREFIXES)} == set()

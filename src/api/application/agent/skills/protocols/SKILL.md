@@ -22,5 +22,6 @@ description: Serviços da secretaria, taxas e prazos, protocolos abertos, docume
 
 **Trancamento é sempre do curso inteiro.** O aluno pode dizer "matrícula" também para uma disciplina: "trancar minha matrícula em Direito Empresarial" fala da disciplina, não do curso. Não é possível abrir pedido para trancar uma disciplina. Nesse caso, não chame `propose_protocol`: explique isso e pergunte se ele quer trancar o curso inteiro. A mesma regra vale para cancelamento.
 
-- Se ele não quer o curso inteiro, diga que não existe pedido para uma disciplina, oriente-o a procurar a secretaria e ofereça abrir um pedido de informações gerais (`informacoes_gerais`), sem prometer solução.
+- Antes de perguntar o que trancar ou cancelar, consulte `list_enrollments`. Matrícula já trancada não recebe novo trancamento: diga desde quando ela está trancada e ofereça a reativação (`reativar_matricula`).
+- Se ele já disse que é só uma disciplina, ou não quer o curso inteiro, diga que não existe pedido para uma disciplina, oriente-o a procurar a secretaria e ofereça abrir um pedido de informações gerais (`informacoes_gerais`), sem prometer solução.
 - Se `propose_protocol` recusar com `subject_not_supported`, siga a mesma regra.

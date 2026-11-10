@@ -1,18 +1,9 @@
-from collections.abc import Iterator
 from dataclasses import dataclass
-from enum import StrEnum
 from pathlib import Path
 
-from evals.golden.items import GoldenItem
-from evals.golden.loader import GoldenSet
-from evals.golden.vocabulary import Split
-
-
-class GoldenSource(StrEnum):
-    QUESTIONS = "questions"
-    REDTEAM = "redteam"
-    PROTOCOL_ACTIONS = "protocol_actions"
-    SCOPE = "scope"
+from evals.dataset.items import DatasetItem
+from evals.dataset.loader import Dataset
+from evals.dataset.vocabulary import Split, Suite
 
 
 class SelectionError(ValueError):
@@ -21,76 +12,61 @@ class SelectionError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class ItemSelection:
-    sources: frozenset[GoldenSource] = frozenset({GoldenSource.QUESTIONS})
-    split: Split = Split.DEV
-    holdout_from: frozenset[GoldenSource] = frozenset()
+    suites: frozenset[Suite] = frozenset({Suite.QUALITY})
+    splits: frozenset[Split] = frozenset({Split.DEV})
     only: frozenset[str] = frozenset()
 
-    def pick(self, golden: GoldenSet) -> tuple[GoldenItem, ...]:
-        outside = sorted(self.holdout_from - self.sources)
-        if outside:
-            raise SelectionError(f"holdout de arquivo fora da seleção: {outside}")
-        chosen = tuple(self._chosen(golden))
+    def pick(self, dataset: Dataset) -> tuple[DatasetItem, ...]:
+        chosen = tuple(
+            item
+            for suite in Suite
+            if suite in self.suites
+            for item in dataset.suites[suite]
+            if self._admits(item)
+        )
         unknown = sorted(self.only - {item.id for item in chosen})
         if unknown:
             raise SelectionError(f"itens fora da seleção: {unknown}")
         return chosen
 
-    def _chosen(self, golden: GoldenSet) -> Iterator[GoldenItem]:
-        files = {
-            GoldenSource.QUESTIONS: golden.questions,
-            GoldenSource.REDTEAM: golden.attacks,
-            GoldenSource.PROTOCOL_ACTIONS: golden.actions,
-            GoldenSource.SCOPE: golden.scope,
-        }
-        for source, items in files.items():
-            if source in self.sources:
-                yield from (item for item in items if self._admits(source, item))
-
-    def _admits(self, source: GoldenSource, item: GoldenItem) -> bool:
-        if self.only and item.id not in self.only:
-            return False
-        return item.split is self.split or (
-            item.split is Split.HOLDOUT and source in self.holdout_from
-        )
+    def _admits(self, item: DatasetItem) -> bool:
+        in_split = item.split in self.splits or item.gated
+        return in_split and (not self.only or item.id in self.only)
 
 
 @dataclass(frozen=True, slots=True)
-class Repetitions:
+class Epochs:
     default: int = 1
-    critical: int | None = None
 
-    def of(self, item: GoldenItem) -> int:
-        if item.critical and self.critical is not None:
-            return self.critical
-        return self.default
+    def of(self, item: DatasetItem) -> int:
+        return item.pass_k or self.default
 
 
 @dataclass(frozen=True, slots=True)
 class PlannedExecution:
-    item: GoldenItem
-    repetition: int
+    item: DatasetItem
+    epoch: int
 
     @property
     def key(self) -> str:
         item_id = self.item.id
-        return f"{item_id}#{self.repetition}"
+        return f"{item_id}#{self.epoch}"
 
 
 class RunPlan:
     @staticmethod
-    def of(items: tuple[GoldenItem, ...], repetitions: Repetitions) -> tuple[PlannedExecution, ...]:
+    def of(items: tuple[DatasetItem, ...], epochs: Epochs) -> tuple[PlannedExecution, ...]:
         return tuple(
-            PlannedExecution(item, repetition)
+            PlannedExecution(item, epoch)
             for item in items
-            for repetition in range(1, repetitions.of(item) + 1)
+            for epoch in range(1, epochs.of(item) + 1)
         )
 
 
 @dataclass(frozen=True, slots=True)
 class RunRequest:
     selection: ItemSelection
-    repetitions: Repetitions
+    epochs: Epochs
     output: Path
     concurrency: int | None = None
     env_file: Path | None = None

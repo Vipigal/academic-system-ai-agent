@@ -40,7 +40,7 @@ class ExecutionSink(Protocol):
 @dataclass(frozen=True, slots=True)
 class ContextualizedExecution:
     context: ItemContext
-    repetition: int
+    epoch: int
 
 
 class EvalRunner:
@@ -62,7 +62,7 @@ class EvalRunner:
 
     async def _executed(self, planned: ContextualizedExecution) -> Execution:
         context = planned.context
-        recorder = ExecutionRecorder(context.item.id, planned.repetition, context.question)
+        recorder = ExecutionRecorder(context.item.id, planned.epoch, context.question)
         try:
             await self._driver.run(
                 context.item.student, context.question, context.item.history, recorder

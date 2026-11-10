@@ -4,7 +4,7 @@ from pathlib import Path
 from evals.calibration.cases import CalibrationCase, CalibrationCases
 from evals.calibration.report import CalibrationReport
 from evals.calibration.scoring import CalibrationResult, CalibrationScoring
-from evals.golden.loader import GoldenLoader
+from evals.dataset.loader import DatasetLoader
 from evals.judge.port import Judge
 from evals.judge.session import JudgingSession
 from evals.judge.verdicts import JudgedVerdict, JudgeRequest
@@ -23,7 +23,7 @@ class CalibrationRun:
     def prepare(self) -> None:
         self._output.mkdir(parents=True, exist_ok=True)
         known = {request.id for request in self._requests()}
-        golden = GoldenLoader.load()
+        golden = DatasetLoader.load()
         for request in CalibrationCases.requests_of(self._cases, golden.items):
             if request.id not in known:
                 JsonLines.append(self._files.judge_requests, request)

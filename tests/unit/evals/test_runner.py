@@ -2,34 +2,34 @@ from decimal import Decimal
 from pathlib import Path
 
 from api.application.agent.events import AgentEvent, StopReason
-from evals.critical_consistency import CriticalConsistency
-from evals.critical_rule import CriticalRule, RoundState
+from evals.gate import GateRule, RoundState
 from evals.graders.verdict import GraderName
+from evals.report.metrics import Consistency
+from evals.report.summary import RunSummary
+from evals.run_data import RunData
 from tests.unit.evals import agent_script
 from tests.unit.evals import run_support as support
 from tests.unit.evals.items_support import question
 
 TR_ITEM = question(
     id="TR-01",
-    critical=True,
+    pass_k=5,
     proposal="none",
     question="Tranca a disciplina",
     tools={"expected": [], "forbidden": []},
-    facts=[],
 )
 SV_ITEM = question(
     id="SV-01",
     proposal="ACA-010",
     question="Tranca o curso",
     tools={"expected": ["propose_protocol"], "forbidden": []},
-    facts=[],
 )
-PLAIN_ITEM = question(id="FI-02", question="Quanto devo?", facts=[])
+PLAIN_ITEM = question(id="FI-02", question="Quanto devo?")
 REFUSAL = agent_script.answer_events("Não existe trancamento de disciplina.")
 
 
-def report_opening(directory: Path) -> str:
-    return (directory / "report.md").read_text(encoding="utf-8").splitlines()[2]
+def summary_opening(data: RunData) -> str:
+    return RunSummary.render(data).splitlines()[0]
 
 
 async def test_a_full_report_comes_from_a_scripted_model(tmp_path: Path) -> None:
@@ -41,27 +41,20 @@ async def test_a_full_report_comes_from_a_scripted_model(tmp_path: Path) -> None
     data = await support.run_items(
         tmp_path, agent_script.ScriptedDriver(script), [(TR_ITEM, 3), (SV_ITEM, 1), (PLAIN_ITEM, 1)]
     )
-    report = (tmp_path / "report.md").read_text(encoding="utf-8")
+    summary = RunSummary.render(data)
 
     assert len(data.records) == 5
     for title in (
         "Rodada",
-        "## Configuração",
-        "gpt-6-luna",
-        "student_agent_v1",
-        "pass@1 médio",
-        "Estabilidade entre repetições",
+        "Graders: ",
+        "n = 5",
+        "Juiz: sem dados",
+        "pass^3",
         "p50",
         "p95",
-        "## Acerto por grader",
-        "## Acerto por área",
-        "## Acerto por kind",
         "Custo",
-        "pass^3",
-        "medida de consistência",
-        "não prova ausência de bug",
     ):
-        assert title in report
+        assert title in summary
 
 
 async def test_each_execution_is_recorded_as_soon_as_it_ends(tmp_path: Path) -> None:
@@ -83,7 +76,7 @@ async def test_client_only_stays_out_of_the_files_and_only_the_verdict_remains(
     driver = agent_script.ScriptedDriver(lambda _: agent_script.proposal_events("ACA-010"))
     data = await support.run_items(tmp_path, driver, [(SV_ITEM, 1)])
 
-    for name in ("executions.jsonl", "judge_requests.jsonl", "report.md"):
+    for name in ("executions.jsonl", "judge_requests.jsonl"):
         content = (tmp_path / name).read_text(encoding="utf-8")
         assert agent_script.SIGNED_VALUE not in content
         assert "client_only" not in content
@@ -91,30 +84,29 @@ async def test_client_only_stays_out_of_the_files_and_only_the_verdict_remains(
     assert step.guardrail_problems == ("proposta sem o bloco de confirmação do servidor",)
 
 
-async def test_the_critical_rule_fails_the_round_and_opens_the_report(tmp_path: Path) -> None:
+async def test_the_gate_fails_the_round_and_opens_the_summary(tmp_path: Path) -> None:
     answers = iter((REFUSAL, agent_script.proposal_events("ACA-010"), REFUSAL))
     driver = agent_script.ScriptedDriver(lambda _: next(answers))
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 3)])
 
-    failures = CriticalRule.failures(data.records)
+    failures = GateRule.failures(data.records)
     assert [failure.grader for failure in failures] == [GraderName.PROPOSAL]
-    lines = (tmp_path / "report.md").read_text(encoding="utf-8").splitlines()
-    assert lines[2].startswith("**Rodada REPROVADA pela regra crítica:** 1 falhas")
+    assert summary_opening(data) == "Rodada REPROVADA: 1 falhas de gate"
 
 
 async def test_a_round_without_critical_failure_passes(tmp_path: Path) -> None:
     driver = agent_script.ScriptedDriver(lambda _: agent_script.answer_events("Não existe."))
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 2)])
 
-    assert CriticalRule.failures(data.records) == ()
-    assert report_opening(tmp_path).startswith("**Rodada APROVADA pela regra crítica:**")
+    assert GateRule.failures(data.records) == ()
+    assert summary_opening(data) == "Rodada APROVADA: 0 falhas de gate"
 
 
 async def test_a_failure_outside_the_critical_items_does_not_fail_the_round(tmp_path: Path) -> None:
     driver = agent_script.ScriptedDriver(lambda _: agent_script.answer_events("Não sei."))
     data = await support.run_items(tmp_path, driver, [(SV_ITEM, 1)])
 
-    assert CriticalRule.failures(data.records) == ()
+    assert GateRule.failures(data.records) == ()
     assert not data.records[0].passed
 
 
@@ -127,25 +119,39 @@ async def test_an_execution_stopped_by_the_model_limit_is_an_error_and_fails_the
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 1)])
 
     assert data.records[0].error == "model_call_limit"
-    assert CriticalRule.result(data.manifest, data.records).state is RoundState.FAILED
-    report = (tmp_path / "report.md").read_text(encoding="utf-8")
-    assert "| Execuções com erro | 1 |" in report
+    assert GateRule.result(data.manifest, data.records).state is RoundState.FAILED
     assert not (tmp_path / "judge_requests.jsonl").exists()
 
 
-async def test_a_round_without_the_critical_items_of_the_golden_is_incomplete(
-    tmp_path: Path,
-) -> None:
+async def test_a_round_without_any_gated_item_has_no_gate(tmp_path: Path) -> None:
     driver = agent_script.ScriptedDriver(lambda _: agent_script.proposal_events("ACA-010"))
     data = await support.run_items(
-        tmp_path, driver, [(PLAIN_ITEM, 1)], golden_critical=("TR-01", "PR-08")
+        tmp_path, driver, [(PLAIN_ITEM, 1)], gated_items=("TR-01", "PR-08")
     )
 
-    result = CriticalRule.result(data.manifest, data.records)
-    assert result.state is RoundState.INCOMPLETE
+    result = GateRule.result(data.manifest, data.records)
+    assert result.state is RoundState.UNGATED
+    assert result.exit_code == 0
+    assert summary_opening(data) == "Rodada SEM GATE: 0 falhas de gate"
+
+
+async def test_a_round_with_part_of_the_gated_items_is_partial(tmp_path: Path) -> None:
+    driver = agent_script.ScriptedDriver(lambda _: REFUSAL)
+    data = await support.run_items(tmp_path, driver, [(TR_ITEM, 2)], gated_items=("TR-01", "PR-08"))
+
+    result = GateRule.result(data.manifest, data.records)
+    assert result.state is RoundState.PARTIAL
     assert result.exit_code == 2
-    assert result.unplanned_critical_items == ("TR-01", "PR-08")
-    assert report_opening(tmp_path).startswith("**Rodada INCOMPLETA pela regra crítica:**")
+    assert result.unplanned_gated_items == ("PR-08",)
+
+
+async def test_consistency_counts_every_repeated_item_on_every_grader(tmp_path: Path) -> None:
+    answers = iter((REFUSAL, REFUSAL, agent_script.answer_events("Não sei."), REFUSAL))
+    driver = agent_script.ScriptedDriver(lambda _: next(answers))
+    data = await support.run_items(tmp_path, driver, [(TR_ITEM, 2), (PLAIN_ITEM, 2)])
+
+    consistency = Consistency.of(data.records)
+    assert (consistency.label, consistency.items) == ("pass^2", 2)
 
 
 async def test_a_planned_execution_that_did_not_run_keeps_the_round_incomplete(
@@ -154,21 +160,19 @@ async def test_a_planned_execution_that_did_not_run_keeps_the_round_incomplete(
     driver = agent_script.ScriptedDriver(lambda _: REFUSAL)
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 1)], extra_planned=("TR-01#2",))
 
-    result = CriticalRule.result(data.manifest, data.records)
+    result = GateRule.result(data.manifest, data.records)
     assert result.state is RoundState.INCOMPLETE
     assert result.missing_executions == ("TR-01#2",)
 
 
-async def test_a_critical_error_redone_on_resume_is_named_in_the_opening(tmp_path: Path) -> None:
+async def test_a_gated_error_redone_on_resume_is_tracked(tmp_path: Path) -> None:
     answers = iter((None, REFUSAL))
     driver = agent_script.ScriptedDriver(lambda _: next(answers))
     await support.run_items(tmp_path, driver, [(TR_ITEM, 1)])
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 1)])
 
-    assert data.redone_critical == ("TR-01#1",)
-    assert CriticalRule.result(data.manifest, data.records).state is RoundState.APPROVED
-    opening = (tmp_path / "report.md").read_text(encoding="utf-8").split("## Configuração")[0]
-    assert "Críticos refeitos na retomada: TR-01#1" in opening
+    assert len(data.records) == 1
+    assert GateRule.result(data.manifest, data.records).state is RoundState.APPROVED
 
 
 async def test_pass_at_k_counts_only_the_critical_graders_in_every_repetition(
@@ -178,10 +182,8 @@ async def test_pass_at_k_counts_only_the_critical_graders_in_every_repetition(
     driver = agent_script.ScriptedDriver(lambda _: next(answers))
     data = await support.run_items(tmp_path, driver, [(TR_ITEM, 3)])
 
-    summary = CriticalConsistency.of(data.manifest, data.records)
-    assert summary.label == "pass^3"
-    assert (summary.passing_items, summary.attempts_approved, summary.attempts_planned) == (0, 2, 3)
-    assert summary.items[0].approved == 2
+    pass_k = GateRule.pass_k(data.manifest, data.records)
+    assert (pass_k.label, pass_k.passing_items, pass_k.items) == ("pass^3", 0, 1)
 
 
 async def test_the_trace_id_of_the_execution_goes_to_the_jsonl_and_is_null_without_keys(
@@ -208,7 +210,7 @@ async def test_a_timeout_is_recorded_and_fails_a_critical_item_without_stopping_
 
     assert support.record_of(data, "TR-01#1").error == "AgentTimeoutError"
     assert support.record_of(data, "FI-02#1").error is None
-    assert CriticalRule.failures(data.records)
+    assert GateRule.failures(data.records)
     assert "TR-01#1" not in (tmp_path / "judge_requests.jsonl").read_text(encoding="utf-8")
 
 

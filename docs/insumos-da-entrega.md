@@ -72,7 +72,7 @@ ligado. Nos 50 casos de AV1 em que a média final dá para conferir, ela foi cal
 ## 5. Escopo: medir antes de pôr um classificador
 
 A pergunta era se o agente precisa de um classificador de escopo na frente do modelo. Antes de construir, o eval ganhou um conjunto
-próprio de escopo, que roda sozinho (`--golden scope`).
+próprio de escopo, que roda sozinho (`--suite scope`).
 
 - Antes do prompt v2, o agente entregava a receita de bolo e o código Python pedidos (ES-01 e ES-02, 0 de 2). Com a regra de escopo
   do v2, recusou os dois (2 de 2)[^antes-depois].
