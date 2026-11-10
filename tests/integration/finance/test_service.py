@@ -20,6 +20,10 @@ PARTIAL_INVOICE = "7067951"
 PARTIAL_PERSON = "3003422"
 NOT_YET_DUE_PERSON = "3003610"
 NOT_YET_DUE_CONTRACT = "CT00013240"
+SNAPSHOT_CONTRACTS = (
+    "SELECT count(DISTINCT contractid) FROM finance.receivable_snapshot "
+    "WHERE snapshotdate = '2026-10-31'"
+)
 
 
 async def service_for(database: Database, person_id: str) -> FinancialService:
@@ -176,7 +180,7 @@ async def test_debt_matches_the_receivable_snapshot_contract_by_contract(
     financial_services: list[FinancialService],
 ) -> None:
     expected = await snapshot_by_contract()
-    assert len(expected) == 273
+    assert len(expected) == await SqlOracle().count(SNAPSHOT_CONTRACTS)
     assert principal_and_count(await debt_cents_by_contract(financial_services)) == expected
 
 

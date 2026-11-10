@@ -24,6 +24,7 @@ SELF_PAID_OWNERS = r"""
     JOIN sag.person ON person.person_id = enrollment.person_id
     WHERE customer.taxid = regexp_replace(person.cpf, '\D', '', 'g')
 """
+PEOPLE = r"SELECT count(DISTINCT regexp_replace(cpf, '\D', '', 'g')) FROM sag.person"
 ALL_PROTOCOLS = "SELECT protocol FROM secretary.protocol"
 THIRD_PARTY_PROTOCOLS = (
     "SELECT protocol FROM secretary.protocol WHERE requester_type = 'Third Party'"
@@ -54,6 +55,10 @@ def oracle() -> SqlOracle:
     return SqlOracle()
 
 
+async def owned_by_oracle(oracle: SqlOracle, owners: str) -> set[str]:
+    return {pair.rsplit(":", 1)[0] for pair in await oracle.values(owners)}
+
+
 def joined(identifiers: Iterable[str]) -> str:
     return ",".join(identifiers)
 
@@ -70,8 +75,10 @@ def owned_pairs(everyone: list[Owned], field: str) -> set[str]:
     }
 
 
-def test_every_person_loads_a_session(everyone: list[StudentSession]) -> None:
-    assert len(everyone) == 1000
+async def test_every_person_loads_a_session(
+    everyone: list[StudentSession], oracle: SqlOracle
+) -> None:
+    assert len(everyone) == await oracle.count(PEOPLE)
     assert all(session.person_ids and session.enrollment_keys for session in everyone)
     assert all(session.brands for session in everyone)
 
@@ -89,7 +96,8 @@ async def test_protocols_resolve_to_the_expected_owner(
     owned_by_everyone: list[Owned], oracle: SqlOracle
 ) -> None:
     assert owned_pairs(owned_by_everyone, "protocol_ids") == await oracle.values(PROTOCOL_OWNERS)
-    assert len(identifiers_of(owned_by_everyone, "protocol_ids")) == 3882
+    owned = await owned_by_oracle(oracle, PROTOCOL_OWNERS)
+    assert len(identifiers_of(owned_by_everyone, "protocol_ids")) == len(owned)
 
 
 async def test_only_third_parties_and_guardians_without_student_are_invisible(
@@ -100,8 +108,12 @@ async def test_only_third_parties_and_guardians_without_student_are_invisible(
     )
     third_party = await oracle.values(THIRD_PARTY_PROTOCOLS)
     guardian = await oracle.values(GUARDIAN_PROTOCOLS)
-    assert len(invisible) == 51
-    assert (len(third_party), len(invisible & guardian)) == (11, 40)
+    unowned = await oracle.values(ALL_PROTOCOLS) - await owned_by_oracle(oracle, PROTOCOL_OWNERS)
+    assert len(invisible) == len(unowned)
+    assert (len(invisible & third_party), len(invisible & guardian)) == (
+        len(third_party),
+        len(guardian & unowned),
+    )
     assert invisible == third_party | (invisible & guardian)
 
 
@@ -109,14 +121,17 @@ async def test_guardian_protocols_with_the_student_id_stay_with_the_student(
     owned_by_everyone: list[Owned], oracle: SqlOracle
 ) -> None:
     guardian = await oracle.values(GUARDIAN_PROTOCOLS)
-    assert len(guardian & set(identifiers_of(owned_by_everyone, "protocol_ids"))) == 73
+    owned = await owned_by_oracle(oracle, PROTOCOL_OWNERS)
+    visible = set(identifiers_of(owned_by_everyone, "protocol_ids"))
+    assert len(guardian & visible) == len(guardian & owned)
 
 
 async def test_lms_accounts_resolve_to_the_expected_owner(
     owned_by_everyone: list[Owned], oracle: SqlOracle
 ) -> None:
     assert owned_pairs(owned_by_everyone, "lms_user_ids") == await oracle.values(LMS_OWNERS)
-    assert len(identifiers_of(owned_by_everyone, "lms_user_ids")) == 983
+    owned = await owned_by_oracle(oracle, LMS_OWNERS)
+    assert len(identifiers_of(owned_by_everyone, "lms_user_ids")) == len(owned)
 
 
 async def test_lms_accounts_reach_the_attempts_of_a5(
@@ -124,7 +139,9 @@ async def test_lms_accounts_reach_the_attempts_of_a5(
 ) -> None:
     accounts = joined(identifiers_of(owned_by_everyone, "lms_user_ids"))
     reached = await oracle.count(ATTEMPTS_OF_ACCOUNTS, ids=accounts)
-    assert (reached, await oracle.count(ALL_ATTEMPTS)) == (18566, 18857)
+    owned = joined(await owned_by_oracle(oracle, LMS_OWNERS))
+    assert reached == await oracle.count(ATTEMPTS_OF_ACCOUNTS, ids=owned)
+    assert reached < await oracle.count(ALL_ATTEMPTS)
 
 
 async def test_enrollment_keys_reach_every_subject_record(
@@ -132,7 +149,7 @@ async def test_enrollment_keys_reach_every_subject_record(
 ) -> None:
     keys = (":".join(key) for key in identifiers_of(owned_by_everyone, "enrollment_keys"))
     reached = await oracle.count(RECORDS_OF_ENROLLMENTS, ids=joined(keys))
-    assert (reached, await oracle.count(ALL_RECORDS)) == (20277, 20277)
+    assert reached == await oracle.count(ALL_RECORDS)
 
 
 async def test_contracts_reach_every_invoice_and_payment(
@@ -141,8 +158,10 @@ async def test_contracts_reach_every_invoice_and_payment(
     contracts = joined(identifiers_of(owned_by_everyone, "contract_ids"))
     invoices = await oracle.count(INVOICES_OF_CONTRACTS, ids=contracts)
     payments = await oracle.count(PAYMENTS_OF_CONTRACTS, ids=contracts)
-    assert (invoices, await oracle.count(ALL_INVOICES)) == (25931, 25931)
-    assert (payments, await oracle.count(ALL_PAYMENTS)) == (24380, 24380)
+    assert (invoices, payments) == (
+        await oracle.count(ALL_INVOICES),
+        await oracle.count(ALL_PAYMENTS),
+    )
 
 
 async def test_self_paid_contracts_are_the_ones_paid_with_the_own_cpf(

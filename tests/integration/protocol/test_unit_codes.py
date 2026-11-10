@@ -17,12 +17,14 @@ UNIT_PAIRS = """
          = lower(translate(s.city, 'ãáâéêíóôõúç', 'aaaeeiooouc'))
      AND u.uf = s.uf
 """
+ACADEMIC_UNITS = "SELECT count(DISTINCT unit_name) FROM sag.unit"
 
 
 async def test_every_academic_unit_translates_to_its_unit_in_the_secretary() -> None:
-    pairs = (pair.split("|") for pair in await SqlOracle().values(UNIT_PAIRS))
+    oracle = SqlOracle()
+    pairs = (pair.split("|") for pair in await oracle.values(UNIT_PAIRS))
     translated = dict(pairs)
-    assert len(translated) == 27
+    assert len(translated) == await oracle.count(ACADEMIC_UNITS)
     assert {name: SecretaryDialect.unit_code(name) for name in translated} == translated
 
 
